@@ -426,7 +426,7 @@ public class Network {
         assert !tableau.containsKey(x_i) : "x_i is a non-basic variable..";
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
-                entry.getKey().val = entry.getKey().val + entry.getValue().vars.get(x_i) * (v - x_i.val);
+                entry.getKey().val += entry.getValue().vars.get(x_i) * (v - x_i.val);
                 assert entry.getKey().val >= entry.getKey().domain.lb && entry.getKey().val <= entry.getKey().domain.ub;
             }
         }
@@ -439,10 +439,10 @@ public class Network {
         assert tableau.get(x_i).vars.containsKey(x_j);
         double theta = (v - x_i.val) / tableau.get(x_i).vars.get(x_j);
         x_i.val = v;
-        x_j.val = x_j.val + theta;
+        x_j.val += theta;
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getKey() != x_i && entry.getValue().vars.containsKey(x_j)) {
-                entry.getKey().val = entry.getKey().val + entry.getValue().vars.get(x_j) * theta;
+                entry.getKey().val += entry.getValue().vars.get(x_j) * theta;
             }
         }
 
