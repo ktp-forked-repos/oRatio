@@ -45,6 +45,7 @@ public class BaseEnv implements IEnv {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends IItem> T get(String name) {
         IItem item = items.get(name);
         if (item != null) {

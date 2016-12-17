@@ -16,6 +16,9 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -24,6 +27,7 @@ public class BaseScope implements IScope {
 
     public final Core core;
     public final IScope scope;
+    final Map<String, Field> fields = new HashMap<>();
 
     public BaseScope(Core c, IScope s) {
         this.core = c;
@@ -38,5 +42,24 @@ public class BaseScope implements IScope {
     @Override
     public IScope getScope() {
         return scope;
+    }
+
+    @Override
+    public Field getField(String name) {
+        Field field = fields.get(name);
+        if (field != null) {
+            return field;
+        }
+
+        // if not here, check any enclosing environment
+        if (scope != null) {
+            field = scope.getField(name);
+            if (field != null) {
+                return field;
+            }
+        }
+
+        // not found
+        return null;
     }
 }

@@ -30,9 +30,11 @@ public interface IEnv {
     public Core getCore();
 
     /**
-     * Returns the environment enclosing this environment.
+     * Returns the immediately enclosing environment of this environment. If the
+     * enclosing environment is a top level environment this method returns
+     * {@code null}.
      *
-     * @return the environment enclosing this environment.
+     * @return the immediately enclosing environment of this environment.
      */
     public IEnv getEnv();
 

@@ -44,6 +44,7 @@ public class Core implements IScope, IEnv {
     public static final String BOOL = "bool";
     public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
+    final Map<String, Field> fields = new HashMap<>();
     final Map<String, Type> types = new HashMap<>();
     final Map<String, IItem> items = new HashMap<>();
 
@@ -85,6 +86,11 @@ public class Core implements IScope, IEnv {
     @Override
     public IScope getScope() {
         return null;
+    }
+
+    @Override
+    public Field getField(String name) {
+        return fields.get(name);
     }
 
     @Override
