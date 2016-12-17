@@ -12,4 +12,4 @@ The repository structure is compatible with the [NetBeans](https://netbeans.org/
 
 ## ac-lib
 
-The constraint network is maintained by means of the [ac-lib](https://github.com/oRatioSolver/oRatio/blob/master/src/it/cnr/istc/ac) library which provides features for creating variables and for enforcing constraints among them.
+The constraint network is maintained by means of the [ac-lib](https://github.com/oRatioSolver/oRatio/blob/master/src/it/cnr/istc/ac) library which provides features for creating variables and for enforcing constraints among them [ac-lib](ac).
