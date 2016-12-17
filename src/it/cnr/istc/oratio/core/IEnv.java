@@ -22,7 +22,27 @@ package it.cnr.istc.oratio.core;
  */
 public interface IEnv {
 
+    /**
+     * Returns the core enclosing this environment.
+     *
+     * @return the core enclosing this environment.
+     */
     public Core getCore();
 
+    /**
+     * Returns the environment enclosing this environment.
+     *
+     * @return the environment enclosing this environment.
+     */
     public IEnv getEnv();
+
+    /**
+     * Returns the item of this environment, or any enclosing environment,
+     * associated to the given name.
+     *
+     * @param <T> the type of the item.
+     * @param name the name of the object to be retrieved.
+     * @return the object associated to the given name.
+     */
+    public <T extends IItem> T get(String name);
 }

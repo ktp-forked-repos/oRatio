@@ -16,7 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.BoolVar;
+import it.cnr.istc.ac.Expr;
+import it.cnr.istc.ac.LBool;
 
 /**
  *
@@ -24,15 +25,15 @@ import it.cnr.istc.ac.BoolVar;
  */
 public class BoolItem extends Item implements IBoolItem {
 
-    final BoolVar var;
+    final Expr<LBool> expr;
 
-    BoolItem(Core c, IEnv e, Type t, BoolVar v) {
+    BoolItem(Core c, IEnv e, Type t, Expr<LBool> xp) {
         super(c, e, t);
-        this.var = v;
+        this.expr = xp;
     }
 
     @Override
-    public BoolVar getBoolVar() {
-        return var;
+    public Expr<LBool> getBoolVar() {
+        return expr;
     }
 }

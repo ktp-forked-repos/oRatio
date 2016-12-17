@@ -14,16 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package it.cnr.istc.oratio.core;
-
-import it.cnr.istc.ac.Expr;
-import it.cnr.istc.ac.LBool;
+package it.cnr.istc.oratio.solver;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public interface IBoolItem extends IItem {
-
-    public Expr<LBool> getBoolVar();
+public class Flaw {
 }

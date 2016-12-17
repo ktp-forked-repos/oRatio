@@ -16,6 +16,9 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -24,6 +27,7 @@ public class BaseEnv implements IEnv {
 
     public final Core core;
     public final IEnv env;
+    protected final Map<String, IItem> items = new HashMap<>();
 
     public BaseEnv(Core c, IEnv e) {
         this.core = c;
@@ -38,5 +42,24 @@ public class BaseEnv implements IEnv {
     @Override
     public IEnv getEnv() {
         return env;
+    }
+
+    @Override
+    public <T extends IItem> T get(String name) {
+        IItem item = items.get(name);
+        if (item != null) {
+            return (T) item;
+        }
+
+        // if not here, check any enclosing environment
+        if (env != null) {
+            item = env.get(name);
+            if (item != null) {
+                return (T) item;
+            }
+        }
+
+        // not found
+        return null;
     }
 }
