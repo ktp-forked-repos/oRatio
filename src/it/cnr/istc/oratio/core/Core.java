@@ -30,6 +30,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -93,6 +94,18 @@ public class Core implements IScope, IEnv {
         return new BoolItem(this, this, types.get(BOOL), network.newBool(val));
     }
 
+    public EnumItem newEnum(IItem value) {
+        return new EnumItem(this, value.getType(), network.newEnum(value));
+    }
+
+    public EnumItem newEnum(Type type, IItem... values) {
+        assert values.length > 1;
+        assert Stream.of(values).allMatch(item -> type.isAssignableFrom(item.getType()));
+
+        EnumItem c_enum = new EnumItem(this, type, network.newEnum(values));
+        return c_enum;
+    }
+
     @Override
     public Core getCore() {
         return this;
@@ -134,7 +147,7 @@ public class Core implements IScope, IEnv {
     private static class BoolType extends Type {
 
         BoolType(Core c) {
-            super(c, c, BOOL);
+            super(c, c, BOOL, true);
         }
     }
 }

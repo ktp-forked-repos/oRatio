@@ -16,23 +16,24 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.EnumVar;
+import it.cnr.istc.ac.EnumDomain;
+import it.cnr.istc.ac.Expr;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumItem extends Item implements IEnumItem<Item> {
+public class EnumItem extends Item implements IEnumItem<IItem> {
 
-    final EnumVar<Item> var;
+    final Expr<EnumDomain<IItem>> var;
 
-    EnumItem(Core c, IEnv e, Type t, EnumVar<Item> v) {
-        super(c, e, t);
+    EnumItem(Core c, Type t, Expr<EnumDomain<IItem>> v) {
+        super(c, c, t);
         this.var = v;
     }
 
     @Override
-    public EnumVar<Item> getEnumVar() {
+    public Expr<EnumDomain<IItem>> getEnumVar() {
         return var;
     }
 }

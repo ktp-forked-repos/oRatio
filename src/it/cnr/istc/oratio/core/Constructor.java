@@ -20,9 +20,30 @@ package it.cnr.istc.oratio.core;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Constructor extends BaseScope {
+public abstract class Constructor extends BaseScope {
 
-    public Constructor(Core c, IScope s) {
+    public final Field[] parameters;
+
+    public Constructor(Core c, IScope s, Field... parameters) {
         super(c, s);
+        this.parameters = parameters;
+
+        fields.put(THIS, new Field((Type) s, THIS, true));
+        for (Field par : parameters) {
+            fields.put(par.name, par);
+        }
     }
+
+    public IItem newInstance(IEnv env, IItem... expressions) {
+        assert parameters.length == expressions.length;
+
+        Type type = (Type) scope;
+        IItem item = type.newInstance(env);
+
+        invoke(item, expressions);
+
+        return item;
+    }
+
+    public abstract boolean invoke(IItem item, IItem... expressions);
 }

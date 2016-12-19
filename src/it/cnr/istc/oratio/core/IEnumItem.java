@@ -16,13 +16,14 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.EnumVar;
+import it.cnr.istc.ac.EnumDomain;
+import it.cnr.istc.ac.Expr;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public interface IEnumItem<T> extends IItem {
+public interface IEnumItem<T extends IItem> extends IItem {
 
-    public EnumVar<T> getEnumVar();
+    public Expr<EnumDomain<T>> getEnumVar();
 }

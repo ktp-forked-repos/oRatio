@@ -16,7 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.ArithVar;
+import it.cnr.istc.ac.Expr;
+import it.cnr.istc.ac.Interval;
 
 /**
  *
@@ -24,15 +25,15 @@ import it.cnr.istc.ac.ArithVar;
  */
 public class ArithItem extends Item implements IArithItem {
 
-    final ArithVar var;
+    final Expr<Interval> var;
 
-    ArithItem(Core c, IEnv e, Type t, ArithVar v) {
+    ArithItem(Core c, IEnv e, Type t, Expr<Interval> v) {
         super(c, e, t);
         this.var = v;
     }
 
     @Override
-    public ArithVar getArithVar() {
+    public Expr<Interval> getArithVar() {
         return var;
     }
 }

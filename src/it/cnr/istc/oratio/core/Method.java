@@ -20,12 +20,26 @@ package it.cnr.istc.oratio.core;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Method extends BaseScope {
+public abstract class Method extends BaseScope {
 
     public final String name;
+    public final Type return_type;
+    public final Field[] parameters;
 
-    public Method(Core c, IScope s, String n) {
+    public Method(Core c, IScope s, String n, Type rt, Field... pars) {
         super(c, s);
         this.name = n;
+        this.return_type = rt;
+        this.parameters = pars;
+
+        fields.put(THIS, new Field((Type) scope, THIS, true));
+        if (rt != null) {
+            fields.put(RETURN, new Field(rt, RETURN, true));
+        }
+        for (Field par : pars) {
+            fields.put(par.name, par);
+        }
     }
+
+    public abstract boolean invoke(IEnv env, IItem... expressions);
 }
