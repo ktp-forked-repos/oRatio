@@ -17,7 +17,11 @@
 package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumVar;
+import it.cnr.istc.ac.Interval;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  *
@@ -27,11 +31,15 @@ class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
 
     final ArithExpr arith_var;
     final EnumVar<IArithItem> enum_var;
+    final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
 
     ArithEnum(Core c, Type t, ArithExpr av, EnumVar<IArithItem> ev) {
         super(c, c, t);
         this.arith_var = av;
         this.enum_var = ev;
+        for (IArithItem v : ev.evaluate().getAllowedValues()) {
+            eqs.put(v, core.network.eq(arith_var, v.getArithVar()));
+        }
     }
 
     @Override
@@ -42,5 +50,34 @@ class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
     @Override
     public EnumVar<IArithItem> getEnumVar() {
         return enum_var;
+    }
+
+    @Override
+    public BoolExpr allows(IArithItem val) {
+        return eqs.get(val);
+    }
+
+    @Override
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (item instanceof IArithItem) {
+            return core.network.eq(arith_var, ((IArithItem) item).getArithVar());
+        } else {
+            return core.network.newBool(false);
+        }
+    }
+
+    @Override
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (item instanceof IBoolItem) {
+            Interval left_d = arith_var.evaluate();
+            Interval right_d = ((IArithItem) item).getArithVar().evaluate();
+            return left_d.intersects(right_d);
+        } else {
+            return false;
+        }
     }
 }

@@ -18,6 +18,9 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumVar;
+import it.cnr.istc.ac.LBool;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  *
@@ -27,11 +30,15 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
 
     final BoolExpr bool_var;
     final EnumVar<IBoolItem> enum_var;
+    final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
 
     BoolEnum(Core c, Type t, BoolExpr bv, EnumVar<IBoolItem> ev) {
         super(c, c, t);
         this.bool_var = bv;
         this.enum_var = ev;
+        for (IBoolItem v : ev.evaluate().getAllowedValues()) {
+            eqs.put(v, core.network.eq(bool_var, v.getBoolVar()));
+        }
     }
 
     @Override
@@ -42,5 +49,34 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
     @Override
     public EnumVar<IBoolItem> getEnumVar() {
         return enum_var;
+    }
+
+    @Override
+    public BoolExpr allows(IBoolItem val) {
+        return eqs.get(val);
+    }
+
+    @Override
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (item instanceof IBoolItem) {
+            return core.network.eq(bool_var, ((IBoolItem) item).getBoolVar());
+        } else {
+            return core.network.newBool(false);
+        }
+    }
+
+    @Override
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (item instanceof IBoolItem) {
+            LBool left_d = bool_var.evaluate();
+            LBool right_d = ((IBoolItem) item).getBoolVar().evaluate();
+            return !((left_d == LBool.L_TRUE && right_d == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right_d == LBool.L_TRUE));
+        } else {
+            return false;
+        }
     }
 }

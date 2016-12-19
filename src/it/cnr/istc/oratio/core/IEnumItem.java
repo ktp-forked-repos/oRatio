@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumDomain;
 import it.cnr.istc.ac.Expr;
 
@@ -26,4 +27,6 @@ import it.cnr.istc.ac.Expr;
 public interface IEnumItem<T extends IItem> extends IItem {
 
     public Expr<EnumDomain<T>> getEnumVar();
+
+    public BoolExpr allows(T val);
 }

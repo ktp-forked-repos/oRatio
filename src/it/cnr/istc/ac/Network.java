@@ -260,6 +260,14 @@ public class Network {
         }
     }
 
+    public <T> BoolExpr eq(Expr<EnumDomain<T>> left, T right) {
+        if (left instanceof EnumConst) {
+            return new BoolConst(((EnumConst<T>) left).val == right ? LBool.L_TRUE : LBool.L_FALSE);
+        } else {
+            return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right);
+        }
+    }
+
     public BoolExpr eq(BoolExpr left, BoolExpr right) {
         if (left instanceof BoolConst && right instanceof BoolConst) {
             return new BoolConst(((BoolConst) left).val == ((BoolConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);

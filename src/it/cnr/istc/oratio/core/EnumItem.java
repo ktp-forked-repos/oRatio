@@ -16,8 +16,11 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumDomain;
 import it.cnr.istc.ac.Expr;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  *
@@ -25,15 +28,52 @@ import it.cnr.istc.ac.Expr;
  */
 class EnumItem extends Item implements IEnumItem<IItem> {
 
-    final Expr<EnumDomain<IItem>> var;
+    final Expr<EnumDomain<IItem>> expr;
+    final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
 
-    EnumItem(Core c, Type t, Expr<EnumDomain<IItem>> v) {
+    EnumItem(Core c, Type t, Expr<EnumDomain<IItem>> xp) {
         super(c, c, t);
-        this.var = v;
+        this.expr = xp;
+        for (IItem v : xp.evaluate().getAllowedValues()) {
+            eqs.put(v, core.network.eq(expr, v));
+        }
     }
 
     @Override
     public Expr<EnumDomain<IItem>> getEnumVar() {
-        return var;
+        return expr;
+    }
+
+    @Override
+    public BoolExpr allows(IItem val) {
+        return eqs.get(val);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (eqs.containsKey(item)) {
+            return eqs.get(item);
+        } else if (item instanceof IEnumItem) {
+            return core.network.eq(expr, ((IEnumItem<IItem>) item).getEnumVar());
+        } else {
+            return core.network.newBool(false);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (eqs.containsKey(item)) {
+            return true;
+        } else if (item instanceof IEnumItem) {
+            return expr.evaluate().isIntersecting(((IEnumItem<IItem>) item).getEnumVar().evaluate());
+        } else {
+            return false;
+        }
     }
 }
