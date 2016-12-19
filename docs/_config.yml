@@ -1,4 +1,7 @@
 name: oRatio
 markdown: kramdown
+kramdown:
+  input: GFM
+  auto_ids: true
 baseurl: /oRatio
 highlighter: rouge
