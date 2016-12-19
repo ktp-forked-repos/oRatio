@@ -10,7 +10,7 @@ This library provides features for maintaining an arc-consistency based constrai
 
 Creating a constraint network is overly simple. I it sufficient to create an instance of the `Network` class.
 
-```Java
+```java
 Network n = new Network();
 ```
 
