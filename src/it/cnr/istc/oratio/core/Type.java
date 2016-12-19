@@ -18,7 +18,6 @@ package it.cnr.istc.oratio.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class Type extends BaseScope {
     public final boolean primitive;
     protected final Collection<Type> superclasses = new ArrayList<>();
     protected final Collection<Constructor> constructors = new ArrayList<>();
-    protected final Map<String, Collection<Method>> methods = new HashMap<>();
+    protected final Map<String, Collection<Method>> methods = new LinkedHashMap<>();
     protected final Map<String, Type> types = new LinkedHashMap<>();
     protected final Map<String, Predicate> predicates = new LinkedHashMap<>();
     protected final Collection<IItem> instances = new ArrayList<>();

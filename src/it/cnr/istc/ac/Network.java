@@ -104,6 +104,10 @@ public class Network {
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
+    public BoolExpr imply(BoolExpr left, BoolExpr right) {
+        return or(not(left), right);
+    }
+
     public ArithExpr minus(ArithExpr expr) {
         if (expr instanceof ArithConst) {
             return new ArithConst(-((ArithConst) expr).val);

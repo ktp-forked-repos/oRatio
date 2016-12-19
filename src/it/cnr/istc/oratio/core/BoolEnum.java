@@ -16,7 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.BoolVar;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumVar;
 
 /**
@@ -25,17 +25,17 @@ import it.cnr.istc.ac.EnumVar;
  */
 public class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
 
-    final BoolVar bool_var;
+    final BoolExpr bool_var;
     final EnumVar<IBoolItem> enum_var;
 
-    BoolEnum(Core c, Type t, BoolVar bv, EnumVar<IBoolItem> ev) {
+    BoolEnum(Core c, Type t, BoolExpr bv, EnumVar<IBoolItem> ev) {
         super(c, c, t);
         this.bool_var = bv;
         this.enum_var = ev;
     }
 
     @Override
-    public BoolVar getBoolVar() {
+    public BoolExpr getBoolVar() {
         return bool_var;
     }
 

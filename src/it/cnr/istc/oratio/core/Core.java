@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.parser.oRatioLexer;
@@ -27,8 +28,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,12 +50,16 @@ public class Core implements IScope, IEnv {
     public static final String REAL = "real";
     public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
-    final Map<String, Field> fields = new HashMap<>();
-    final Map<String, Type> types = new HashMap<>();
-    final Map<String, IItem> items = new HashMap<>();
+    protected final Map<String, Field> fields = new LinkedHashMap<>();
+    protected final Map<String, Collection<Method>> methods = new LinkedHashMap<>();
+    protected final Map<String, Predicate> predicates = new LinkedHashMap<>();
+    protected final Map<String, Type> types = new LinkedHashMap<>();
+    protected final Map<String, IItem> items = new LinkedHashMap<>();
+    protected BoolExpr ctr_var;
 
     public Core() {
         types.put(BOOL, new BoolType(this));
+        types.put(REAL, new RealType(this));
     }
 
     public boolean read(String script) {
@@ -130,6 +135,43 @@ public class Core implements IScope, IEnv {
         return new BoolItem(this, types.get(BOOL), network.and(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
+    public IBoolItem or(IBoolItem... vars) {
+        return new BoolItem(this, types.get(BOOL), network.or(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
+    }
+
+    public IArithItem minus(IArithItem var) {
+        return new ArithItem(this, types.get(REAL), network.minus(var.getArithVar()));
+    }
+
+    public IArithItem sum(IArithItem... vars) {
+        return new ArithItem(this, types.get(REAL), network.sum(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+    }
+
+    public IArithItem mult(IArithItem... vars) {
+        return new ArithItem(this, types.get(REAL), network.mult(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+    }
+
+    public IArithItem div(IArithItem left, IArithItem right) {
+        return new ArithItem(this, types.get(REAL), network.div(left.getArithVar(), right.getArithVar()));
+    }
+
+    public IBoolItem leq(IArithItem left, IArithItem right) {
+        return new BoolItem(this, types.get(BOOL), network.leq(left.getArithVar(), right.getArithVar()));
+    }
+
+    public IBoolItem eq(IArithItem left, IArithItem right) {
+        return new BoolItem(this, types.get(BOOL), network.eq(left.getArithVar(), right.getArithVar()));
+    }
+
+    public IBoolItem geq(IArithItem left, IArithItem right) {
+        return new BoolItem(this, types.get(BOOL), network.geq(left.getArithVar(), right.getArithVar()));
+    }
+
+    public boolean add(IBoolItem... vars) {
+        network.add(Stream.of(vars).map(var -> network.imply(ctr_var, var.getBoolVar())).toArray(BoolExpr[]::new));
+        return network.propagate();
+    }
+
     @Override
     public Core getCore() {
         return this;
@@ -143,6 +185,40 @@ public class Core implements IScope, IEnv {
     @Override
     public Field getField(String name) {
         return fields.get(name);
+    }
+
+    @Override
+    public Method getMethod(String name, Type... parameterTypes) {
+        boolean isCorrect;
+        if (methods.containsKey(name)) {
+            for (Method m : methods.get(name)) {
+                if (m.parameters.length == parameterTypes.length) {
+                    isCorrect = true;
+                    for (int i = 0; i < m.parameters.length; i++) {
+                        if (!m.parameters[i].type.isAssignableFrom(parameterTypes[i])) {
+                            isCorrect = false;
+                            break;
+                        }
+                    }
+                    if (isCorrect) {
+                        return m;
+                    }
+                }
+            }
+        }
+
+        // not found
+        return null;
+    }
+
+    @Override
+    public Predicate getPredicate(String name) {
+        return predicates.get(name);
+    }
+
+    @Override
+    public Type getType(String name) {
+        return types.get(name);
     }
 
     @Override
@@ -172,6 +248,23 @@ public class Core implements IScope, IEnv {
 
         BoolType(Core c) {
             super(c, c, BOOL, true);
+        }
+
+        @Override
+        public IItem newInstance(IEnv env) {
+            return core.newBool();
+        }
+    }
+
+    private static class RealType extends Type {
+
+        RealType(Core c) {
+            super(c, c, REAL, true);
+        }
+
+        @Override
+        public IItem newInstance(IEnv env) {
+            return core.newReal();
         }
     }
 }

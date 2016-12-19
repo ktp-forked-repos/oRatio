@@ -16,7 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.ArithVar;
+import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.EnumVar;
 
 /**
@@ -25,17 +25,17 @@ import it.cnr.istc.ac.EnumVar;
  */
 public class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
 
-    final ArithVar arith_var;
+    final ArithExpr arith_var;
     final EnumVar<IArithItem> enum_var;
 
-    ArithEnum(Core c, Type t, ArithVar av, EnumVar<IArithItem> ev) {
+    ArithEnum(Core c, Type t, ArithExpr av, EnumVar<IArithItem> ev) {
         super(c, c, t);
         this.arith_var = av;
         this.enum_var = ev;
     }
 
     @Override
-    public ArithVar getArithVar() {
+    public ArithExpr getArithVar() {
         return arith_var;
     }
 
