@@ -1,3 +1,4 @@
 name: oRatio
 markdown: kramdown
 baseurl: /oRatio
+highlighter: rouge
