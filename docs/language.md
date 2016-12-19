@@ -13,3 +13,6 @@ As already mentioned, the scope concept represents the junction element between 
 The basic core of the oRatio architecture provides an object-oriented virtual environment for the definition of objects and constraints among them.
 Every object in the oRatio environment is an instance of a specific *type*.
 oRatio distinguishes among *primitive types* (i.e., bools, ints, reals, enums and strings) and user defined *complex types* (e.g., robots, trucks, locations, etc.).
+Within oRatio, a problem is composed of different *compilation units* (i.e., several files) that can possibly interact each other.
+Each compilation unit can contain several declarations of different types and/or statements.
+Such units are given to the solver in different sorted *groups* (i.e., a list of lists of files).
