@@ -10,15 +10,15 @@ This library provides features for maintaining an arc-consistency based constrai
 
 Creating a constraint network is overly simple. I it sufficient to create an instance of the `Network` class.
 
-```java
+{% highlight java %}
 Network n = new Network();
-```
+{% endhighlight %}
 
 ### Creating new variables and constants
 
 Variables can be created by invoking mothods of the `Network` instance. It is possible to create boolean variables, real variables and enumerative variables. Similarly, it is possible to create boolean constants, real constants and enumerative constants.
 
-```java
+{% highlight java %}
 Network n = new Network();
 
 // a boolean variable
@@ -32,4 +32,4 @@ ArithVar av = n.newReal();
 
 // a real constant assuming value 0
 ArithConst ac = n.newReal(0);
-```
+{% endhighlight %}
