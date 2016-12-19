@@ -23,7 +23,7 @@ import it.cnr.istc.ac.EnumVar;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
+class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
 
     final ArithExpr arith_var;
     final EnumVar<IArithItem> enum_var;

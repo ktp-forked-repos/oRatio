@@ -16,13 +16,23 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
 public class Disjunction extends BaseScope {
 
-    public Disjunction(Core c, IScope s) {
+    final Collection<Conjunction> conjunctions = new ArrayList<>();
+
+    Disjunction(Core c, IScope s) {
         super(c, s);
+    }
+
+    public Collection<Conjunction> getConjunctions() {
+        return Collections.unmodifiableCollection(conjunctions);
     }
 }

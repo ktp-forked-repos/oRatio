@@ -23,7 +23,7 @@ import it.cnr.istc.ac.Expr;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumItem extends Item implements IEnumItem<IItem> {
+class EnumItem extends Item implements IEnumItem<IItem> {
 
     final Expr<EnumDomain<IItem>> var;
 

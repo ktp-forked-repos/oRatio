@@ -23,7 +23,7 @@ import it.cnr.istc.ac.EnumVar;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
+class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
 
     final BoolExpr bool_var;
     final EnumVar<IBoolItem> enum_var;

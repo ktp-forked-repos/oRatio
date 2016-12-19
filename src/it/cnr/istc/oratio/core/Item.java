@@ -16,6 +16,13 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.BoolExpr;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -32,5 +39,80 @@ public class Item extends BaseEnv implements IItem {
     @Override
     public Type getType() {
         return type;
+    }
+
+    @Override
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (item instanceof IEnumItem) {
+            return item.eq(this);
+        } else {
+            // We have two items of the same type
+            // All the fields of the first item should be equal to all the fields of second item..
+
+            Set<Type> types = new HashSet<>();
+            LinkedList<Type> queue = new LinkedList<>();
+            queue.add(type);
+            while (!queue.isEmpty()) {
+                Type c_type = queue.pollFirst();
+                if (!types.contains(c_type)) {
+                    types.add(c_type);
+                    queue.addAll(c_type.superclasses);
+                }
+            }
+
+            Collection<BoolExpr> exprs = new ArrayList<>();
+            for (Type t : types) {
+                for (Field f : t.fields.values()) {
+                    if (!f.synthetic) {
+                        exprs.add(items.get(f.name).eq(item.get(f.name)));
+                    }
+                }
+            }
+
+            if (exprs.isEmpty()) {
+                return core.network.newBool(true);
+            } else if (exprs.size() == 1) {
+                return exprs.iterator().next();
+            } else {
+                return core.network.and(exprs.toArray(new BoolExpr[exprs.size()]));
+            }
+        }
+    }
+
+    @Override
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (item instanceof IEnumItem) {
+            return item.equates(this);
+        } else {
+            // We have two items of the same type
+            // All the fields of the first item should equate to all the fields of second item..
+
+            Set<Type> types = new HashSet<>();
+            LinkedList<Type> queue = new LinkedList<>();
+            queue.add(type);
+            while (!queue.isEmpty()) {
+                Type c_type = queue.pollFirst();
+                if (!types.contains(c_type)) {
+                    types.add(c_type);
+                    queue.addAll(c_type.superclasses);
+                }
+            }
+
+            for (Type t : types) {
+                for (Field f : t.fields.values()) {
+                    if (!f.synthetic) {
+                        if (!items.get(f.name).equates(item.get(f.name))) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }

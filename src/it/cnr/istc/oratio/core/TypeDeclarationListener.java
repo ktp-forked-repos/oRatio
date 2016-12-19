@@ -61,4 +61,24 @@ class TypeDeclarationListener extends oRatioBaseListener {
     public void enterClass_type(oRatioParser.Class_typeContext ctx) {
         super.enterClass_type(ctx); //To change body of generated methods, choose Tools | Templates.
     }
+
+    static class Typedef extends Type {
+
+        final Type base_type;
+        final oRatioParser.ExprContext expr;
+
+        Typedef(Core c, IScope s, String n, Type base_type, oRatioParser.ExprContext expr) {
+            super(c, s, n);
+            this.base_type = base_type;
+            this.expr = expr;
+        }
+
+        @Override
+        public IItem newInstance(IEnv env) {
+            IItem i = base_type.newInstance(env);
+            boolean add = core.add(core.eq(i, new ExpressionVisitor(core, env).visit(expr)));
+            assert add;
+            return i;
+        }
+    }
 }

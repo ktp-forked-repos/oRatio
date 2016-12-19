@@ -17,22 +17,48 @@
 package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.Interval;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ArithItem extends Item implements IArithItem {
+class ArithItem extends Item implements IArithItem {
 
-    final ArithExpr var;
+    final ArithExpr expr;
 
-    ArithItem(Core c, Type t, ArithExpr v) {
+    ArithItem(Core c, Type t, ArithExpr xp) {
         super(c, c, t);
-        this.var = v;
+        this.expr = xp;
     }
 
     @Override
     public ArithExpr getArithVar() {
-        return var;
+        return expr;
+    }
+
+    @Override
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (item instanceof IArithItem) {
+            return core.network.eq(expr, ((IArithItem) item).getArithVar());
+        } else {
+            return core.network.newBool(false);
+        }
+    }
+
+    @Override
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (item instanceof IBoolItem) {
+            Interval left_d = expr.evaluate();
+            Interval right_d = ((IArithItem) item).getArithVar().evaluate();
+            return left_d.intersects(right_d);
+        } else {
+            return false;
+        }
     }
 }

@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.BoolExpr;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -23,4 +25,8 @@ package it.cnr.istc.oratio.core;
 public interface IItem extends IEnv {
 
     public Type getType();
+
+    public BoolExpr eq(IItem item);
+
+    public boolean equates(IItem item);
 }

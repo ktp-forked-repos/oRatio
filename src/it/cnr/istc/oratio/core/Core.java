@@ -171,12 +171,12 @@ public class Core implements IScope, IEnv {
         return new BoolItem(this, types.get(BOOL), network.leq(left.getArithVar(), right.getArithVar()));
     }
 
-    public IBoolItem eq(IArithItem left, IArithItem right) {
-        return new BoolItem(this, types.get(BOOL), network.eq(left.getArithVar(), right.getArithVar()));
-    }
-
     public IBoolItem geq(IArithItem left, IArithItem right) {
         return new BoolItem(this, types.get(BOOL), network.geq(left.getArithVar(), right.getArithVar()));
+    }
+
+    public IBoolItem eq(IItem left, IItem right) {
+        return new BoolItem(this, types.get(BOOL), left.eq(right));
     }
 
     public boolean add(IBoolItem... vars) {

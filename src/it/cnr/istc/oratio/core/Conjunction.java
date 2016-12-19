@@ -20,9 +20,11 @@ package it.cnr.istc.oratio.core;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Conjunction extends BaseScope {
+public abstract class Conjunction extends BaseScope {
 
-    public Conjunction(Core c, IScope s) {
+    Conjunction(Core c, IScope s) {
         super(c, s);
     }
+
+    public abstract boolean apply(IEnv env);
 }

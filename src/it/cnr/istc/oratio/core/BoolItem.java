@@ -17,12 +17,13 @@
 package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.LBool;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class BoolItem extends Item implements IBoolItem {
+class BoolItem extends Item implements IBoolItem {
 
     final BoolExpr expr;
 
@@ -34,5 +35,29 @@ public class BoolItem extends Item implements IBoolItem {
     @Override
     public BoolExpr getBoolVar() {
         return expr;
+    }
+
+    @Override
+    public BoolExpr eq(IItem item) {
+        if (this == item) {
+            return core.network.newBool(true);
+        } else if (item instanceof IBoolItem) {
+            return core.network.eq(expr, ((IBoolItem) item).getBoolVar());
+        } else {
+            return core.network.newBool(false);
+        }
+    }
+
+    @Override
+    public boolean equates(IItem item) {
+        if (this == item) {
+            return true;
+        } else if (item instanceof IBoolItem) {
+            LBool left_d = expr.evaluate();
+            LBool right_d = ((IBoolItem) item).getBoolVar().evaluate();
+            return !((left_d == LBool.L_TRUE && right_d == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right_d == LBool.L_TRUE));
+        } else {
+            return false;
+        }
     }
 }
