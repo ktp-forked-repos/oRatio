@@ -1,4 +1,4 @@
 name: oRatio
 markdown: kramdown
 baseurl: /oRatio
-theme: jekyll-theme-cayman
+theme: minima
