@@ -1,7 +1,3 @@
----
-layout: default
-title: oRatio
----
 # oRatio
 
 [![Build Travis-CI Status](https://travis-ci.org/oRatioSolver/oRatio.svg?branch=master)](https://travis-ci.org/oRatioSolver/oRatio)

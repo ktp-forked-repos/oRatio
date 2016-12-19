@@ -1,7 +1,3 @@
----
-layout: default
-title: ac-lib
----
 # ac-lib
 
 This library provides features for maintaining an arc-consistency based constraint network.
