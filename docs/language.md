@@ -16,3 +16,18 @@ oRatio distinguishes among *primitive types* (i.e., bools, ints, reals, enums an
 Within oRatio, a problem is composed of different *compilation units* (i.e., several files) that can possibly interact each other.
 Each compilation unit can contain several declarations of different types and/or statements.
 Such units are given to the solver in different sorted *groups* (i.e., a list of lists of files).
+
+Furthermore, these groups can be sent to solver at different times so as to provide plan adaptation features.
+Although not strictly required, it is common practice to separate the type declarations from the statements in different units (e.g., a first unit for type declarations and a second unit for statements).
+Furthermore, type declarations can be spread on different units so as to improve model decomposition.
+In this regard, we tried to facilitate the definition of the domains by internally implementing forward declaration.
+Specifically, types, methods and predicates can be used before of being declared, under the obvious assumption that these types (methods and predicates) are defined sooner or later within the same group of units within which the type (method or predicate) is used (or, alternatively, in a group previously sent to the solver).
+This same argument does not apply to statements which, on the contrary, are executed sequentially.
+Hence it is not possible, for example, to use a variable which has not yet been declared.
+
+To sum up, the suggested methodology, as summarized in the following image, consists in providing to the solver a set of compilation units containing the definition of types, methods and predicates, so as to inform the solver of the domain model on which it will have to reason.
+At a later time, a new compilation unit is provided to the solver containing the statements relative to the declaration of the instances, the facts and the goals.
+At this point, if a solution to the proposed problem exists, the solver will be able to find it and will return `true`, if not, it and will return `false`.
+Finally, if needed, the solution can be adapted, several times, by providing further compilation units.
+
+![alt text](compilation_units.png "Compilation Units")
