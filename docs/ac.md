@@ -4,7 +4,7 @@ This library provides features for maintaining an arc-consistency based constrai
 
 ### Creating a constraint network
 
-Creating a constraint network is overly simple. I it sufficient to create an instance of the `Network` class.
+Creating a constraint network is overly simple. It is sufficient to create an instance of the `Network` class.
 
 ```java
 Network n = new Network();
