@@ -8,7 +8,7 @@ In addition, aspects related to first order logic are further made explicit, all
 Finally, although the language is based on a multi-sorted first order logic core, from which the object-oriented approach comes, it has been designed for allowing extensibility.
 As already mentioned, the scope concept represents the junction element between the logic based core and specialized resolution algorithms.
 
-## 
+## An Object-Oriented Language
 
 The basic core of the oRatio architecture provides an object-oriented virtual environment for the definition of objects and constraints among them.
 Every object in the oRatio environment is an instance of a specific *type*.
