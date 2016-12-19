@@ -33,3 +33,19 @@ ArithVar av = n.newReal();
 // a real constant assuming value 0
 ArithConst ac = n.newReal(0);
 ```
+
+{% highlight java %}
+Network n = new Network();
+
+// a boolean variable
+BoolVar bv = n.newBool();
+
+// a boolean constant assuming value true
+BoolConst bc = n.newBool(true);
+
+// a real variable
+ArithVar av = n.newReal();
+
+// a real constant assuming value 0
+ArithConst ac = n.newReal(0);
+{% endhighlight %}
