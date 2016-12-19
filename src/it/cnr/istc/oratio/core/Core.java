@@ -34,6 +34,7 @@ import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 /**
  *
@@ -52,12 +53,18 @@ public class Core implements IScope, IEnv {
         types.put(BOOL, new BoolType(this));
     }
 
-    public void read(String script) {
+    public boolean read(String script) {
         oRatioParser parser = new oRatioParser(new CommonTokenStream(new oRatioLexer(new ANTLRInputStream(script))));
         oRatioParser.Compilation_unitContext cu = parser.compilation_unit();
+        ParseTreeWalker.DEFAULT.walk(new TypeDeclarationListener(this), cu);
+        ParseTreeWalker.DEFAULT.walk(new TypeRefinementListener(this), cu);
+        if (!new StatementVisitor(this, this).visit(cu)) {
+            return false;
+        }
+        return network.propagate();
     }
 
-    public void read(File... files) throws IOException {
+    public boolean read(File... files) throws IOException {
         List<File> fs = new ArrayList<>(files.length);
         for (File file : files) {
             fs.addAll(Files.walk(Paths.get(file.toURI())).filter(Files::isRegularFile).map(path -> path.toFile()).collect(Collectors.toList()));
@@ -68,6 +75,14 @@ public class Core implements IScope, IEnv {
             oRatioParser.Compilation_unitContext context = parser.compilation_unit();
             snippets.add(new CodeSnippet(f, parser, context));
         }
+        for (CodeSnippet snippet : snippets) {
+            ParseTreeWalker.DEFAULT.walk(new TypeDeclarationListener(this), snippet.context);
+            ParseTreeWalker.DEFAULT.walk(new TypeRefinementListener(this), snippet.context);
+            if (!new StatementVisitor(this, this).visit(snippet.context)) {
+                return false;
+            }
+        }
+        return network.propagate();
     }
 
     public IBoolItem newBool() {
