@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumEq<T> implements Expr<LBool> {
+public class EnumEq<T> implements BoolExpr {
 
     final EnumVar<T> left;
     final EnumVar<T> right;

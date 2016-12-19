@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumAssignment<T> implements Expr<LBool> {
+public class EnumAssignment<T> implements BoolExpr {
 
     final EnumVar<T> left;
     final T right;

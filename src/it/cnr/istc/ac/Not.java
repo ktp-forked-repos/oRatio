@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Not implements Expr<LBool> {
+public class Not implements BoolExpr {
 
     final BoolVar var;
 

@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ArithVar extends Var<Interval> {
+public class ArithVar extends Var<Interval> implements ArithExpr {
 
     double val;
 

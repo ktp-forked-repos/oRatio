@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class BoolConst implements Expr<LBool> {
+public class BoolConst implements BoolExpr {
 
     public final LBool val;
 

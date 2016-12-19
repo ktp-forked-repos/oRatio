@@ -20,26 +20,5 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ArithConst implements ArithExpr {
-
-    public final double val;
-
-    public ArithConst(double val) {
-        this.val = val;
-    }
-
-    @Override
-    public String id() {
-        return Double.toString(val);
-    }
-
-    @Override
-    public Interval evaluate() {
-        return new Interval(val);
-    }
-
-    @Override
-    public Var<Interval> to_var(Network n) {
-        return new ArithVar(n, id(), new Interval(val));
-    }
+public interface ArithExpr extends Expr<Interval> {
 }

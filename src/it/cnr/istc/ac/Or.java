@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Or implements Expr<LBool> {
+public class Or implements BoolExpr {
 
     final Map<BoolVar, Boolean> vars;
 

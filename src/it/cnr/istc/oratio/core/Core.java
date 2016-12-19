@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.parser.oRatioLexer;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
@@ -119,6 +120,14 @@ public class Core implements IScope, IEnv {
             default:
                 return new EnumItem(this, type, network.newEnum(values));
         }
+    }
+
+    public IBoolItem not(IBoolItem var) {
+        return new BoolItem(this, types.get(BOOL), network.not(var.getBoolVar()));
+    }
+
+    public IBoolItem and(IBoolItem... vars) {
+        return new BoolItem(this, types.get(BOOL), network.and(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
     @Override

@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Lin implements Expr<Interval> {
+public class Lin implements ArithExpr {
 
     final Map<ArithVar, Double> vars;
     double known_term;

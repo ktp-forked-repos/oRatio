@@ -81,7 +81,7 @@ public class Network {
     }
     //</editor-fold>
 
-    public Expr<LBool> not(Expr<LBool> expr) {
+    public BoolExpr not(BoolExpr expr) {
         if (expr instanceof BoolConst) {
             switch (((BoolConst) expr).val) {
                 case L_TRUE:
@@ -96,17 +96,15 @@ public class Network {
         }
     }
 
-    @SafeVarargs
-    public final Expr<LBool> and(Expr<LBool>... exprs) {
+    public BoolExpr and(BoolExpr... exprs) {
         return new And(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
-    @SafeVarargs
-    public final Expr<LBool> or(Expr<LBool>... exprs) {
+    public BoolExpr or(BoolExpr... exprs) {
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
-    public Expr<Interval> minus(Expr<Interval> expr) {
+    public ArithExpr minus(ArithExpr expr) {
         if (expr instanceof ArithConst) {
             return new ArithConst(-((ArithConst) expr).val);
         } else {
@@ -128,13 +126,12 @@ public class Network {
         }
     }
 
-    @SafeVarargs
-    public final Expr<Interval> sum(Expr<Interval>... exprs) {
+    public ArithExpr sum(ArithExpr... exprs) {
         if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
             return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).sum());
         } else {
             Lin lin = new Lin();
-            for (Expr<Interval> expr : exprs) {
+            for (ArithExpr expr : exprs) {
                 if (expr instanceof ArithConst) {
                     lin.add(((ArithConst) expr).val);
                 } else if (expr instanceof ArithVar) {
@@ -153,14 +150,13 @@ public class Network {
         }
     }
 
-    @SafeVarargs
-    public final Expr<Interval> mult(Expr<Interval>... exprs) {
+    public ArithExpr mult(ArithExpr... exprs) {
         if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
             return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).reduce(1, (a, b) -> a * b));
         } else {
             double k = 1;
             Lin lin = new Lin();
-            for (Expr<Interval> expr : exprs) {
+            for (ArithExpr expr : exprs) {
                 if (expr instanceof ArithConst) {
                     k *= ((ArithConst) expr).val;
                 } else if (expr instanceof ArithVar) {
@@ -185,7 +181,7 @@ public class Network {
         }
     }
 
-    public Expr<Interval> div(Expr<Interval> left, Expr<Interval> right) {
+    public ArithExpr div(ArithExpr left, ArithExpr right) {
         if (right instanceof ArithConst) {
             if (left instanceof ArithConst) {
                 return new ArithConst(((ArithConst) left).val / ((ArithConst) right).val);
@@ -197,11 +193,11 @@ public class Network {
         }
     }
 
-    public Expr<LBool> leq(Expr<Interval> left, Expr<Interval> right) {
+    public BoolExpr leq(ArithExpr left, ArithExpr right) {
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val <= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
-            Expr<Interval> c_expr = sum(left, minus(right));
+            ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
                 double c_right = -lin.known_term;
@@ -214,11 +210,11 @@ public class Network {
         }
     }
 
-    public Expr<LBool> eq(Expr<Interval> left, Expr<Interval> right) {
+    public BoolExpr eq(ArithExpr left, ArithExpr right) {
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val == ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
-            Expr<Interval> c_expr = sum(left, minus(right));
+            ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
                 double c_right = -lin.known_term;
@@ -231,11 +227,11 @@ public class Network {
         }
     }
 
-    public Expr<LBool> geq(Expr<Interval> left, Expr<Interval> right) {
+    public BoolExpr geq(ArithExpr left, ArithExpr right) {
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val >= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
-            Expr<Interval> c_expr = sum(left, minus(right));
+            ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
                 double c_right = -lin.known_term;
@@ -248,7 +244,7 @@ public class Network {
         }
     }
 
-    public <T> Expr<LBool> enum_eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
+    public <T> BoolExpr enum_eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
         if (left instanceof EnumConst && right instanceof EnumConst) {
             return new BoolConst(((EnumConst<T>) left).val == ((EnumConst<T>) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else if (left instanceof EnumConst) {
@@ -260,11 +256,10 @@ public class Network {
         }
     }
 
-    @SafeVarargs
-    public final void add(Expr<LBool>... exprs) {
+    public void add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
-        for (Expr<LBool> expr : exprs) {
+        for (BoolExpr expr : exprs) {
             boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
             assert intersect;
         }
@@ -339,7 +334,7 @@ public class Network {
         return null;
     }
 
-    public boolean assign(Expr<LBool> var) {
+    public boolean assign(BoolExpr var) {
         assert var.evaluate() == LBool.L_UNKNOWN;
         if (!prop_q.isEmpty() && !propagate()) {
             return false;

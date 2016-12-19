@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class BoolVar extends Var<LBool> {
+public class BoolVar extends Var<LBool> implements BoolExpr {
 
     public BoolVar(Network network, String name) {
         this(network, name, LBool.L_UNKNOWN);

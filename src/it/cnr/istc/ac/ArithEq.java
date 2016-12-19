@@ -20,7 +20,7 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ArithEq implements Expr<LBool> {
+public class ArithEq implements BoolExpr {
 
     final ArithVar left;
     final double right;

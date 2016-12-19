@@ -83,13 +83,13 @@ public class NetworkTest {
         Network n = new Network();
         ArithVar x0 = n.newReal();
         ArithVar x1 = n.newReal();
-        Expr<Interval> s1 = n.sum(n.minus(x0), x1);
-        Expr<Interval> s2 = n.sum(x0, x1);
+        ArithExpr s1 = n.sum(n.minus(x0), x1);
+        ArithExpr s2 = n.sum(x0, x1);
 
-        Expr<LBool> leq_0 = n.leq(x0, n.newReal(-4));
-        Expr<LBool> geq_0 = n.geq(x0, n.newReal(-8));
-        Expr<LBool> leq_1 = n.leq(s1, n.newReal(1));
-        Expr<LBool> geq_1 = n.geq(s2, n.newReal(-3));
+        BoolExpr leq_0 = n.leq(x0, n.newReal(-4));
+        BoolExpr geq_0 = n.geq(x0, n.newReal(-8));
+        BoolExpr leq_1 = n.leq(s1, n.newReal(1));
+        BoolExpr geq_1 = n.geq(s2, n.newReal(-3));
 
         assertNotNull(leq_0);
         assertNotNull(geq_0);
@@ -107,8 +107,8 @@ public class NetworkTest {
         ArithVar x0 = n.newReal();
         ArithVar x1 = n.newReal();
 
-        Expr<LBool> leq_0 = n.leq(n.sum(x0, n.newReal(1)), x1);
-        Expr<LBool> leq_1 = n.leq(n.sum(x1, n.newReal(1)), x0);
+        BoolExpr leq_0 = n.leq(n.sum(x0, n.newReal(1)), x1);
+        BoolExpr leq_1 = n.leq(n.sum(x1, n.newReal(1)), x0);
 
         n.add(leq_0, leq_1);
         boolean sat = n.propagate();
@@ -151,7 +151,7 @@ public class NetworkTest {
         for (BoolVar v : unsat_core) {
             ng_vars.add((BoolVar) n.not(v).to_var(n));
         }
-        Expr<LBool> no_good = n.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
+        BoolExpr no_good = n.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
         while (no_good.evaluate() == LBool.L_FALSE) {
             n.pop();
         }
