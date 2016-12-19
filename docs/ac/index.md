@@ -18,7 +18,7 @@ Network n = new Network();
 
 Variables can be created by invoking mothods of the `Network` instance. It is possible to create boolean variables, real variables and enumerative variables. Similarly, it is possible to create boolean constants, real constants and enumerative constants.
 
-```Java
+```java
 Network n = new Network();
 
 // a boolean variable
