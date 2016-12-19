@@ -26,10 +26,10 @@ import it.cnr.istc.ac.EnumVar;
 public class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
 
     final ArithVar arith_var;
-    final EnumVar<IBoolItem> enum_var;
+    final EnumVar<IArithItem> enum_var;
 
-    ArithEnum(Core c, IEnv e, Type t, ArithVar av, EnumVar<IBoolItem> ev) {
-        super(c, e, t);
+    ArithEnum(Core c, Type t, ArithVar av, EnumVar<IArithItem> ev) {
+        super(c, c, t);
         this.arith_var = av;
         this.enum_var = ev;
     }
@@ -41,6 +41,6 @@ public class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem>
 
     @Override
     public EnumVar<IArithItem> getEnumVar() {
-        return getEnumVar();
+        return enum_var;
     }
 }

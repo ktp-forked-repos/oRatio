@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -44,6 +45,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 public class Core implements IScope, IEnv {
 
     public static final String BOOL = "bool";
+    public static final String REAL = "real";
     public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
     final Map<String, Field> fields = new HashMap<>();
@@ -87,23 +89,36 @@ public class Core implements IScope, IEnv {
     }
 
     public IBoolItem newBool() {
-        return new BoolItem(this, this, types.get(BOOL), network.newBool());
+        return new BoolItem(this, types.get(BOOL), network.newBool());
     }
 
     public IBoolItem newBool(boolean val) {
-        return new BoolItem(this, this, types.get(BOOL), network.newBool(val));
+        return new BoolItem(this, types.get(BOOL), network.newBool(val));
     }
 
-    public EnumItem newEnum(IItem value) {
+    public IArithItem newReal() {
+        return new ArithItem(this, types.get(REAL), network.newReal());
+    }
+
+    public IArithItem newReal(double val) {
+        return new ArithItem(this, types.get(REAL), network.newReal(val));
+    }
+
+    public IEnumItem<IItem> newEnum(IItem value) {
         return new EnumItem(this, value.getType(), network.newEnum(value));
     }
 
-    public EnumItem newEnum(Type type, IItem... values) {
+    public IEnumItem<? extends IItem> newEnum(Type type, IItem... values) {
         assert values.length > 1;
         assert Stream.of(values).allMatch(item -> type.isAssignableFrom(item.getType()));
-
-        EnumItem c_enum = new EnumItem(this, type, network.newEnum(values));
-        return c_enum;
+        switch (type.name) {
+            case BOOL:
+                return new BoolEnum(this, types.get(BOOL), network.newBool(), network.newEnum(Arrays.copyOf(values, values.length, IBoolItem[].class)));
+            case REAL:
+                return new ArithEnum(this, types.get(REAL), network.newReal(), network.newEnum(Arrays.copyOf(values, values.length, IArithItem[].class)));
+            default:
+                return new EnumItem(this, type, network.newEnum(values));
+        }
     }
 
     @Override

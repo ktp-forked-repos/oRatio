@@ -28,8 +28,8 @@ public class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
     final BoolVar bool_var;
     final EnumVar<IBoolItem> enum_var;
 
-    BoolEnum(Core c, IEnv e, Type t, BoolVar bv, EnumVar<IBoolItem> ev) {
-        super(c, e, t);
+    BoolEnum(Core c, Type t, BoolVar bv, EnumVar<IBoolItem> ev) {
+        super(c, c, t);
         this.bool_var = bv;
         this.enum_var = ev;
     }

@@ -27,8 +27,8 @@ public class ArithItem extends Item implements IArithItem {
 
     final Expr<Interval> var;
 
-    ArithItem(Core c, IEnv e, Type t, Expr<Interval> v) {
-        super(c, e, t);
+    ArithItem(Core c, Type t, Expr<Interval> v) {
+        super(c, c, t);
         this.var = v;
     }
 

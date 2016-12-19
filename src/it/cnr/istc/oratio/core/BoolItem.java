@@ -27,8 +27,8 @@ public class BoolItem extends Item implements IBoolItem {
 
     final Expr<LBool> expr;
 
-    BoolItem(Core c, IEnv e, Type t, Expr<LBool> xp) {
-        super(c, e, t);
+    BoolItem(Core c, Type t, Expr<LBool> xp) {
+        super(c, c, t);
         this.expr = xp;
     }
 
