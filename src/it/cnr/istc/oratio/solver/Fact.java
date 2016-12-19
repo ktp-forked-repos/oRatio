@@ -16,9 +16,24 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.oratio.core.Atom;
+import java.util.Collection;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
 class Fact extends Flaw {
+
+    private final Atom a;
+
+    Fact(Solver s, Resolver c, Atom a) {
+        super(s, c);
+        this.a = a;
+    }
+
+    @Override
+    boolean computeResolvers(Collection<Resolver> rs) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

@@ -16,9 +16,96 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.BoolVar;
+import it.cnr.istc.ac.LBool;
+import it.cnr.istc.ac.Propagator;
+import it.cnr.istc.ac.Var;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Flaw {
+public abstract class Flaw implements Propagator {
+
+    protected final Solver solver;
+    protected final Resolver cause;
+    protected final BoolVar in_plan;
+    private final Collection<Resolver> resolvers = new ArrayList<>();
+    protected double estimated_cost = Double.POSITIVE_INFINITY;
+    private boolean expanded = false;
+
+    public Flaw(Solver s, Resolver c) {
+        this.solver = s;
+        this.cause = c;
+        this.in_plan = s.network.newBool();
+    }
+
+    boolean expand() {
+        assert !expanded;
+
+        boolean solved = computeResolvers(resolvers);
+        expanded = true;
+
+        if (resolvers.isEmpty()) {
+            assert !solved;
+            solver.network.add(solver.network.not(in_plan));
+            if (!solver.network.propagate()) {
+                return false;
+            }
+        } else if (resolvers.size() == 1) {
+            solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan));
+            if (!solver.network.propagate()) {
+                return false;
+            }
+        } else {
+            solver.network.add(solver.network.imply(in_plan, solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
+            if (!solver.network.propagate()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    abstract boolean computeResolvers(Collection<Resolver> rs);
+
+    void updateCosts(Set<Flaw> visited) {
+        if (!visited.contains(this)) {
+            visited.add(this);
+            double c_cost = Double.POSITIVE_INFINITY;
+            for (Resolver r : resolvers) {
+                double r_cost = r.cost.getVal();
+                if (r.estimated_cost + r_cost < c_cost) {
+                    c_cost = r.estimated_cost + r_cost;
+                }
+            }
+            if (c_cost != estimated_cost) {
+                estimated_cost = c_cost;
+                if (cause != null) {
+                    cause.updateCosts(new HashSet<>(visited));
+                }
+            }
+        }
+    }
+
+    @Override
+    public Var<?>[] getArgs() {
+        return new Var<?>[]{in_plan};
+    }
+
+    @Override
+    public boolean propagate(Var<?> v) {
+        if (in_plan.evaluate() == LBool.L_FALSE) {
+            estimated_cost = Double.POSITIVE_INFINITY;
+            if (cause != null) {
+                cause.updateCosts(new HashSet<>(Arrays.asList(this)));
+            }
+        }
+        return true;
+    }
 }

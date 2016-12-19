@@ -16,9 +16,26 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.oratio.core.IEnv;
+import java.util.Collection;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
 class Disjunction extends Flaw {
+
+    private final IEnv env;
+    private final Disjunction d;
+
+    Disjunction(Solver s, Resolver c, IEnv env, Disjunction d) {
+        super(s, c);
+        this.env = env;
+        this.d = d;
+    }
+
+    @Override
+    boolean computeResolvers(Collection<Resolver> rs) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
