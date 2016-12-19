@@ -127,6 +127,18 @@ public class Core implements IScope, IEnv {
         }
     }
 
+    public boolean newFact(Atom atom) {
+        return true;
+    }
+
+    public boolean newGoal(Atom atom) {
+        return true;
+    }
+
+    public boolean newDisjunction(IEnv env, Disjunction d) {
+        return true;
+    }
+
     public IBoolItem not(IBoolItem var) {
         return new BoolItem(this, types.get(BOOL), network.not(var.getBoolVar()));
     }
