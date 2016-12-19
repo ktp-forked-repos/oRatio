@@ -248,7 +248,7 @@ public class Network {
         }
     }
 
-    public <T> BoolExpr enum_eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
+    public <T> BoolExpr eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
         if (left instanceof EnumConst && right instanceof EnumConst) {
             return new BoolConst(((EnumConst<T>) left).val == ((EnumConst<T>) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else if (left instanceof EnumConst) {
@@ -257,6 +257,18 @@ public class Network {
             return new EnumAssignment<>((EnumVar<T>) left.to_var(this), ((EnumConst<T>) right).val);
         } else {
             return new EnumEq<>((EnumVar<T>) left.to_var(this), (EnumVar<T>) right.to_var(this));
+        }
+    }
+
+    public BoolExpr eq(BoolExpr left, BoolExpr right) {
+        if (left instanceof BoolConst && right instanceof BoolConst) {
+            return new BoolConst(((BoolConst) left).val == ((BoolConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
+        } else if (left instanceof BoolConst) {
+            return new BoolAssignment((BoolVar) right.to_var(this), ((BoolConst) left).val);
+        } else if (right instanceof BoolConst) {
+            return new BoolAssignment((BoolVar) left.to_var(this), ((BoolConst) right).val);
+        } else {
+            return new BoolEq((BoolVar) left.to_var(this), (BoolVar) right.to_var(this));
         }
     }
 

@@ -20,28 +20,27 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumEq<T> implements BoolExpr {
+public class BoolAssignment implements BoolExpr {
 
-    final EnumVar<T> left;
-    final EnumVar<T> right;
+    final BoolVar left;
+    final LBool right;
 
-    public EnumEq(EnumVar<T> left, EnumVar<T> right) {
+    public BoolAssignment(BoolVar left, LBool right) {
         this.left = left;
         this.right = right;
     }
 
     @Override
     public String id() {
-        return left.id() + " == " + right.id();
+        return left.id() + " == " + right;
     }
 
     @Override
     public LBool evaluate() {
-        EnumDomain<T> left_d = left.evaluate();
-        EnumDomain<T> right_d = right.evaluate();
-        if (!left_d.isIntersecting(right_d)) {
+        LBool left_d = left.evaluate();
+        if ((left_d == LBool.L_TRUE && right == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right == LBool.L_TRUE)) {
             return LBool.L_FALSE;
-        } else if (left_d.isSingleton() && right_d.isSingleton()) {
+        } else if (left_d.isSingleton() && right.isSingleton()) {
             return LBool.L_TRUE;
         } else {
             return LBool.L_UNKNOWN;
@@ -67,7 +66,7 @@ public class EnumEq<T> implements BoolExpr {
             n.store(new Propagator() {
                 @Override
                 public Var<?>[] getArgs() {
-                    return new Var<?>[]{left, right, eq};
+                    return new Var<?>[]{left, eq};
                 }
 
                 @Override
@@ -75,19 +74,13 @@ public class EnumEq<T> implements BoolExpr {
                     switch (eq.domain) {
                         case L_TRUE:
                             // The constraint must be satisfied..
-                            if (!left.intersect(new EnumDomain<>(right.domain.allowed_vals), this)) {
-                                return false;
-                            }
-                            if (!right.intersect(new EnumDomain<>(left.domain.allowed_vals), this)) {
+                            if (!left.intersect(right, this)) {
                                 return false;
                             }
                             return true;
                         case L_FALSE:
                             // The constraint must be not satisfied..
-                            if (right.isSingleton() && !left.complement(right.domain.allowed_vals.iterator().next(), this)) {
-                                return false;
-                            }
-                            if (left.isSingleton() && !right.complement(left.domain.allowed_vals.iterator().next(), this)) {
+                            if (right.isSingleton() && !left.intersect(right.not(), this)) {
                                 return false;
                             }
                             return true;

@@ -20,12 +20,12 @@ package it.cnr.istc.ac;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class EnumEq<T> implements BoolExpr {
+public class BoolEq implements BoolExpr {
 
-    final EnumVar<T> left;
-    final EnumVar<T> right;
+    final BoolVar left;
+    final BoolVar right;
 
-    public EnumEq(EnumVar<T> left, EnumVar<T> right) {
+    public BoolEq(BoolVar left, BoolVar right) {
         this.left = left;
         this.right = right;
     }
@@ -37,9 +37,9 @@ public class EnumEq<T> implements BoolExpr {
 
     @Override
     public LBool evaluate() {
-        EnumDomain<T> left_d = left.evaluate();
-        EnumDomain<T> right_d = right.evaluate();
-        if (!left_d.isIntersecting(right_d)) {
+        LBool left_d = left.evaluate();
+        LBool right_d = right.evaluate();
+        if ((left_d == LBool.L_TRUE && right_d == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right_d == LBool.L_TRUE)) {
             return LBool.L_FALSE;
         } else if (left_d.isSingleton() && right_d.isSingleton()) {
             return LBool.L_TRUE;
@@ -75,19 +75,19 @@ public class EnumEq<T> implements BoolExpr {
                     switch (eq.domain) {
                         case L_TRUE:
                             // The constraint must be satisfied..
-                            if (!left.intersect(new EnumDomain<>(right.domain.allowed_vals), this)) {
+                            if (!left.intersect(right.domain, this)) {
                                 return false;
                             }
-                            if (!right.intersect(new EnumDomain<>(left.domain.allowed_vals), this)) {
+                            if (!right.intersect(left.domain, this)) {
                                 return false;
                             }
                             return true;
                         case L_FALSE:
                             // The constraint must be not satisfied..
-                            if (right.isSingleton() && !left.complement(right.domain.allowed_vals.iterator().next(), this)) {
+                            if (right.isSingleton() && !left.intersect(right.domain.not(), this)) {
                                 return false;
                             }
-                            if (left.isSingleton() && !right.complement(left.domain.allowed_vals.iterator().next(), this)) {
+                            if (left.isSingleton() && !right.intersect(left.domain.not(), this)) {
                                 return false;
                             }
                             return true;
