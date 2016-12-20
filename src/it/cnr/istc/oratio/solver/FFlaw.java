@@ -16,7 +16,9 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.oratio.core.Atom;
+import it.cnr.istc.oratio.core.AtomState;
 import java.util.Collection;
 
 /**
@@ -34,6 +36,21 @@ class FFlaw extends Flaw {
 
     @Override
     boolean computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        rs.add(new AddFact(solver, solver.network.newReal(0), this));
+        return true;
+    }
+
+    private static class AddFact extends Resolver {
+
+        AddFact(Solver s, ArithExpr c, Flaw e) {
+            super(s, c, e);
+        }
+
+        @Override
+        boolean apply() {
+            estimated_cost = 0;
+            solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).a.state, AtomState.Active)));
+            return solver.network.propagate();
+        }
     }
 }
