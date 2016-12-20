@@ -64,7 +64,7 @@ public abstract class Flaw implements Propagator {
                 return false;
             }
         } else {
-            solver.network.add(solver.network.imply(in_plan, solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
+            solver.network.add(solver.network.imply(in_plan, solver.network.exact_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
             if (!solver.network.propagate()) {
                 return false;
             }

@@ -104,6 +104,10 @@ public class Network {
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
+    public BoolExpr exact_one(BoolExpr... exprs) {
+        return new ExctOne(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
+    }
+
     public BoolExpr imply(BoolExpr left, BoolExpr right) {
         return or(not(left), right);
     }
