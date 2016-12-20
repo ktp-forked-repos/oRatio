@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -83,6 +84,10 @@ public class Type extends BaseScope {
         } else {
             return core.newEnum(this, instances.toArray(new IItem[instances.size()]));
         }
+    }
+
+    public Collection<IItem> getInstances() {
+        return Collections.unmodifiableCollection(instances);
     }
 
     protected boolean factCreated(Atom atom) {

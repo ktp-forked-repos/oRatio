@@ -27,11 +27,11 @@ import java.util.Collection;
  */
 class FFlaw extends Flaw {
 
-    private final Atom a;
+    private final Atom atom;
 
     FFlaw(Solver s, Resolver c, Atom a) {
         super(s, c);
-        this.a = a;
+        this.atom = a;
     }
 
     @Override
@@ -49,7 +49,7 @@ class FFlaw extends Flaw {
         @Override
         boolean apply() {
             estimated_cost = 0;
-            solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).a.state, AtomState.Active)));
+            solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active)));
             return solver.network.propagate();
         }
     }

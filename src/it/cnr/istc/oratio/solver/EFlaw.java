@@ -29,19 +29,19 @@ import java.util.Set;
  */
 class EFlaw extends Flaw {
 
-    private final IEnumItem ei;
+    private final IEnumItem enum_item;
 
     EFlaw(Solver s, Resolver c, IEnumItem ei) {
         super(s, c);
-        this.ei = ei;
+        this.enum_item = ei;
     }
 
     @Override
     boolean computeResolvers(Collection<Resolver> rs) {
-        Set<? extends IItem> vals = ei.getEnumVar().evaluate().getAllowedValues();
+        Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
         for (IItem v : vals) {
-            ei.allows(v);
-            rs.add(new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, ei.allows(v)));
+            enum_item.allows(v);
+            rs.add(new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v)));
         }
         return true;
     }

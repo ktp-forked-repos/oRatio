@@ -16,11 +16,16 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Core;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
 public class Solver extends Core {
+
+    final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
 }

@@ -20,9 +20,11 @@ package it.cnr.istc.oratio.core;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Predicate extends Type {
+public abstract class Predicate extends Type {
 
     public Predicate(Core c, IScope s, String n) {
         super(c, s, n);
     }
+
+    public abstract boolean apply(Atom atom);
 }
