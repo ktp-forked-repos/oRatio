@@ -48,6 +48,7 @@ public class Core implements IScope, IEnv {
 
     public static final String BOOL = "bool";
     public static final String REAL = "real";
+    public static final String STRING = "string";
     public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
     protected final Map<String, Field> fields = new LinkedHashMap<>();
@@ -60,6 +61,7 @@ public class Core implements IScope, IEnv {
     public Core() {
         types.put(BOOL, new BoolType(this));
         types.put(REAL, new RealType(this));
+        types.put(STRING, new StringType(this));
     }
 
     public boolean read(String script) {
@@ -125,6 +127,14 @@ public class Core implements IScope, IEnv {
             default:
                 return new EnumItem(this, type, network.newEnum(values));
         }
+    }
+
+    public StringItem newString() {
+        return new StringItem(this, types.get(REAL), "");
+    }
+
+    public StringItem newString(String val) {
+        return new StringItem(this, types.get(REAL), val);
     }
 
     public boolean newFact(Atom atom) {
@@ -277,6 +287,18 @@ public class Core implements IScope, IEnv {
         @Override
         public IItem newInstance(IEnv env) {
             return core.newReal();
+        }
+    }
+
+    private static class StringType extends Type {
+
+        StringType(Core c) {
+            super(c, c, STRING, true);
+        }
+
+        @Override
+        public IItem newInstance(IEnv env) {
+            return core.newString();
         }
     }
 }

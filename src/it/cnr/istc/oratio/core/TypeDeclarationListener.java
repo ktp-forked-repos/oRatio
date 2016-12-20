@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.oratio.core.parser.oRatioBaseListener;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
  *
@@ -35,50 +36,62 @@ class TypeDeclarationListener extends oRatioBaseListener {
     @Override
     public void enterCompilation_unit(oRatioParser.Compilation_unitContext ctx) {
         core.scopes.put(ctx, core);
+        scope = core;
     }
 
     @Override
     public void enterTypedef_declaration(oRatioParser.Typedef_declarationContext ctx) {
-        super.enterTypedef_declaration(ctx); //To change body of generated methods, choose Tools | Templates.
+        Typedef td = new Typedef(core, scope, ctx.name.getText(), new TypeVisitor(core).visit(ctx.primitive_type()), ctx.expr());
+        core.scopes.put(ctx, td);
+
+        if (scope == core) {
+            core.types.put(td.name, td);
+        } else {
+            ((Type) scope).types.put(td.name, td);
+        }
     }
 
     @Override
     public void enterEnum_declaration(oRatioParser.Enum_declarationContext ctx) {
-        super.enterEnum_declaration(ctx); //To change body of generated methods, choose Tools | Templates.
+        EnumType et = new EnumType(core, scope, ctx.name.getText());
+        core.scopes.put(ctx, et);
+
+        // We add the enum values..
+        for (oRatioParser.Enum_constantsContext c : ctx.enum_constants()) {
+            for (TerminalNode l : c.StringLiteral()) {
+                et.addEnum(core.newString(l.getText()));
+            }
+        }
+
+        if (scope == core) {
+            core.types.put(et.name, et);
+        } else {
+            ((Type) scope).types.put(et.name, et);
+        }
     }
 
     @Override
     public void enterClass_declaration(oRatioParser.Class_declarationContext ctx) {
-        super.enterClass_declaration(ctx); //To change body of generated methods, choose Tools | Templates.
+        // A new type has been declared..
+        Type t = new Type(core, scope, ctx.name.getText());
+        core.scopes.put(ctx, t);
+
+        if (scope == core) {
+            core.types.put(t.name, t);
+        } else {
+            ((Type) scope).types.put(t.name, t);
+        }
+
+        scope = t;
     }
 
     @Override
     public void exitClass_declaration(oRatioParser.Class_declarationContext ctx) {
-        super.exitClass_declaration(ctx); //To change body of generated methods, choose Tools | Templates.
+        scope = scope.getScope();
     }
 
     @Override
     public void enterClass_type(oRatioParser.Class_typeContext ctx) {
-        super.enterClass_type(ctx); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    static class Typedef extends Type {
-
-        final Type base_type;
-        final oRatioParser.ExprContext expr;
-
-        Typedef(Core c, IScope s, String n, Type base_type, oRatioParser.ExprContext expr) {
-            super(c, s, n);
-            this.base_type = base_type;
-            this.expr = expr;
-        }
-
-        @Override
-        public IItem newInstance(IEnv env) {
-            IItem i = base_type.newInstance(env);
-            boolean add = core.add(core.eq(i, new ExpressionVisitor(core, env).visit(expr)));
-            assert add;
-            return i;
-        }
+        core.scopes.put(ctx, scope);
     }
 }

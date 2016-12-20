@@ -23,7 +23,7 @@ import it.cnr.istc.oratio.core.parser.oRatioParser;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class TypeVisitor extends oRatioBaseVisitor<Boolean> {
+class TypeVisitor extends oRatioBaseVisitor<Type> {
 
     private final Core core;
 
@@ -32,37 +32,37 @@ class TypeVisitor extends oRatioBaseVisitor<Boolean> {
     }
 
     @Override
-    public Boolean visitLiteral_expression(oRatioParser.Literal_expressionContext ctx) {
+    public Type visitLiteral_expression(oRatioParser.Literal_expressionContext ctx) {
         return super.visitLiteral_expression(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitCast_expression(oRatioParser.Cast_expressionContext ctx) {
+    public Type visitCast_expression(oRatioParser.Cast_expressionContext ctx) {
         return super.visitCast_expression(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitPrimitive_type(oRatioParser.Primitive_typeContext ctx) {
+    public Type visitPrimitive_type(oRatioParser.Primitive_typeContext ctx) {
         return super.visitPrimitive_type(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitClass_type(oRatioParser.Class_typeContext ctx) {
+    public Type visitClass_type(oRatioParser.Class_typeContext ctx) {
         return super.visitClass_type(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitQualified_id(oRatioParser.Qualified_idContext ctx) {
+    public Type visitQualified_id(oRatioParser.Qualified_idContext ctx) {
         return super.visitQualified_id(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitQualified_id_expression(oRatioParser.Qualified_id_expressionContext ctx) {
+    public Type visitQualified_id_expression(oRatioParser.Qualified_id_expressionContext ctx) {
         return super.visitQualified_id_expression(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Boolean visitConstructor_expression(oRatioParser.Constructor_expressionContext ctx) {
+    public Type visitConstructor_expression(oRatioParser.Constructor_expressionContext ctx) {
         return super.visitConstructor_expression(ctx); //To change body of generated methods, choose Tools | Templates.
     }
 }
