@@ -79,7 +79,7 @@ public abstract class Flaw implements Propagator {
             visited.add(this);
             double c_cost = Double.POSITIVE_INFINITY;
             for (Resolver r : resolvers) {
-                double r_cost = r.cost.getVal();
+                double r_cost = solver.network.evaluate(r.cost);
                 if (r.estimated_cost + r_cost < c_cost) {
                     c_cost = r.estimated_cost + r_cost;
                 }

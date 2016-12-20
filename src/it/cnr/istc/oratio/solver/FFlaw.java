@@ -23,11 +23,11 @@ import java.util.Collection;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class Goal extends Flaw {
+class FFlaw extends Flaw {
 
     private final Atom a;
 
-    Goal(Solver s, Resolver c, Atom a) {
+    FFlaw(Solver s, Resolver c, Atom a) {
         super(s, c);
         this.a = a;
     }

@@ -16,24 +16,50 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.oratio.core.IEnumItem;
+import it.cnr.istc.oratio.core.IItem;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class Enum extends Flaw {
+class EFlaw extends Flaw {
 
-    private final IEnumItem<?> ei;
+    private final IEnumItem ei;
 
-    Enum(Solver s, Resolver c, IEnumItem<?> ei) {
+    EFlaw(Solver s, Resolver c, IEnumItem ei) {
         super(s, c);
         this.ei = ei;
     }
 
     @Override
     boolean computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Set<? extends IItem> vals = ei.getEnumVar().evaluate().getAllowedValues();
+        for (IItem v : vals) {
+            ei.allows(v);
+            rs.add(new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, ei.allows(v)));
+        }
+        return true;
+    }
+
+    private static class ChooseValue extends Resolver {
+
+        private final BoolExpr eq_v;
+
+        ChooseValue(Solver s, ArithExpr c, Flaw e, BoolExpr eq_v) {
+            super(s, c, e);
+            this.eq_v = eq_v;
+        }
+
+        @Override
+        boolean apply() {
+            estimated_cost = 0;
+            solver.network.add(solver.network.imply(in_plan, eq_v));
+            return solver.network.propagate();
+        }
     }
 }

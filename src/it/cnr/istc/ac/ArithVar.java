@@ -35,10 +35,6 @@ public class ArithVar extends Var<Interval> implements ArithExpr {
         }
     }
 
-    public double getVal() {
-        return val;
-    }
-
     boolean intersect(Interval interval, Propagator propagator) {
         if (interval.contains(domain)) {
             return true;

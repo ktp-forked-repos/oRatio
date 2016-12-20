@@ -26,18 +26,18 @@ import java.util.Map;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
+class BoolEnum extends Item implements IBoolItem, IEnumItem {
 
     final BoolExpr bool_var;
-    final EnumVar<IBoolItem> enum_var;
+    final EnumVar<IItem> enum_var;
     final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
 
-    BoolEnum(Core c, Type t, BoolExpr bv, EnumVar<IBoolItem> ev) {
+    BoolEnum(Core c, Type t, BoolExpr bv, EnumVar<IItem> ev) {
         super(c, c, t);
         this.bool_var = bv;
         this.enum_var = ev;
-        for (IBoolItem v : ev.evaluate().getAllowedValues()) {
-            eqs.put(v, core.network.eq(bool_var, v.getBoolVar()));
+        for (IItem v : ev.evaluate().getAllowedValues()) {
+            eqs.put(v, core.network.eq(bool_var, ((IBoolItem) v).getBoolVar()));
         }
     }
 
@@ -47,12 +47,12 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem<IBoolItem> {
     }
 
     @Override
-    public EnumVar<IBoolItem> getEnumVar() {
+    public EnumVar<IItem> getEnumVar() {
         return enum_var;
     }
 
     @Override
-    public BoolExpr allows(IBoolItem val) {
+    public BoolExpr allows(IItem val) {
         return eqs.get(val);
     }
 

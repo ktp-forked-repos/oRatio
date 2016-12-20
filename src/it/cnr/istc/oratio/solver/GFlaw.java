@@ -23,11 +23,11 @@ import java.util.Collection;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class Fact extends Flaw {
+class GFlaw extends Flaw {
 
     private final Atom a;
 
-    Fact(Solver s, Resolver c, Atom a) {
+    GFlaw(Solver s, Resolver c, Atom a) {
         super(s, c);
         this.a = a;
     }

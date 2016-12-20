@@ -16,6 +16,9 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.oratio.core.Conjunction;
+import it.cnr.istc.oratio.core.Disjunction;
 import it.cnr.istc.oratio.core.IEnv;
 import java.util.Collection;
 
@@ -23,19 +26,39 @@ import java.util.Collection;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class Disjunction extends Flaw {
+class DFlaw extends Flaw {
 
     private final IEnv env;
-    private final Disjunction d;
+    private final Disjunction disjunction;
 
-    Disjunction(Solver s, Resolver c, IEnv env, Disjunction d) {
+    DFlaw(Solver s, Resolver c, IEnv env, Disjunction d) {
         super(s, c);
         this.env = env;
-        this.d = d;
+        this.disjunction = d;
     }
 
     @Override
     boolean computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (Conjunction conjunction : disjunction.getConjunctions()) {
+            rs.add(new ChooseConjunction(solver, solver.network.newReal(1), this, env, conjunction));
+        }
+        return true;
+    }
+
+    private static class ChooseConjunction extends Resolver {
+
+        private final IEnv env;
+        private final Conjunction conjunction;
+
+        ChooseConjunction(Solver s, ArithExpr c, Flaw e, IEnv env, Conjunction conjunction) {
+            super(s, c, e);
+            this.env = env;
+            this.conjunction = conjunction;
+        }
+
+        @Override
+        boolean apply() {
+            return conjunction.apply(env);
+        }
     }
 }

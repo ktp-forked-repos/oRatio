@@ -24,9 +24,9 @@ import it.cnr.istc.ac.Expr;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public interface IEnumItem<T extends IItem> extends IItem {
+public interface IEnumItem extends IItem {
 
-    public Expr<EnumDomain<T>> getEnumVar();
+    public Expr<EnumDomain<IItem>> getEnumVar();
 
-    public BoolExpr allows(T val);
+    public BoolExpr allows(IItem val);
 }

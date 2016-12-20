@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class EnumItem extends Item implements IEnumItem<IItem> {
+class EnumItem extends Item implements IEnumItem {
 
     final Expr<EnumDomain<IItem>> expr;
     final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
@@ -50,28 +50,26 @@ class EnumItem extends Item implements IEnumItem<IItem> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public BoolExpr eq(IItem item) {
         if (this == item) {
             return core.network.newBool(true);
         } else if (eqs.containsKey(item)) {
             return eqs.get(item);
         } else if (item instanceof IEnumItem) {
-            return core.network.eq(expr, ((IEnumItem<IItem>) item).getEnumVar());
+            return core.network.eq(expr, ((IEnumItem) item).getEnumVar());
         } else {
             return core.network.newBool(false);
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean equates(IItem item) {
         if (this == item) {
             return true;
         } else if (eqs.containsKey(item)) {
             return true;
         } else if (item instanceof IEnumItem) {
-            return expr.evaluate().isIntersecting(((IEnumItem<IItem>) item).getEnumVar().evaluate());
+            return expr.evaluate().isIntersecting(((IEnumItem) item).getEnumVar().evaluate());
         } else {
             return false;
         }

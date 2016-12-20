@@ -16,7 +16,7 @@
  */
 package it.cnr.istc.oratio.solver;
 
-import it.cnr.istc.ac.ArithVar;
+import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolVar;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Propagator;
@@ -34,12 +34,12 @@ public abstract class Resolver implements Propagator {
 
     protected final Solver solver;
     protected final BoolVar in_plan;
-    protected final ArithVar cost;
+    protected final ArithExpr cost;
     private final Collection<Flaw> preconditions = new ArrayList<>();
     protected final Flaw effect;
     protected double estimated_cost = Double.POSITIVE_INFINITY;
 
-    public Resolver(Solver s, ArithVar c, Flaw e) {
+    public Resolver(Solver s, ArithExpr c, Flaw e) {
         this.solver = s;
         this.cost = c;
         this.effect = e;

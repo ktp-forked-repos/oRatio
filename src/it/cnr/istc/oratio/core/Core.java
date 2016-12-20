@@ -110,11 +110,11 @@ public class Core implements IScope, IEnv {
         return new ArithItem(this, types.get(REAL), network.newReal(val));
     }
 
-    public IEnumItem<IItem> newEnum(IItem value) {
+    public IEnumItem newEnum(IItem value) {
         return new EnumItem(this, value.getType(), network.newEnum(value));
     }
 
-    public IEnumItem<? extends IItem> newEnum(Type type, IItem... values) {
+    public IEnumItem newEnum(Type type, IItem... values) {
         assert values.length > 1;
         assert Stream.of(values).allMatch(item -> type.isAssignableFrom(item.getType()));
         switch (type.name) {

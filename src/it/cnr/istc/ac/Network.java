@@ -81,6 +81,7 @@ public class Network {
     }
     //</editor-fold>
 
+    //<editor-fold defaultstate="collapsed" desc="sat constraints..">
     public BoolExpr not(BoolExpr expr) {
         if (expr instanceof BoolConst) {
             switch (((BoolConst) expr).val) {
@@ -112,6 +113,20 @@ public class Network {
         return or(not(left), right);
     }
 
+    public BoolExpr eq(BoolExpr left, BoolExpr right) {
+        if (left instanceof BoolConst && right instanceof BoolConst) {
+            return new BoolConst(((BoolConst) left).val == ((BoolConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
+        } else if (left instanceof BoolConst) {
+            return new BoolAssignment((BoolVar) right.to_var(this), ((BoolConst) left).val);
+        } else if (right instanceof BoolConst) {
+            return new BoolAssignment((BoolVar) left.to_var(this), ((BoolConst) right).val);
+        } else {
+            return new BoolEq((BoolVar) left.to_var(this), (BoolVar) right.to_var(this));
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold defaultstate="collapsed" desc="arithmetic constraints..">
     public ArithExpr minus(ArithExpr expr) {
         if (expr instanceof ArithConst) {
             return new ArithConst(-((ArithConst) expr).val);
@@ -252,6 +267,20 @@ public class Network {
         }
     }
 
+    public double evaluate(ArithExpr expr) {
+        if (expr instanceof ArithConst) {
+            return ((ArithConst) expr).val;
+        } else if (expr instanceof ArithVar) {
+            return ((ArithVar) expr).val;
+        } else if (expr instanceof Lin) {
+            return ((Lin) expr).vars.entrySet().stream().mapToDouble(entry -> entry.getKey().val * entry.getValue()).sum() + ((Lin) expr).known_term;
+        } else {
+            throw new UnsupportedOperationException("non-linear expression..");
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold defaultstate="collapsed" desc="enum constraints..">
     public <T> BoolExpr eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
         if (left instanceof EnumConst && right instanceof EnumConst) {
             return new BoolConst(((EnumConst<T>) left).val == ((EnumConst<T>) right).val ? LBool.L_TRUE : LBool.L_FALSE);
@@ -271,18 +300,7 @@ public class Network {
             return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right);
         }
     }
-
-    public BoolExpr eq(BoolExpr left, BoolExpr right) {
-        if (left instanceof BoolConst && right instanceof BoolConst) {
-            return new BoolConst(((BoolConst) left).val == ((BoolConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else if (left instanceof BoolConst) {
-            return new BoolAssignment((BoolVar) right.to_var(this), ((BoolConst) left).val);
-        } else if (right instanceof BoolConst) {
-            return new BoolAssignment((BoolVar) left.to_var(this), ((BoolConst) right).val);
-        } else {
-            return new BoolEq((BoolVar) left.to_var(this), (BoolVar) right.to_var(this));
-        }
-    }
+    //</editor-fold>
 
     public void add(BoolExpr... exprs) {
         assert exprs.length > 0;

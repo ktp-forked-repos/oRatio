@@ -27,18 +27,18 @@ import java.util.Map;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
+class ArithEnum extends Item implements IArithItem, IEnumItem {
 
     final ArithExpr arith_var;
-    final EnumVar<IArithItem> enum_var;
+    final EnumVar<IItem> enum_var;
     final Map<IItem, BoolExpr> eqs = new IdentityHashMap<>();
 
-    ArithEnum(Core c, Type t, ArithExpr av, EnumVar<IArithItem> ev) {
+    ArithEnum(Core c, Type t, ArithExpr av, EnumVar<IItem> ev) {
         super(c, c, t);
         this.arith_var = av;
         this.enum_var = ev;
-        for (IArithItem v : ev.evaluate().getAllowedValues()) {
-            eqs.put(v, core.network.eq(arith_var, v.getArithVar()));
+        for (IItem v : ev.evaluate().getAllowedValues()) {
+            eqs.put(v, core.network.eq(arith_var, ((IArithItem) v).getArithVar()));
         }
     }
 
@@ -48,12 +48,12 @@ class ArithEnum extends Item implements IArithItem, IEnumItem<IArithItem> {
     }
 
     @Override
-    public EnumVar<IArithItem> getEnumVar() {
+    public EnumVar<IItem> getEnumVar() {
         return enum_var;
     }
 
     @Override
-    public BoolExpr allows(IArithItem val) {
+    public BoolExpr allows(IItem val) {
         return eqs.get(val);
     }
 
