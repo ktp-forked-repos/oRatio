@@ -16,24 +16,18 @@
  */
 package it.cnr.istc.oratio.core;
 
-import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.oratio.core.parser.oRatioParser;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public abstract class Conjunction extends BaseScope {
+class InstantiatedField extends Field {
 
-    protected final ArithExpr cost;
+    final oRatioParser.ExprContext expr;
 
-    Conjunction(Core c, IScope s, ArithExpr cost) {
-        super(c, s);
-        this.cost = cost;
+    InstantiatedField(Type t, String n, oRatioParser.ExprContext expr) {
+        super(t, n);
+        this.expr = expr;
     }
-
-    public ArithExpr getCost() {
-        return cost;
-    }
-
-    public abstract boolean apply(IEnv env);
 }

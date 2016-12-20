@@ -40,7 +40,7 @@ class DFlaw extends Flaw {
     @Override
     boolean computeResolvers(Collection<Resolver> rs) {
         for (Conjunction conjunction : disjunction.getConjunctions()) {
-            rs.add(new ChooseConjunction(solver, solver.network.newReal(1), this, env, conjunction));
+            rs.add(new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction));
         }
         return true;
     }

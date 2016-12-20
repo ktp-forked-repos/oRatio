@@ -90,6 +90,10 @@ public class Type extends BaseScope {
         return Collections.unmodifiableCollection(instances);
     }
 
+    protected boolean predicateDefined(Predicate predicate) {
+        return true;
+    }
+
     protected boolean factCreated(Atom atom) {
         for (Type superclass : superclasses) {
             if (!superclass.factCreated(atom)) {
