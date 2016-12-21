@@ -301,7 +301,7 @@ class TypeRefinementListener extends oRatioBaseListener {
             }
         }
 
-        Predicate p = new Predicate(core, scope, ctx.name.getText()) {
+        Predicate p = new Predicate(core, scope, ctx.name.getText(), args.toArray(new Field[args.size()])) {
             @Override
             public boolean apply(Atom atom) {
                 for (Type sp : superclasses) {

@@ -24,8 +24,14 @@ import java.util.LinkedList;
  */
 public abstract class Predicate extends Type {
 
-    public Predicate(Core c, IScope s, String n) {
+    public Predicate(Core c, IScope s, String n, Field... pars) {
         super(c, s, n);
+        if (scope instanceof Type) {
+            this.fields.put(THIS, new Field((Type) scope, THIS, true));
+        }
+        for (Field par : pars) {
+            this.fields.put(par.name, par);
+        }
     }
 
     @Override
