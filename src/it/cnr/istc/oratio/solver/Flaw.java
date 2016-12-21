@@ -24,6 +24,7 @@ import it.cnr.istc.ac.Var;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,6 +45,18 @@ public abstract class Flaw implements Propagator {
         this.solver = s;
         this.cause = c;
         this.in_plan = s.network.newBool();
+    }
+
+    boolean isExpanded() {
+        return expanded;
+    }
+
+    boolean isSolved() {
+        return estimated_cost < Double.POSITIVE_INFINITY;
+    }
+
+    public Collection<Resolver> getResolvers() {
+        return Collections.unmodifiableCollection(resolvers);
     }
 
     boolean expand() {

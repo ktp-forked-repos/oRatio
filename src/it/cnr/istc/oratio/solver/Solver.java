@@ -43,6 +43,7 @@ public class Solver extends Core {
     Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
     private Resolver resolver;
+    private final LinkedList<Flaw> flaw_q = new LinkedList<>();
 
     public Solver() {
         resolver = new FindSolution(this);
@@ -59,6 +60,7 @@ public class Solver extends Core {
         if (resolver.effect == null) {
             // we have a top level flaw..
             flaws.add(flaw);
+            flaw_q.add(flaw);
         }
         return c_enum;
     }
@@ -70,11 +72,13 @@ public class Solver extends Core {
         }
         FFlaw flaw = new FFlaw(this, resolver, atom);
         if (!resolver.addPrecondition(flaw)) {
+            LOG.info("cannot create fact: inconsistent problem..");
             return false;
         }
         if (resolver.effect == null) {
             // we have a top level flaw..
             flaws.add(flaw);
+            flaw_q.add(flaw);
         }
         return true;
     }
@@ -86,11 +90,13 @@ public class Solver extends Core {
         }
         GFlaw flaw = new GFlaw(this, resolver, atom);
         if (!resolver.addPrecondition(flaw)) {
+            LOG.info("cannot create goal: inconsistent problem..");
             return false;
         }
         if (resolver.effect == null) {
             // we have a top level flaw..
             flaws.add(flaw);
+            flaw_q.add(flaw);
         }
         return true;
     }
@@ -102,20 +108,77 @@ public class Solver extends Core {
         }
         DFlaw flaw = new DFlaw(this, resolver, env, d);
         if (!resolver.addPrecondition(flaw)) {
+            LOG.info("cannot create disjunction: inconsistent problem..");
             return false;
         }
         if (resolver.effect == null) {
             // we have a top level flaw..
             flaws.add(flaw);
+            flaw_q.add(flaw);
         }
         return true;
     }
 
     public boolean solve() {
+        LOG.info("solving the problem..");
+        if (!build_planning_graph()) {
+            // the problem is unsolvable..
+            return false;
+        }
+
+        // we update the planning graph with the inconsistencies..
+        Collection<Flaw> incs = get_inconsistencies();
+        while (!incs.isEmpty()) {
+            incs = get_inconsistencies();
+        }
         return build_planning_graph();
     }
 
     private boolean build_planning_graph() {
+        LOG.info("building the planning graph..");
+        assert network.rootLevel();
+
+        Resolver tmp_r = resolver;
+        while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+            Flaw flaw = flaw_q.pollFirst();
+            if (!flaw.isExpanded()) {
+                // not all flaws require to be expanded..
+                boolean requires_expansion = true;
+                Flaw c_f = flaw;
+                while (c_f.cause.effect != null) {
+                    if (c_f.cause.effect.isSolved()) {
+                        requires_expansion = false;
+                        break;
+                    } else {
+                        c_f = c_f.cause.effect;
+                    }
+                }
+
+                if (requires_expansion) {
+                    if (!flaw.expand()) {
+                        return false;
+                    }
+                    for (Resolver r : flaw.getResolvers()) {
+                        resolver = r;
+                        ctr_var = resolver.in_plan;
+                        if (!r.apply()) {
+                            return false;
+                        }
+                        if (r.estimated_cost < Double.POSITIVE_INFINITY) {
+                            resolver.updateCosts(new HashSet<>());
+                        }
+                    }
+                } else {
+                    // we postpone the expansion..
+                    flaw_q.add(flaw);
+                }
+            }
+        }
+
+        assert tmp_r.estimated_cost < Double.POSITIVE_INFINITY;
+
+        resolver = tmp_r;
+        ctr_var = resolver.in_plan;
         return true;
     }
 
