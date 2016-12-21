@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.oratio.core.parser.oRatioBaseVisitor;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
  *
@@ -33,36 +34,62 @@ class TypeVisitor extends oRatioBaseVisitor<Type> {
 
     @Override
     public Type visitLiteral_expression(oRatioParser.Literal_expressionContext ctx) {
-        return super.visitLiteral_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        if (ctx.literal().numeric != null) {
+            return core.types.get(Core.REAL);
+        } else if (ctx.literal().string != null) {
+            return core.types.get(Core.STRING);
+        } else if (ctx.literal().t != null || ctx.literal().f != null) {
+            return core.types.get(Core.BOOL);
+        } else {
+            throw new AssertionError("the primitive type has not been found..");
+        }
     }
 
     @Override
     public Type visitCast_expression(oRatioParser.Cast_expressionContext ctx) {
-        return super.visitCast_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return visit(ctx.type());
     }
 
     @Override
     public Type visitPrimitive_type(oRatioParser.Primitive_typeContext ctx) {
-        return super.visitPrimitive_type(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.types.get(ctx.getText());
     }
 
     @Override
     public Type visitClass_type(oRatioParser.Class_typeContext ctx) {
-        return super.visitClass_type(ctx); //To change body of generated methods, choose Tools | Templates.
+        IScope s = core.scopes.get(ctx);
+        for (TerminalNode id : ctx.ID()) {
+            s = s.getType(id.getText());
+            if (s == null) {
+                core.parser.notifyErrorListeners(id.getSymbol(), "cannot find symbol..", null);
+            }
+        }
+        return (Type) s;
     }
 
     @Override
     public Type visitQualified_id(oRatioParser.Qualified_idContext ctx) {
-        return super.visitQualified_id(ctx); //To change body of generated methods, choose Tools | Templates.
+        IScope s = core.scopes.get(ctx);
+        if (ctx.t != null) {
+            s = s.getField(BaseScope.THIS).type;
+        }
+        for (TerminalNode id : ctx.ID()) {
+            Field f = s.getField(id.getText());
+            if (f == null) {
+                core.parser.notifyErrorListeners(id.getSymbol(), "cannot find symbol..", null);
+            }
+            s = s.getField(id.getText()).type;
+        }
+        return (Type) s;
     }
 
     @Override
     public Type visitQualified_id_expression(oRatioParser.Qualified_id_expressionContext ctx) {
-        return super.visitQualified_id_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return visit(ctx.qualified_id());
     }
 
     @Override
     public Type visitConstructor_expression(oRatioParser.Constructor_expressionContext ctx) {
-        return super.visitConstructor_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return visit(ctx.type());
     }
 }

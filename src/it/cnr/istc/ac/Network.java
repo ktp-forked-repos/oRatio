@@ -105,7 +105,7 @@ public class Network {
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
-    public BoolExpr exact_one(BoolExpr... exprs) {
+    public BoolExpr exct_one(BoolExpr... exprs) {
         return new ExctOne(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
@@ -171,6 +171,14 @@ public class Network {
             }
             return lin;
         }
+    }
+
+    public ArithExpr sub(ArithExpr... exprs) {
+        ArithExpr[] c_exprs = new ArithExpr[exprs.length];
+        for (int i = 0; i < c_exprs.length; i++) {
+            c_exprs[i] = i == 0 ? exprs[i] : minus(exprs[i]);
+        }
+        return sum(c_exprs);
     }
 
     public ArithExpr mult(ArithExpr... exprs) {

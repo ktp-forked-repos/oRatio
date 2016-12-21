@@ -22,6 +22,9 @@ package it.cnr.istc.oratio.core;
  */
 public interface IScope {
 
+    public static final String THIS = "this";
+    public static final String RETURN = "return";
+
     /**
      * Returns the core enclosing this scope.
      *

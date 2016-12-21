@@ -51,6 +51,7 @@ public class Core implements IScope, IEnv {
     public static final String STRING = "string";
     public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
+    oRatioParser parser;
     protected final Map<String, Field> fields = new LinkedHashMap<>();
     protected final Map<String, Collection<Method>> methods = new LinkedHashMap<>();
     protected final Map<String, Predicate> predicates = new LinkedHashMap<>();
@@ -65,13 +66,14 @@ public class Core implements IScope, IEnv {
     }
 
     public boolean read(String script) {
-        oRatioParser parser = new oRatioParser(new CommonTokenStream(new oRatioLexer(new ANTLRInputStream(script))));
+        parser = new oRatioParser(new CommonTokenStream(new oRatioLexer(new ANTLRInputStream(script))));
         oRatioParser.Compilation_unitContext cu = parser.compilation_unit();
         ParseTreeWalker.DEFAULT.walk(new TypeDeclarationListener(this), cu);
         ParseTreeWalker.DEFAULT.walk(new TypeRefinementListener(this), cu);
         if (!new StatementVisitor(this, this).visit(cu)) {
             return false;
         }
+        parser = null;
         return network.propagate();
     }
 
@@ -82,16 +84,18 @@ public class Core implements IScope, IEnv {
         }
         Collection<CodeSnippet> snippets = new ArrayList<>(fs.size());
         for (File f : fs) {
-            oRatioParser parser = new oRatioParser(new CommonTokenStream(new oRatioLexer(new ANTLRFileStream(f.getPath()))));
-            oRatioParser.Compilation_unitContext context = parser.compilation_unit();
-            snippets.add(new CodeSnippet(f, parser, context));
+            oRatioParser c_parser = new oRatioParser(new CommonTokenStream(new oRatioLexer(new ANTLRFileStream(f.getPath()))));
+            oRatioParser.Compilation_unitContext context = c_parser.compilation_unit();
+            snippets.add(new CodeSnippet(f, c_parser, context));
         }
         for (CodeSnippet snippet : snippets) {
+            parser = snippet.parser;
             ParseTreeWalker.DEFAULT.walk(new TypeDeclarationListener(this), snippet.context);
             ParseTreeWalker.DEFAULT.walk(new TypeRefinementListener(this), snippet.context);
             if (!new StatementVisitor(this, this).visit(snippet.context)) {
                 return false;
             }
+            parser = null;
         }
         return network.propagate();
     }
@@ -129,11 +133,11 @@ public class Core implements IScope, IEnv {
         }
     }
 
-    public StringItem newString() {
+    public IStringItem newString() {
         return new StringItem(this, types.get(REAL), "");
     }
 
-    public StringItem newString(String val) {
+    public IStringItem newString(String val) {
         return new StringItem(this, types.get(REAL), val);
     }
 
@@ -161,12 +165,24 @@ public class Core implements IScope, IEnv {
         return new BoolItem(this, types.get(BOOL), network.or(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
+    public IBoolItem exct_one(IBoolItem... vars) {
+        return new BoolItem(this, types.get(BOOL), network.exct_one(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
+    }
+
+    public IBoolItem imply(IBoolItem left, IBoolItem right) {
+        return new BoolItem(this, types.get(BOOL), network.imply(left.getBoolVar(), right.getBoolVar()));
+    }
+
     public IArithItem minus(IArithItem var) {
         return new ArithItem(this, types.get(REAL), network.minus(var.getArithVar()));
     }
 
     public IArithItem sum(IArithItem... vars) {
         return new ArithItem(this, types.get(REAL), network.sum(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+    }
+
+    public IArithItem sub(IArithItem... vars) {
+        return new ArithItem(this, types.get(REAL), network.sub(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
     }
 
     public IArithItem mult(IArithItem... vars) {

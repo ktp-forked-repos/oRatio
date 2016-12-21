@@ -25,8 +25,6 @@ import java.util.Map;
  */
 public class BaseScope implements IScope {
 
-    public static final String THIS = "this";
-    public static final String RETURN = "return";
     public final Core core;
     public final IScope scope;
     final Map<String, Field> fields = new HashMap<>();

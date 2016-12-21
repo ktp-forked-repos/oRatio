@@ -16,8 +16,13 @@
  */
 package it.cnr.istc.oratio.core;
 
+import static it.cnr.istc.oratio.core.IScope.RETURN;
+import static it.cnr.istc.oratio.core.IScope.THIS;
 import it.cnr.istc.oratio.core.parser.oRatioBaseVisitor;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
+import java.util.ArrayList;
+import java.util.Collection;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
  *
@@ -35,111 +40,214 @@ class ExpressionVisitor extends oRatioBaseVisitor<IItem> {
 
     @Override
     public IItem visitLiteral_expression(oRatioParser.Literal_expressionContext ctx) {
-        return super.visitLiteral_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        if (ctx.literal().numeric != null) {
+            return core.newReal(Double.parseDouble(ctx.literal().numeric.getText()));
+        } else if (ctx.literal().string != null) {
+            return core.newString(ctx.literal().string.getText());
+        } else if (ctx.literal().t != null) {
+            return core.newBool(true);
+        } else if (ctx.literal().f != null) {
+            return core.newBool(false);
+        } else {
+            throw new AssertionError("the primitive type has not been found..");
+        }
     }
 
     @Override
     public IItem visitParentheses_expression(oRatioParser.Parentheses_expressionContext ctx) {
-        return super.visitParentheses_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return visit(ctx.expr());
     }
 
     @Override
     public IItem visitMultiplication_expression(oRatioParser.Multiplication_expressionContext ctx) {
-        return super.visitMultiplication_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IArithItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IArithItem) visit(expr));
+        }
+        return core.mult(exprs.toArray(new IArithItem[exprs.size()]));
     }
 
     @Override
     public IItem visitDivision_expression(oRatioParser.Division_expressionContext ctx) {
-        return super.visitDivision_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.div((IArithItem) visit(ctx.expr(0)), (IArithItem) visit(ctx.expr(1)));
     }
 
     @Override
     public IItem visitAddition_expression(oRatioParser.Addition_expressionContext ctx) {
-        return super.visitAddition_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IArithItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IArithItem) visit(expr));
+        }
+        return core.sum(exprs.toArray(new IArithItem[exprs.size()]));
     }
 
     @Override
     public IItem visitSubtraction_expression(oRatioParser.Subtraction_expressionContext ctx) {
-        return super.visitSubtraction_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IArithItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IArithItem) visit(expr));
+        }
+        return core.sub(exprs.toArray(new IArithItem[exprs.size()]));
     }
 
     @Override
     public IItem visitMinus_expression(oRatioParser.Minus_expressionContext ctx) {
-        return super.visitMinus_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.minus((IArithItem) visit(ctx.expr()));
     }
 
     @Override
     public IItem visitNot_expression(oRatioParser.Not_expressionContext ctx) {
-        return super.visitNot_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.not((IBoolItem) visit(ctx.expr()));
+    }
+
+    @Override
+    public IItem visitQualified_id(oRatioParser.Qualified_idContext ctx) {
+        IScope s = core.scopes.get(ctx);
+        IEnv c_env = env;
+        if (ctx.t != null) {
+            s = s.getField(THIS).type;
+            c_env = c_env.get(THIS);
+        }
+        for (TerminalNode id : ctx.ID()) {
+            Field f = s.getField(id.getText());
+            if (f == null) {
+                core.parser.notifyErrorListeners(id.getSymbol(), "cannot find symbol..", null);
+            }
+            s = s.getField(id.getText()).type;
+            c_env = c_env.get(id.getText());
+        }
+        return (IItem) c_env;
     }
 
     @Override
     public IItem visitQualified_id_expression(oRatioParser.Qualified_id_expressionContext ctx) {
-        return super.visitQualified_id_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return visit(ctx.qualified_id());
     }
 
     @Override
     public IItem visitFunction_expression(oRatioParser.Function_expressionContext ctx) {
-        return super.visitFunction_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        IEnv c_env = env;
+        Collection<Type> types = new ArrayList<>();
+        Collection<IItem> exprs = new ArrayList<>();
+        if (ctx.expr_list() != null) {
+            for (oRatioParser.ExprContext expr : ctx.expr_list().expr()) {
+                IItem it = new ExpressionVisitor(core, c_env).visit(expr);
+                types.add(it.getType());
+                exprs.add(it);
+            }
+        }
+
+        Method m = null;
+        if (ctx.object != null) {
+            m = visit(ctx.object).getType().getMethod(ctx.function_name.getText(), types.toArray(new Type[types.size()]));
+        } else {
+            m = core.scopes.get(ctx).getMethod(ctx.function_name.getText(), types.toArray(new Type[types.size()]));
+        }
+        if (m == null) {
+            core.parser.notifyErrorListeners(ctx.function_name, "cannot find method..", null);
+        }
+
+        boolean invoke = m.invoke(c_env, exprs.toArray(new IItem[exprs.size()]));
+        if (!invoke) {
+            core.parser.notifyErrorListeners(ctx.function_name, "functions are not supposed to create inconsistencies..", null);
+        }
+        return c_env.get(RETURN);
     }
 
     @Override
     public IItem visitRange_expression(oRatioParser.Range_expressionContext ctx) {
-        return super.visitRange_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        IArithItem var = core.newReal();
+        IArithItem min = (IArithItem) visit(ctx.min);
+        IArithItem max = (IArithItem) visit(ctx.max);
+        core.network.add(
+                core.network.geq(var.getArithVar(), min.getArithVar()),
+                core.network.leq(var.getArithVar(), max.getArithVar())
+        );
+        boolean propagate = core.network.propagate();
+        if (!propagate) {
+            core.parser.notifyErrorListeners(ctx.getStart(), "invalid range expression..", null);
+        }
+        return var;
     }
 
     @Override
     public IItem visitConstructor_expression(oRatioParser.Constructor_expressionContext ctx) {
-        return super.visitConstructor_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Type t = new TypeVisitor(core).visit(ctx.type());
+        Collection<Type> types = new ArrayList<>();
+        Collection<IItem> exprs = new ArrayList<>();
+        if (ctx.expr_list() != null) {
+            for (oRatioParser.ExprContext expr : ctx.expr_list().expr()) {
+                IItem it = new ExpressionVisitor(core, env).visit(expr);
+                types.add(it.getType());
+                exprs.add(it);
+            }
+        }
+        Constructor c = t.getConstructor(types.toArray(new Type[types.size()]));
+        if (c == null) {
+            core.parser.notifyErrorListeners(ctx.type().start, "cannot find constructor..", null);
+        }
+        return c.newInstance(env, exprs.toArray(new IItem[exprs.size()]));
     }
 
     @Override
     public IItem visitLt_expression(oRatioParser.Lt_expressionContext ctx) {
-        return super.visitLt_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("strict inequalities are not supported yet..");
     }
 
     @Override
     public IItem visitLeq_expression(oRatioParser.Leq_expressionContext ctx) {
-        return super.visitLeq_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.leq((IArithItem) visit(ctx.expr(0)), (IArithItem) visit(ctx.expr(1)));
     }
 
     @Override
     public IItem visitEq_expression(oRatioParser.Eq_expressionContext ctx) {
-        return super.visitEq_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.eq(visit(ctx.expr(0)), visit(ctx.expr(1)));
     }
 
     @Override
     public IItem visitGeq_expression(oRatioParser.Geq_expressionContext ctx) {
-        return super.visitGeq_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.geq((IArithItem) visit(ctx.expr(0)), (IArithItem) visit(ctx.expr(1)));
     }
 
     @Override
     public IItem visitGt_expression(oRatioParser.Gt_expressionContext ctx) {
-        return super.visitGt_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("strict inequalities are not supported yet..");
     }
 
     @Override
     public IItem visitNeq_expression(oRatioParser.Neq_expressionContext ctx) {
-        return super.visitNeq_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.not(core.eq(visit(ctx.expr(0)), visit(ctx.expr(1))));
     }
 
     @Override
     public IItem visitImplication_expression(oRatioParser.Implication_expressionContext ctx) {
-        return super.visitImplication_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        return core.imply((IBoolItem) visit(ctx.expr(0)), (IBoolItem) visit(ctx.expr(1)));
     }
 
     @Override
     public IItem visitConjunction_expression(oRatioParser.Conjunction_expressionContext ctx) {
-        return super.visitConjunction_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IBoolItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IBoolItem) visit(expr));
+        }
+        return core.and(exprs.toArray(new IBoolItem[exprs.size()]));
     }
 
     @Override
     public IItem visitDisjunction_expression(oRatioParser.Disjunction_expressionContext ctx) {
-        return super.visitDisjunction_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IBoolItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IBoolItem) visit(expr));
+        }
+        return core.or(exprs.toArray(new IBoolItem[exprs.size()]));
     }
 
     @Override
     public IItem visitExtc_one_expression(oRatioParser.Extc_one_expressionContext ctx) {
-        return super.visitExtc_one_expression(ctx); //To change body of generated methods, choose Tools | Templates.
+        Collection<IBoolItem> exprs = new ArrayList<>(ctx.expr().size());
+        for (oRatioParser.ExprContext expr : ctx.expr()) {
+            exprs.add((IBoolItem) visit(expr));
+        }
+        return core.exct_one(exprs.toArray(new IBoolItem[exprs.size()]));
     }
 }
