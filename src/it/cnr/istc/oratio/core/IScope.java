@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.Collection;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -52,6 +54,17 @@ public interface IScope {
     public Field getField(String name);
 
     /**
+     * Returns a {@code Collection} containing all the fields defined in the
+     * current scope.
+     *
+     * @return a {@code Collection} containing all the fields defined in the
+     * current scope.
+     */
+    public default Collection<Field> getFields() {
+        return getScope().getFields();
+    }
+
+    /**
      * Returns a {@code Method} object that reflects the specified public member
      * method of the class or interface represented by this {@code IScope}
      * object. The {@code name} parameter is a {@code String} specifying the
@@ -69,6 +82,17 @@ public interface IScope {
     }
 
     /**
+     * Returns a {@code Collection} containing all the methods defined in the
+     * current scope.
+     *
+     * @return a {@code Collection} containing all the methods defined in the
+     * current scope.
+     */
+    public default Collection<Method> getMethods() {
+        return getScope().getMethods();
+    }
+
+    /**
      * Returns a {@code Predicate} object that reflects the specified public
      * member predicate of the class or interface represented by this
      * {@code IScope} object.
@@ -82,6 +106,17 @@ public interface IScope {
     }
 
     /**
+     * Returns a {@code Collection} containing all the predicates defined in the
+     * current scope.
+     *
+     * @return a {@code Collection} containing all the predicates defined in the
+     * current scope.
+     */
+    public default Collection<Predicate> getPredicates() {
+        return getScope().getPredicates();
+    }
+
+    /**
      * Returns a {@code Type} object that reflects the specified public member
      * type of the class or interface represented by this {@code IScope} object.
      *
@@ -90,5 +125,16 @@ public interface IScope {
      */
     public default Type getType(String name) {
         return getScope().getType(name);
+    }
+
+    /**
+     * Returns a {@code Collection} containing all the types defined in the
+     * current scope.
+     *
+     * @return a {@code Collection} containing all the types defined in the
+     * current scope.
+     */
+    public default Collection<Type> getTypes() {
+        return getScope().getTypes();
     }
 }

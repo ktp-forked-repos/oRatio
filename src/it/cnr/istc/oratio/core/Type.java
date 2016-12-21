@@ -91,6 +91,11 @@ public class Type extends BaseScope {
     }
 
     protected boolean predicateDefined(Predicate predicate) {
+        for (Type superclass : superclasses) {
+            if (!superclass.predicateDefined(predicate)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -132,6 +137,10 @@ public class Type extends BaseScope {
 
         // not found
         return null;
+    }
+
+    public Collection<Constructor> getConstructors() {
+        return Collections.unmodifiableCollection(constructors);
     }
 
     @Override
@@ -199,6 +208,15 @@ public class Type extends BaseScope {
     }
 
     @Override
+    public Collection<Method> getMethods() {
+        Collection<Method> c_methods = new ArrayList<>();
+        for (Collection<Method> ms : methods.values()) {
+            c_methods.addAll(ms);
+        }
+        return Collections.unmodifiableCollection(c_methods);
+    }
+
+    @Override
     public Predicate getPredicate(String name) {
         Predicate predicate = predicates.get(name);
         if (predicate != null) {
@@ -226,6 +244,11 @@ public class Type extends BaseScope {
     }
 
     @Override
+    public Collection<Predicate> getPredicates() {
+        return Collections.unmodifiableCollection(predicates.values());
+    }
+
+    @Override
     public Type getType(String name) {
         Type type = types.get(name);
         if (type != null) {
@@ -249,5 +272,10 @@ public class Type extends BaseScope {
 
         // not found
         return null;
+    }
+
+    @Override
+    public Collection<Type> getTypes() {
+        return Collections.unmodifiableCollection(types.values());
     }
 }

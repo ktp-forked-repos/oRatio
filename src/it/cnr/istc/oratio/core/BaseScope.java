@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,5 +63,10 @@ public class BaseScope implements IScope {
 
         // not found
         return null;
+    }
+
+    @Override
+    public Collection<Field> getFields() {
+        return Collections.unmodifiableCollection(fields.values());
     }
 }

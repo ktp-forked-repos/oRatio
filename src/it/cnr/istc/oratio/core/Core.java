@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -142,10 +143,20 @@ public class Core implements IScope, IEnv {
     }
 
     public boolean newFact(Atom atom) {
+        if (atom.type.scope instanceof Type) {
+            if (!((Type) atom.type.scope).factCreated(atom)) {
+                return false;
+            }
+        }
         return true;
     }
 
     public boolean newGoal(Atom atom) {
+        if (atom.type.scope instanceof Type) {
+            if (!((Type) atom.type.scope).goalCreated(atom)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -250,13 +261,32 @@ public class Core implements IScope, IEnv {
     }
 
     @Override
+    public Collection<Method> getMethods() {
+        Collection<Method> c_methods = new ArrayList<>();
+        for (Collection<Method> ms : methods.values()) {
+            c_methods.addAll(ms);
+        }
+        return Collections.unmodifiableCollection(c_methods);
+    }
+
+    @Override
     public Predicate getPredicate(String name) {
         return predicates.get(name);
     }
 
     @Override
+    public Collection<Predicate> getPredicates() {
+        return Collections.unmodifiableCollection(predicates.values());
+    }
+
+    @Override
     public Type getType(String name) {
         return types.get(name);
+    }
+
+    @Override
+    public Collection<Type> getTypes() {
+        return Collections.unmodifiableCollection(types.values());
     }
 
     @Override
