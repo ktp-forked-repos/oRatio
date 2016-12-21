@@ -26,8 +26,8 @@ public class Atom extends Item {
 
     public final EnumVar<AtomState> state;
 
-    Atom(Core c, IEnv e, Type t) {
-        super(c, e, t);
+    Atom(Core c, IEnv e, Predicate p) {
+        super(c, e, p);
         this.state = c.network.newEnum(AtomState.values());
     }
 }

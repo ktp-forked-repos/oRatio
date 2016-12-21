@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.LinkedList;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
@@ -24,6 +26,21 @@ public abstract class Predicate extends Type {
 
     public Predicate(Core c, IScope s, String n) {
         super(c, s, n);
+    }
+
+    @Override
+    public Atom newInstance(IEnv env) {
+        Atom atom = new Atom(core, env, this);
+
+        LinkedList<Type> queue = new LinkedList<>();
+        queue.add(this);
+        while (!queue.isEmpty()) {
+            Type c_type = queue.pollFirst();
+            c_type.instances.add(atom);
+            queue.addAll(c_type.superclasses);
+        }
+
+        return atom;
     }
 
     public abstract boolean apply(Atom atom);
