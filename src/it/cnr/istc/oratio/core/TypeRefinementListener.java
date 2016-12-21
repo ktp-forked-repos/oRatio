@@ -304,7 +304,15 @@ class TypeRefinementListener extends oRatioBaseListener {
         Predicate p = new Predicate(core, scope, ctx.name.getText()) {
             @Override
             public boolean apply(Atom atom) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                for (Type sp : superclasses) {
+                    if (!((Predicate) sp).apply(atom)) {
+                        return false;
+                    }
+                }
+
+                BaseEnv c_env = new BaseEnv(core, atom);
+                c_env.items.put(THIS, atom);
+                return new StatementVisitor(core, c_env).visit(ctx.block());
             }
         };
 
