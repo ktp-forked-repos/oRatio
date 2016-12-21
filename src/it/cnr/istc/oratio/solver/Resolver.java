@@ -23,6 +23,7 @@ import it.cnr.istc.ac.Propagator;
 import it.cnr.istc.ac.Var;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,6 +45,18 @@ public abstract class Resolver implements Propagator {
         this.cost = c;
         this.effect = e;
         this.in_plan = s.network.newBool();
+    }
+
+    public Collection<Flaw> getPreconditions() {
+        return Collections.unmodifiableCollection(preconditions);
+    }
+
+    public Flaw getEffect() {
+        return effect;
+    }
+
+    public double getEstimatedCost() {
+        return estimated_cost;
     }
 
     protected boolean addPrecondition(Flaw f) {
@@ -84,5 +97,12 @@ public abstract class Resolver implements Propagator {
             }
         }
         return true;
+    }
+
+    public abstract String toSimpleString();
+
+    @Override
+    public String toString() {
+        return toSimpleString() + " " + in_plan.evaluate() + " " + estimated_cost;
     }
 }

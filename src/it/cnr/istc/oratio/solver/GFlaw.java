@@ -71,6 +71,11 @@ class GFlaw extends Flaw {
         return solved;
     }
 
+    @Override
+    public String toSimpleString() {
+        return "goal " + atom.type.name;
+    }
+
     private static class ExpandGoal extends Resolver {
 
         ExpandGoal(Solver s, ArithExpr c, Flaw e) {
@@ -81,6 +86,11 @@ class GFlaw extends Flaw {
         boolean apply() {
             solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active)));
             return ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "expand";
         }
     }
 
@@ -128,6 +138,11 @@ class GFlaw extends Flaw {
                     eq_expr
             );
             return solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "unify";
         }
     }
 }

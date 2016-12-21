@@ -47,16 +47,24 @@ public abstract class Flaw implements Propagator {
         this.in_plan = s.network.newBool();
     }
 
-    boolean isExpanded() {
+    public boolean isExpanded() {
         return expanded;
     }
 
-    boolean isSolved() {
+    public boolean isSolved() {
         return estimated_cost < Double.POSITIVE_INFINITY;
+    }
+
+    public double getEstimatedCost() {
+        return estimated_cost;
     }
 
     public Collection<Resolver> getResolvers() {
         return Collections.unmodifiableCollection(resolvers);
+    }
+
+    public Resolver getCause() {
+        return cause;
     }
 
     boolean expand() {
@@ -120,5 +128,12 @@ public abstract class Flaw implements Propagator {
             }
         }
         return true;
+    }
+
+    public abstract String toSimpleString();
+
+    @Override
+    public String toString() {
+        return toSimpleString() + " " + in_plan.evaluate() + " " + estimated_cost;
     }
 }

@@ -40,6 +40,11 @@ class FFlaw extends Flaw {
         return true;
     }
 
+    @Override
+    public String toSimpleString() {
+        return "fact " + atom.type.name;
+    }
+
     private static class AddFact extends Resolver {
 
         AddFact(Solver s, ArithExpr c, Flaw e) {
@@ -51,6 +56,11 @@ class FFlaw extends Flaw {
             estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active)));
             return solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "add fact";
         }
     }
 }

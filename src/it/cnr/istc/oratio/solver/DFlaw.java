@@ -45,6 +45,11 @@ class DFlaw extends Flaw {
         return true;
     }
 
+    @Override
+    public String toSimpleString() {
+        return "disj";
+    }
+
     private static class ChooseConjunction extends Resolver {
 
         private final IEnv env;
@@ -59,6 +64,11 @@ class DFlaw extends Flaw {
         @Override
         boolean apply() {
             return conjunction.apply(env);
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "conj";
         }
     }
 }

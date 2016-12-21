@@ -46,6 +46,11 @@ class EFlaw extends Flaw {
         return true;
     }
 
+    @Override
+    public String toSimpleString() {
+        return "enum";
+    }
+
     private static class ChooseValue extends Resolver {
 
         private final BoolExpr eq_v;
@@ -60,6 +65,11 @@ class EFlaw extends Flaw {
             estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, eq_v));
             return solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "val";
         }
     }
 }

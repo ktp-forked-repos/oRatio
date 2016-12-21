@@ -23,6 +23,7 @@ import it.cnr.istc.oratio.core.IEnumItem;
 import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -44,6 +45,7 @@ public class Solver extends Core {
     Set<Flaw> flaws = new HashSet<>();
     private Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
+    private final Collection<SolverListener> listeners = new ArrayList<>();
 
     public Solver() {
         resolver = new FindSolution(this);
@@ -202,6 +204,15 @@ public class Solver extends Core {
         return c_flaws;
     }
 
+    public void addSolverListener(SolverListener listener) {
+        listeners.add(listener);
+        listener.newResolver(resolver);
+    }
+
+    public void removeSolverListener(SolverListener listener) {
+        listeners.remove(listener);
+    }
+
     static class FindSolution extends Resolver {
 
         FindSolution(Solver s) {
@@ -211,6 +222,11 @@ public class Solver extends Core {
         @Override
         boolean apply() {
             return true;
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "solution";
         }
     }
 
