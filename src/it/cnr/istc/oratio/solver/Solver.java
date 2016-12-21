@@ -23,6 +23,8 @@ import it.cnr.istc.oratio.core.IEnumItem;
 import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Type;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,6 +53,12 @@ public class Solver extends Core {
     public Solver() {
         resolver = new FindSolution(this);
         ctr_var = resolver.in_plan;
+        try {
+            boolean read = read(new File(Solver.class.getResource("time.rddl").getPath()));
+            assert read;
+        } catch (IOException ex) {
+            Logger.getLogger(Solver.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
