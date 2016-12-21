@@ -46,9 +46,10 @@ public class Solver extends Core {
     Map<Flaw, Double> flaw_costs;
     Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
+    private final LinkedList<Layer> layers = new LinkedList<>();
     private Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
-    private final Collection<SolverListener> listeners = new ArrayList<>();
+    final Collection<SolverListener> listeners = new ArrayList<>();
 
     public Solver() {
         resolver = new FindSolution(this);
@@ -65,6 +66,7 @@ public class Solver extends Core {
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
         EFlaw flaw = new EFlaw(this, resolver, c_enum);
+        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
         if (!resolver.addPrecondition(flaw)) {
             LOG.info("cannot create enum: inconsistent problem..");
         }
@@ -82,6 +84,7 @@ public class Solver extends Core {
             return false;
         }
         FFlaw flaw = new FFlaw(this, resolver, atom);
+        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
         if (!resolver.addPrecondition(flaw)) {
             LOG.info("cannot create fact: inconsistent problem..");
             return false;
@@ -100,6 +103,7 @@ public class Solver extends Core {
             return false;
         }
         GFlaw flaw = new GFlaw(this, resolver, atom);
+        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
         if (!resolver.addPrecondition(flaw)) {
             LOG.info("cannot create goal: inconsistent problem..");
             return false;
@@ -118,6 +122,7 @@ public class Solver extends Core {
             return false;
         }
         DFlaw flaw = new DFlaw(this, resolver, env, d);
+        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
         if (!resolver.addPrecondition(flaw)) {
             LOG.info("cannot create disjunction: inconsistent problem..");
             return false;
@@ -149,6 +154,11 @@ public class Solver extends Core {
         LOG.info("building the planning graph..");
         assert network.rootLevel();
 
+        if (flaw_q.isEmpty()) {
+            // there is nothing to reason on..
+            return true;
+        }
+
         Resolver tmp_r = resolver;
         while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
@@ -170,6 +180,7 @@ public class Solver extends Core {
                         return false;
                     }
                     for (Resolver r : flaw.getResolvers()) {
+                        listeners.parallelStream().forEach(l -> l.newResolver(resolver));
                         resolver = r;
                         ctr_var = resolver.in_plan;
                         if (!r.apply()) {
@@ -211,6 +222,10 @@ public class Solver extends Core {
             }
         }
         return c_flaws;
+    }
+
+    public boolean rootLevel() {
+        return layers.isEmpty();
     }
 
     public void addSolverListener(SolverListener listener) {

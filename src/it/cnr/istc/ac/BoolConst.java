@@ -43,4 +43,9 @@ public class BoolConst implements BoolExpr {
     public Var<LBool> to_var(Network n) {
         return new BoolVar(n, id(), val);
     }
+
+    @Override
+    public String toString() {
+        return val.toString();
+    }
 }

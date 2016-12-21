@@ -102,19 +102,15 @@ class ExpressionVisitor extends oRatioBaseVisitor<IItem> {
 
     @Override
     public IItem visitQualified_id(oRatioParser.Qualified_idContext ctx) {
-        IScope s = core.scopes.get(ctx);
         IEnv c_env = env;
         if (ctx.t != null) {
-            s = s.getField(THIS).type;
             c_env = c_env.get(THIS);
         }
         for (TerminalNode id : ctx.ID()) {
-            Field f = s.getField(id.getText());
-            if (f == null) {
+            c_env = c_env.get(id.getText());
+            if (c_env == null) {
                 core.parser.notifyErrorListeners(id.getSymbol(), "cannot find symbol..", null);
             }
-            s = s.getField(id.getText()).type;
-            c_env = c_env.get(id.getText());
         }
         return (IItem) c_env;
     }

@@ -390,7 +390,7 @@ class TypeRefinementListener extends oRatioBaseListener {
 
     @Override
     public void enterLocal_variable_statement(oRatioParser.Local_variable_statementContext ctx) {
-        super.enterLocal_variable_statement(ctx); //To change body of generated methods, choose Tools | Templates.
+        core.scopes.put(ctx, scope);
     }
 
     @Override
@@ -410,6 +410,11 @@ class TypeRefinementListener extends oRatioBaseListener {
 
     @Override
     public void enterReturn_statement(oRatioParser.Return_statementContext ctx) {
+        core.scopes.put(ctx, scope);
+    }
+
+    @Override
+    public void enterQualified_id(oRatioParser.Qualified_idContext ctx) {
         core.scopes.put(ctx, scope);
     }
 

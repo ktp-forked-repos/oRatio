@@ -195,7 +195,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         assert resolvers.containsKey(f.getCause());
         synchronized (m_vis) {
             Node flaw_node = g.addNode();
-            flaw_node.set(VisualItem.LABEL, f.toString());
+            flaw_node.set(VisualItem.LABEL, f.toSimpleString());
             if (f.isSolved()) {
                 flaw_node.set(NODE_TYPE, "solved-flaw");
             } else {
@@ -222,20 +222,11 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     }
 
     @Override
-    public void newCausalLink(Flaw f, Resolver r) {
-        synchronized (m_vis) {
-            if (g.getEdge(flaws.get(f), resolvers.get(r)) == null) {
-                g.addEdge(flaws.get(f), resolvers.get(r));
-            }
-        }
-    }
-
-    @Override
     public void newResolver(Resolver r) {
         assert !resolvers.containsKey(r);
         synchronized (m_vis) {
             Node resolver_node = g.addNode();
-            resolver_node.set(VisualItem.LABEL, r.toString());
+            resolver_node.set(VisualItem.LABEL, r.toSimpleString());
             resolver_node.set(NODE_TYPE, "resolver");
             resolver_node.set(NODE_COST, -r.getEstimatedCost());
             resolver_node.set(NODE_CONTENT, r);
@@ -251,6 +242,15 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node resolver_node = resolvers.get(r);
             resolver_node.set(NODE_COST, -r.getEstimatedCost());
+        }
+    }
+
+    @Override
+    public void newCausalLink(Flaw f, Resolver r) {
+        synchronized (m_vis) {
+            if (g.getEdge(flaws.get(f), resolvers.get(r)) == null) {
+                g.addEdge(flaws.get(f), resolvers.get(r));
+            }
         }
     }
 

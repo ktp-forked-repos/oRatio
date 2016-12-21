@@ -61,6 +61,7 @@ public abstract class Resolver implements Propagator {
 
     protected boolean addPrecondition(Flaw f) {
         preconditions.add(f);
+        solver.listeners.parallelStream().forEach(l -> l.newCausalLink(f, this));
         // if this choice is in plan, its preconditions must be in plan as well..
         solver.network.add(solver.network.imply(in_plan, f.in_plan));
         return solver.network.propagate();
@@ -74,7 +75,11 @@ public abstract class Resolver implements Propagator {
             }
         }
         if (c_cost != estimated_cost) {
+            if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
+                solver.resolver_costs.put(this, estimated_cost);
+            }
             estimated_cost = c_cost;
+            solver.listeners.parallelStream().forEach(l -> l.updateResolver(this));
             if (effect != null) {
                 effect.updateCosts(visited);
             }

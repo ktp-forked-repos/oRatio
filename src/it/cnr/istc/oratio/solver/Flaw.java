@@ -106,7 +106,11 @@ public abstract class Flaw implements Propagator {
                 }
             }
             if (c_cost != estimated_cost) {
+                if (!solver.rootLevel() && !solver.flaw_costs.containsKey(this)) {
+                    solver.flaw_costs.put(this, estimated_cost);
+                }
                 estimated_cost = c_cost;
+                solver.listeners.parallelStream().forEach(l -> l.updateFlaw(this));
                 if (cause != null) {
                     cause.updateCosts(new HashSet<>(visited));
                 }

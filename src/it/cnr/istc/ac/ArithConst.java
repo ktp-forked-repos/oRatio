@@ -42,4 +42,9 @@ public class ArithConst implements ArithExpr {
     public Var<Interval> to_var(Network n) {
         return new ArithVar(n, id(), new Interval(val));
     }
+
+    @Override
+    public String toString() {
+        return Double.toString(val);
+    }
 }

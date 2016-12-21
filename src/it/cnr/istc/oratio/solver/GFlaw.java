@@ -56,6 +56,7 @@ class GFlaw extends Flaw {
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
                 }
+                solver.network.pop();
             }
         }
 
