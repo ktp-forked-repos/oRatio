@@ -1,4 +1,4 @@
-# The oRatio Domain Definition Language
+# The oRatio Domain Definition Language (RDDL)
 
 This section describes the domain description language used, within the oRatio framework, to represent physical domains.
 Compared to previous versions of the language (e.g., [Cesta and Oddi, 1996a](https://www.researchgate.net/publication/228818262_DDL_1_A_formal_description_of_a_constraint_representation_language_for_physical_domains)), the current proposal introduces a pure object-oriented approach to the definition of domain models and problem definitions.
@@ -30,4 +30,4 @@ At a later time, a new compilation unit is provided to the solver containing the
 At this point, if a solution to the proposed problem exists, the solver will be able to find it and will return `true`, if not, it and will return `false`.
 Finally, if needed, the solution can be adapted, several times, by providing further compilation units.
 
-![alt text](compilation_units.png "Compilation Units")
+![Compilation Units](compilation_units.png "Compilation Units")
