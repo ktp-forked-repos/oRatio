@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -127,104 +126,6 @@ public class Solver extends Core {
         return true;
     }
 
-    public boolean solve() {
-        LOG.info("solving the problem..");
-
-        // we update the planning graph with the inconsistencies..
-        for (Flaw f : get_inconsistencies()) {
-            if (resolver.addPrecondition(f)) {
-                flaws.add(f);
-                flaw_q.add(f);
-            } else {
-                // the problem is unsolvable..
-                return false;
-            }
-        }
-        if (flaws.isEmpty()) {
-            // we have found a solution..
-            return true;
-        } else if (!build_planning_graph()) {
-            // the problem is unsolvable..
-            return false;
-        }
-
-        while (!flaws.isEmpty()) {
-            assert flaws.stream().allMatch(flaw -> flaw.isExpanded() && flaw.isSolved() && flaw.in_plan.evaluate() == LBool.L_TRUE);
-
-            // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
-            Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
-            flaws.remove(most_expensive_flaw);
-
-            // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-            Optional<Resolver> min = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost));
-
-            if (min.isPresent()) {
-                resolver = min.get();
-                Layer l = new Layer(flaw_costs, resolver_costs, flaws);
-                flaw_costs = new IdentityHashMap<>();
-                resolver_costs = new IdentityHashMap<>();
-                flaws = new HashSet<>(flaws);
-                layers.add(l);
-
-                // we try to enforce the resolver..
-                if (network.assign(resolver.in_plan)) {
-                    // we add sub-goals..
-                    flaws.addAll(resolver.getPreconditions());
-                } else {
-                    // we compute the unsat-core..
-                    Collection<BoolVar> unsat_core = network.getUnsatCore();
-
-                    // we build a no-good..
-                    Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
-                    for (BoolVar v : unsat_core) {
-                        ng_vars.add((BoolVar) network.not(v).to_var(network));
-                    }
-                    BoolExpr no_good = network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
-
-                    // we backjump.. 
-                    while (no_good.evaluate() == LBool.L_FALSE) {
-                        if (rootLevel()) {
-                            // the problem is inconsistent..
-                            return false;
-                        }
-
-                        // we restore the constraint network state..
-                        network.pop();
-
-                        // we restore updated flaws and resolvers costs..
-                        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-                            entry.getKey().estimated_cost = entry.getValue();
-                        }
-                        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
-                            entry.getKey().estimated_cost = entry.getValue();
-                        }
-
-                        Layer l_l = layers.getLast();
-                        flaw_costs = l_l.flaw_costs;
-                        resolver_costs = l_l.resolver_costs;
-                        flaws = l_l.flaws;
-                        layers.pollLast();
-                    }
-
-                    // we add the no-good..
-                    network.add(no_good);
-                    boolean propagate = network.propagate();
-                    assert propagate;
-                }
-            }
-        }
-
-        for (Flaw f : get_inconsistencies()) {
-            if (resolver.addPrecondition(f)) {
-                flaws.add(f);
-                flaw_q.add(f);
-            } else {
-                // the problem is unsolvable..
-                return false;
-            }
-        }
-    }
-
     private boolean build_planning_graph() {
         LOG.info("building the planning graph..");
         assert network.rootLevel();
@@ -276,6 +177,165 @@ public class Solver extends Core {
 
         resolver = tmp_r;
         ctr_var = resolver.in_plan;
+        return true;
+    }
+
+    public boolean solve() {
+        LOG.info("solving the problem..");
+
+        // we first remove the inconsistencies..
+        if (!remove_inconsistencies()) {
+            // we need to backjump..
+            if (!backjump()) {
+                // the problem is unsolvable..
+                return false;
+            }
+        }
+
+        // we clean up trivial flaws..
+        flaws.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+
+        while (!flaws.isEmpty()) {
+            // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
+            Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
+            listeners.parallelStream().forEach(l -> l.choosenFlaw(most_expensive_flaw));
+            flaws.remove(most_expensive_flaw);
+
+            // we select the least expensive resolver (i.e., the most promising for finding a solution)..
+            Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+            listeners.parallelStream().forEach(l -> l.choosenResolver(least_expensive_resolver));
+
+            // we create a new layer..
+            Layer l = new Layer(flaw_costs, resolver_costs, flaws);
+            flaw_costs = new IdentityHashMap<>();
+            resolver_costs = new IdentityHashMap<>();
+            layers.add(l);
+
+            // we try to enforce the resolver..
+            if (network.assign(least_expensive_resolver.in_plan)) {
+                // we add sub-goals..
+                flaws.addAll(least_expensive_resolver.getPreconditions());
+
+                // we clean up trivial flaws..
+                flaws.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+
+                // we remove the inconsistencies..
+                if (!remove_inconsistencies()) {
+                    // we need to backjump..
+                    if (!backjump()) {
+                        // the problem is unsolvable..
+                        return false;
+                    }
+                }
+            } else {
+                // we need to back-jump..
+                if (!backjump()) {
+                    // the problem is unsolvable..
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private boolean remove_inconsistencies() {
+        LOG.info("removing inconsistencies..");
+        // we update the planning graph with the inconsistencies..
+        Collection<Flaw> incs = get_inconsistencies();
+        while (!incs.isEmpty()) {
+            for (Flaw f : incs) {
+                if (resolver.addPrecondition(f)) {
+                    flaw_q.add(f);
+                } else {
+                    // the problem is unsolvable..
+                    return false;
+                }
+            }
+
+            if (!build_planning_graph()) {
+                // the problem is unsolvable..
+                return false;
+            }
+
+            // we clean up trivial flaws..
+            incs.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+
+            while (!incs.isEmpty()) {
+                // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
+                Flaw most_expensive_flaw = incs.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
+                listeners.parallelStream().forEach(l -> l.choosenFlaw(most_expensive_flaw));
+                incs.remove(most_expensive_flaw);
+
+                // we select the least expensive resolver (i.e., the most promising for finding a solution)..
+                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+                listeners.parallelStream().forEach(l -> l.choosenResolver(least_expensive_resolver));
+
+                // we create a new layer..
+                Layer l = new Layer(flaw_costs, resolver_costs, flaws);
+                flaw_costs = new IdentityHashMap<>();
+                resolver_costs = new IdentityHashMap<>();
+                layers.add(l);
+
+                // we try to enforce the resolver..
+                if (network.assign(least_expensive_resolver.in_plan)) {
+                    // we add sub-goals..
+                    incs.addAll(least_expensive_resolver.getPreconditions());
+
+                    // we clean up trivial flaws..
+                    incs.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+                } else {
+                    // we need to back-jump..
+                    return false;
+                }
+            }
+            incs = get_inconsistencies();
+        }
+
+        return true;
+    }
+
+    private boolean backjump() {
+        // we compute the unsat-core..
+        Collection<BoolVar> unsat_core = network.getUnsatCore();
+
+        // we build a no-good..
+        Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
+        for (BoolVar v : unsat_core) {
+            ng_vars.add((BoolVar) network.not(v).to_var(network));
+        }
+        BoolExpr no_good = network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
+
+        // we backtrack till we can enforce the no-good.. 
+        while (no_good.evaluate() == LBool.L_FALSE) {
+            if (rootLevel()) {
+                // the problem is inconsistent..
+                return false;
+            }
+
+            // we restore the constraint network state..
+            network.pop();
+
+            // we restore updated flaws and resolvers costs..
+            for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
+                entry.getKey().estimated_cost = entry.getValue();
+            }
+            for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
+                entry.getKey().estimated_cost = entry.getValue();
+            }
+
+            Layer l_l = layers.getLast();
+            flaw_costs = l_l.flaw_costs;
+            resolver_costs = l_l.resolver_costs;
+            flaws = l_l.flaws;
+            layers.pollLast();
+        }
+
+        // we add the no-good..
+        network.add(no_good);
+        boolean propagate = network.propagate();
+        assert propagate;
+
         return true;
     }
 

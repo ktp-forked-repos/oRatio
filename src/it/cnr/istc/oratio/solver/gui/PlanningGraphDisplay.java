@@ -254,6 +254,14 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         }
     }
 
+    @Override
+    public void choosenFlaw(Flaw f) {
+    }
+
+    @Override
+    public void choosenResolver(Resolver r) {
+    }
+
     /**
      * Set label positions. Labels are assumed to be DecoratorItem instances,
      * decorating their respective nodes. The layout simply gets the bounds of

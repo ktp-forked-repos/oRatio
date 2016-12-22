@@ -30,5 +30,9 @@ public interface SolverListener {
 
     public void updateResolver(Resolver r);
 
+    public void choosenFlaw(Flaw f);
+
+    public void choosenResolver(Resolver r);
+
     public void newCausalLink(Flaw f, Resolver r);
 }
