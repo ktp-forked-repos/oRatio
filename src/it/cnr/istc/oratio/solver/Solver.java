@@ -231,8 +231,11 @@ public class Solver extends Core {
                         if (!resolver.apply()) {
                             return false;
                         }
-                        if (resolver.estimated_cost < Double.POSITIVE_INFINITY) {
-                            resolver.updateCosts(new HashSet<>());
+                        if (resolver.getPreconditions().isEmpty()) {
+                            // there are no requirements for this resolver..
+                            resolver.estimated_cost = 0;
+                            listeners.parallelStream().forEach(l -> l.updateResolver(resolver));
+                            flaw.updateCosts(new HashSet<>());
                         }
                     }
                 } else {

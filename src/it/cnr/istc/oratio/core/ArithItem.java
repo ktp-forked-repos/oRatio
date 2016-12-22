@@ -53,7 +53,7 @@ class ArithItem extends Item implements IArithItem {
     public boolean equates(IItem item) {
         if (this == item) {
             return true;
-        } else if (item instanceof IBoolItem) {
+        } else if (item instanceof IArithItem) {
             Interval left_d = expr.evaluate();
             Interval right_d = ((IArithItem) item).getArithVar().evaluate();
             return left_d.intersects(right_d);

@@ -53,7 +53,6 @@ class FFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active)));
             return solver.network.propagate();
         }

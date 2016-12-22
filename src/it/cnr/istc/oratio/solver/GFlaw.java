@@ -25,6 +25,7 @@ import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 /**
  *
@@ -52,6 +53,8 @@ class GFlaw extends Flaw {
                 if (solver.network.propagate()) {
                     // unification is actually possible!
                     solved = true;
+                    estimated_cost = 0;
+                    updateCosts(new HashSet<>());
                     rs.add(unify);
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;

@@ -239,7 +239,6 @@ public class StateVariable extends SmartType {
                 rs.add(new Resolver(solver, solver.network.newReal(1.0 / or.size()), this) {
                     @Override
                     protected boolean apply() {
-                        estimated_cost = 0;
                         solver.network.add(solver.network.imply(in_plan, expr));
                         return solver.network.propagate();
                     }

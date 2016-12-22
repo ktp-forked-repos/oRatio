@@ -62,7 +62,6 @@ class EFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, eq_v));
             return solver.network.propagate();
         }
