@@ -37,7 +37,7 @@ class EFlaw extends Flaw {
     }
 
     @Override
-    boolean computeResolvers(Collection<Resolver> rs) {
+    protected boolean computeResolvers(Collection<Resolver> rs) {
         Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
         for (IItem v : vals) {
             enum_item.allows(v);
@@ -61,7 +61,7 @@ class EFlaw extends Flaw {
         }
 
         @Override
-        boolean apply() {
+        protected boolean apply() {
             estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, eq_v));
             return solver.network.propagate();

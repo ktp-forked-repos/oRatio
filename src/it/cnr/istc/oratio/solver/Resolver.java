@@ -86,7 +86,7 @@ public abstract class Resolver implements Propagator {
         }
     }
 
-    abstract boolean apply();
+    protected abstract boolean apply();
 
     @Override
     public Var<?>[] getArgs() {

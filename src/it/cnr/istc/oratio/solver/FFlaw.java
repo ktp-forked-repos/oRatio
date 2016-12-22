@@ -35,7 +35,7 @@ class FFlaw extends Flaw {
     }
 
     @Override
-    boolean computeResolvers(Collection<Resolver> rs) {
+    protected boolean computeResolvers(Collection<Resolver> rs) {
         rs.add(new AddFact(solver, solver.network.newReal(0), this));
         return true;
     }
@@ -52,7 +52,7 @@ class FFlaw extends Flaw {
         }
 
         @Override
-        boolean apply() {
+        protected boolean apply() {
             estimated_cost = 0;
             solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active)));
             return solver.network.propagate();

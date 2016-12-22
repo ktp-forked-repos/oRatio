@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.core;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,5 +63,9 @@ public class BaseEnv implements IEnv {
 
         // not found
         return null;
+    }
+
+    public Map<String, IItem> getItems() {
+        return Collections.unmodifiableMap(items);
     }
 }

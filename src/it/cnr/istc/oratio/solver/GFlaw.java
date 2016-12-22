@@ -40,7 +40,7 @@ class GFlaw extends Flaw {
     }
 
     @Override
-    boolean computeResolvers(Collection<Resolver> rs) {
+    protected boolean computeResolvers(Collection<Resolver> rs) {
         boolean solved = false;
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
@@ -84,7 +84,7 @@ class GFlaw extends Flaw {
         }
 
         @Override
-        boolean apply() {
+        protected boolean apply() {
             solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active)));
             return ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
         }
@@ -132,7 +132,7 @@ class GFlaw extends Flaw {
         }
 
         @Override
-        boolean apply() {
+        protected boolean apply() {
             estimated_cost = 0;
             solver.network.add(
                     solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Unified)),

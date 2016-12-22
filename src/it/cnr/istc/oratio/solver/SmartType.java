@@ -16,7 +16,6 @@
  */
 package it.cnr.istc.oratio.solver;
 
-import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.IScope;
 import it.cnr.istc.oratio.core.Type;
 import java.util.Collection;
@@ -27,7 +26,7 @@ import java.util.Collection;
  */
 public abstract class SmartType extends Type {
 
-    public SmartType(Core c, IScope s, String n) {
+    public SmartType(Solver c, IScope s, String n) {
         super(c, s, n);
     }
 

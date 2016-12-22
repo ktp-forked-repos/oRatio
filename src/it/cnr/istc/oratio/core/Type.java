@@ -90,13 +90,18 @@ public class Type extends BaseScope {
         return Collections.unmodifiableCollection(instances);
     }
 
-    protected boolean predicateDefined(Predicate predicate) {
-        for (Type superclass : superclasses) {
-            if (!superclass.predicateDefined(predicate)) {
-                return false;
-            }
+    protected void predicateDefined(Predicate predicate) {
+        for (Type st : superclasses) {
+            st.predicateDefined(predicate);
         }
-        return true;
+    }
+
+    protected void enrichPredicate(Predicate p, Field f) {
+        p.fields.put(f.name, f);
+    }
+
+    protected void extendPredicate(Predicate derived, Predicate base) {
+        derived.superclasses.add(base);
     }
 
     protected boolean factCreated(Atom atom) {

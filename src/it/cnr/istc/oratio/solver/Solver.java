@@ -126,6 +126,16 @@ public class Solver extends Core {
         return true;
     }
 
+    /**
+     * Returns an instance of {@code Resolver} representing the current
+     * resolver.
+     *
+     * @return the current resolver.
+     */
+    public Resolver getResolver() {
+        return resolver;
+    }
+
     private boolean build_planning_graph() {
         LOG.info("building the planning graph..");
         assert network.rootLevel();
@@ -379,7 +389,7 @@ public class Solver extends Core {
         }
 
         @Override
-        boolean apply() {
+        protected boolean apply() {
             return true;
         }
 

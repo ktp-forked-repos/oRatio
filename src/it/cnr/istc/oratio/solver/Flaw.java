@@ -93,7 +93,7 @@ public abstract class Flaw implements Propagator {
         return true;
     }
 
-    abstract boolean computeResolvers(Collection<Resolver> rs);
+    protected abstract boolean computeResolvers(Collection<Resolver> rs);
 
     void updateCosts(Set<Flaw> visited) {
         if (!visited.contains(this)) {
