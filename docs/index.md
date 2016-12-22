@@ -9,7 +9,7 @@ oRatio is an Integrated Logic and Constraint based solver which takes inspiratio
 ## Building oRatio
 
 The repository structure is compatible with the [NetBeans](https://netbeans.org/) editor folder structure, therefore, the easiest way for building oRatio is to clone the repository, open it with NetBeans and build the project.
-Nontheless, oRatio can be built regardless if NetBeans by using [Apache Ant](http://ant.apache.org/) simply going within the project folder and starting an `ant` building script.
+Nonetheless, oRatio can be built regardless if NetBeans by using [Apache Ant](http://ant.apache.org/) simply going within the project folder and starting an `ant` building script.
 Precompiled builds will be available soon.
 
 ### Building Requirements
@@ -17,6 +17,32 @@ Precompiled builds will be available soon.
 The unique requirement for building the oRatio framework is to have the [Java SE (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) version 8 or greater.
 
 ## System Usage
+
+The oRatio environment can be used either as a command line tool or as a library.
+
+The default usage syntax is the following:
+
+```
+java -jar oRatio.jar [options] <input-files>
+Options:
+-show-planning-graph    Shows the generated planning graph
+```
+
+where `<input-files>` is a list of input files containing [RDDL](language.md) code snippets.
+
+Using oRatio as a library is pretty simple. It is enough to create a `Solver` instance and interact with it.
+
+```java
+Solver s = new Solver();
+
+s.read("real a;");
+
+IArithItem a = s.get("a");
+
+s.read(new File("/examples/test/test_sv_0.ratio"));
+
+s.solve();
+```
 
 ## The oRatio Domain Description Language (RDDL)
 

@@ -38,10 +38,11 @@ public class SolverTest {
 
         long t0 = System.nanoTime();
         try {
-            boolean read = s.read(new File("examples\\test\\test_sv_0.ratio"));
+            boolean read = s.read(new File("examples/test/test_sv_0.ratio"));
             Assert.assertTrue(read);
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
+            Assert.fail(ex.getLocalizedMessage());
         }
 
         long t1 = System.nanoTime();

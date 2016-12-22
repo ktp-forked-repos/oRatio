@@ -20,6 +20,9 @@ import it.cnr.istc.oratio.solver.Solver;
 import it.cnr.istc.oratio.solver.gui.PlanningGraphJFrame;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,35 +40,41 @@ public class oRatio {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        LOG.info("Starting oRatio solver..");
+        Set<String> opts = new HashSet<>(Arrays.asList(args));
+        opts.removeIf(o -> !o.startsWith("-"));
 
-        if (args.length == 0) {
+        boolean show_planning_graph = opts.remove("-show-planning-graph");
+
+        if (args.length - opts.size() == 0) {
             LOG.severe("there are no input files..");
+            printUsage();
+            System.exit(0);
         }
 
         Solver s = new Solver();
 
-        PlanningGraphJFrame frame = new PlanningGraphJFrame(s);
-        frame.setVisible(true);
+        if (show_planning_graph) {
+            PlanningGraphJFrame frame = new PlanningGraphJFrame(s);
+            frame.setVisible(true);
+        }
 
         LOG.log(Level.INFO, "Reading {0} files..", args.length);
         long t0 = System.nanoTime();
         try {
-            if (!s.read(Stream.of(args).map(arg -> new File(arg)).toArray(File[]::new))) {
-                LOG.severe("inconsistent initial problem..");
+            if (!s.read(Stream.of(args).filter(arg -> !arg.startsWith("-")).map(arg -> new File(arg)).toArray(File[]::new))) {
+                LOG.severe("The initial problem is inconsistent..");
                 long t1 = System.nanoTime();
                 LOG.log(Level.INFO, "Parsing time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t1 - t0));
             }
         } catch (IOException ex) {
-            Logger.getLogger(oRatio.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.log(Level.SEVERE, null, ex);
         }
 
         long t1 = System.nanoTime();
         LOG.log(Level.INFO, "Parsing time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t1 - t0));
 
-        LOG.info("Solving the problem..");
         if (!s.solve()) {
-            LOG.severe("the problem has no solution..");
+            LOG.severe("The problem is unsolvable..");
             long t2 = System.nanoTime();
             LOG.log(Level.INFO, "Solving time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t2 - t1));
             LOG.log(Level.INFO, "Total time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t2 - t0));
@@ -75,5 +84,10 @@ public class oRatio {
             LOG.log(Level.INFO, "Solving time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t2 - t1));
             LOG.log(Level.INFO, "Total time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t2 - t0));
         }
+    }
+
+    private static void printUsage() {
+        LOG.info("usage: java -jar oRatio.jar [options] <file-paths>");
+        LOG.info("-show-planning-graph        Shows the generated planning graph");
     }
 }
