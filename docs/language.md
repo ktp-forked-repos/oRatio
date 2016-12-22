@@ -31,3 +31,127 @@ At this point, if a solution to the proposed problem exists, the solver will be 
 Finally, if needed, the solution can be adapted, several times, by providing further compilation units.
 
 ![Compilation Units](compilation_units.png "Compilation Units")
+
+## The Extended Backus-Naur form
+
+This section presents the complete grammar of the language in its Extended Backus-Naur form.
+
+```
+<compilation_unit>          ::= (<type_declaration> | <method_declaration> | <predicate_declaration> | <statement>)*
+
+<type_declaration>          ::= <typedef_declaration>
+                              | <enum_declaration>
+                              | <class_declaration>
+
+<typedef_declaration>       ::= 'typedef' <primitive_type> <expr> <ID> ';'
+
+<enum_declaration>          ::= 'enum' <ID> <enum_constants> ('|' <enum_constants>)* ';'
+
+<enum_constants>            ::= '{' StringLiteral (',' StringLiteral)* '}'
+                              | <type>
+
+<class_declaration>         ::= 'class' <ID> (':' <type_list>)? '{' <member>* '}';
+
+<member>                    ::= <field_declaration>
+                              | <method_declaration>
+                              | <constructor_declaration>
+                              | <predicate_declaration>
+                              | <type_declaration>
+
+<field_declaration>         ::= <type> <variable_dec> (',' <variable_dec>)* ';'
+
+<variable_dec>              ::= <ID> ('=' <expr>)?
+
+<method_declaration>        ::= 'void' <ID> '(' <typed_list>? ')' '{' <block> '}'
+                              | <type> <ID> '(' <typed_list>? ')' '{' <block> '}'
+
+<constructor_declaration>   ::= <ID> '(' <typed_list>? ')' (':' <initializer_element> (',' <initializer_element>)*)? '{' <block> '}'
+
+<initializer_element>       ::= <ID> '(' <expr_list>? ')'
+
+<predicate_declaration>     ::= 'predicate' <ID> '(' <typed_list>? ')' (':' <type_list>)? '{' <block> '}'
+
+<statement>                 ::= <assignment_statement>
+                              | <local_variable_statement>
+                              | <expression_statement>
+                              | <disjunction_statement>
+                              | <formula_statement>
+                              | <return_statement>
+                              | '{' block '}'
+
+<block>                     ::= <statement>*
+
+<assignment_statement>      ::= (<qualified_id> '.')? <ID> '=' <expr> ';'
+
+<local_variable_statement>  ::= <type> <variable_dec> (',' <variable_dec>)* ';'
+
+<expression_statement>      ::= <expr> ';'
+
+<disjunction_statement>     ::= <conjunction> ('or' <conjunction>)+
+
+<conjunction>               ::= '{' <block> '}' ('[' <expr> ']')?
+
+<formula_statement>         ::= ('goal' | 'fact') <ID> '=' 'new' (<qualified_id> '.')? <ID> '(' <assignment_list>? ')' ';'
+
+<return_statement>          ::= 'return' <expr> ';'
+
+<assignment_list>           ::= <assignment> (',' <assignment>)*
+
+<assignment>                ::= <ID> ':' <expr>
+
+<expr>                      ::= <literal>
+                              | '(' <expr> ')'
+                              | <expr> ('*' <expr>)+
+                              | <expr> '/' <expr>
+                              | <expr> ('+' <expr>)+
+                              | <expr> ('-' <expr>)+
+                              | '+' <expr>
+                              | '-' <expr>
+                              | '!' <expr>
+                              | qualified_id
+                              | (<qualified_id> '.')? <ID> '(' <expr_list?> ')'
+                              | '(' <type> ')' <expr>
+                              | '[' <expr> ',' <expr> ']'
+                              | 'new' <type> '(' <expr_list>? ')'
+                              | <expr> '==' <expr>
+                              | <expr> '>=' <expr>
+                              | <expr> '<=' <expr>
+                              | <expr> '>' <expr>
+                              | <expr> '<' <expr>
+                              | <expr> '!=' <expr>
+                              | <expr> '->' <expr>
+                              | <expr> ('|' <expr>)+
+                              | <expr> ('&' <expr>)+
+                              | <expr> ('^' <expr>)+
+
+<expr_list>                 ::= <expr> (',' <expr>)*
+
+<literal>                   ::= <NumericLiteral>
+                              | <StringLiteral>
+                              | 'true'
+                              | 'false'
+
+<qualified_id>              ::= ('this' | <ID>) ('.' <ID>)*;
+
+<type>                      ::= <class_type>
+                              | <primitive_type>
+
+<class_type>                ::= <ID> ('.' <ID>)*
+
+<primitive_type>            ::= 'real'
+                              | 'bool'
+                              | 'string'
+
+<type_list>                 ::= <type> (',' <type>)*
+
+<typed_list>                ::= <type> <ID> (',' <type> <ID>)*
+
+<ID>                        ::= ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+
+<NumericLiteral>            ::= [0-9]+ ('.' [0-9]+)?
+                              | '.' [0-9]+
+
+<StringLiteral>             ::= '"' (ESC|.)*? '"'
+
+<ESC>                       ::= '\\"' | '\\\\'
+```
