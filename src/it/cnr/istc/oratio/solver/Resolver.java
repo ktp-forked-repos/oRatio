@@ -68,17 +68,12 @@ public abstract class Resolver implements Propagator {
     }
 
     protected void updateCosts(Set<Flaw> visited) {
-        double c_cost = Double.NEGATIVE_INFINITY;
-        for (Flaw f : preconditions) {
-            if (f.estimated_cost > c_cost) {
-                c_cost = f.estimated_cost;
-            }
-        }
-        if (c_cost != estimated_cost) {
+        double computed_cost = preconditions.stream().mapToDouble(f -> f.estimated_cost).max().orElse(0);
+        if (computed_cost != estimated_cost) {
             if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
                 solver.resolver_costs.put(this, estimated_cost);
             }
-            estimated_cost = c_cost;
+            estimated_cost = computed_cost;
             solver.listeners.parallelStream().forEach(l -> l.updateResolver(this));
             if (effect != null) {
                 effect.updateCosts(visited);

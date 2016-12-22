@@ -22,6 +22,7 @@ import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Propagator;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.oratio.core.Atom;
+import it.cnr.istc.oratio.core.Constructor;
 import it.cnr.istc.oratio.core.IArithItem;
 import it.cnr.istc.oratio.core.IBoolItem;
 import it.cnr.istc.oratio.core.IEnumItem;
@@ -57,6 +58,12 @@ public class StateVariable extends SmartType {
 
     public StateVariable(Solver s) {
         super(s, s, NAME);
+        constructors.add(new Constructor(core, this) {
+            @Override
+            public boolean invoke(IItem item, IItem... expressions) {
+                return true;
+            }
+        });
     }
 
     @Override

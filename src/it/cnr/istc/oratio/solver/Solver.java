@@ -140,70 +140,12 @@ public class Solver extends Core {
         return resolver;
     }
 
-    private boolean build_planning_graph() {
-        LOG.info("building the planning graph..");
-        assert network.rootLevel();
-
-        if (flaw_q.isEmpty()) {
-            // there is nothing to reason on..
-            return true;
-        }
-
-        Resolver tmp_r = resolver;
-        while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
-            Flaw flaw = flaw_q.pollFirst();
-            if (!flaw.isExpanded()) {
-                // not all flaws require to be expanded..
-                boolean requires_expansion = true;
-                Flaw c_f = flaw;
-                while (c_f.cause.effect != null) {
-                    if (c_f.cause.effect.isSolved()) {
-                        requires_expansion = false;
-                        break;
-                    } else {
-                        c_f = c_f.cause.effect;
-                    }
-                }
-
-                if (requires_expansion) {
-                    if (!flaw.expand()) {
-                        return false;
-                    }
-                    for (Resolver r : flaw.getResolvers()) {
-                        listeners.parallelStream().forEach(l -> l.newResolver(resolver));
-                        resolver = r;
-                        ctr_var = resolver.in_plan;
-                        if (!r.apply()) {
-                            return false;
-                        }
-                        if (r.estimated_cost < Double.POSITIVE_INFINITY) {
-                            resolver.updateCosts(new HashSet<>());
-                        }
-                    }
-                } else {
-                    // we postpone the expansion..
-                    flaw_q.add(flaw);
-                }
-            }
-        }
-
-        assert tmp_r.estimated_cost < Double.POSITIVE_INFINITY;
-
-        resolver = tmp_r;
-        ctr_var = resolver.in_plan;
-        return true;
-    }
-
     public boolean solve() {
         LOG.info("solving the problem..");
 
-        // we first remove the inconsistencies..
-        if (!remove_inconsistencies()) {
-            // we need to backjump..
-            if (!backjump()) {
-                // the problem is unsolvable..
-                return false;
-            }
+        if (!build_planning_graph()) {
+            // the problem is unsolvable..
+            return false;
         }
 
         // we clean up trivial flaws..
@@ -251,6 +193,80 @@ public class Solver extends Core {
         }
 
         return true;
+    }
+
+    private boolean build_planning_graph() {
+        LOG.info("building the planning graph..");
+        assert network.rootLevel();
+
+        if (flaw_q.isEmpty()) {
+            // there is nothing to reason on..
+            return true;
+        }
+
+        Resolver tmp_r = resolver;
+        while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+            Flaw flaw = flaw_q.pollFirst();
+            if (!flaw.isExpanded()) {
+                // not all flaws require to be expanded..
+                boolean requires_expansion = true;
+                Flaw c_f = flaw;
+                while (c_f.cause.effect != null) {
+                    if (c_f.cause.effect.isSolved()) {
+                        requires_expansion = false;
+                        break;
+                    } else {
+                        c_f = c_f.cause.effect;
+                    }
+                }
+
+                if (requires_expansion) {
+                    if (!flaw.expand()) {
+                        return false;
+                    }
+                    for (Resolver r : flaw.getResolvers()) {
+                        listeners.parallelStream().forEach(l -> l.newResolver(r));
+                        resolver = r;
+                        ctr_var = resolver.in_plan;
+                        if (!resolver.apply()) {
+                            return false;
+                        }
+                        if (resolver.estimated_cost < Double.POSITIVE_INFINITY) {
+                            resolver.updateCosts(new HashSet<>());
+                        }
+                    }
+                } else {
+                    // we postpone the expansion..
+                    flaw_q.add(flaw);
+                }
+            }
+        }
+
+        assert tmp_r.estimated_cost < Double.POSITIVE_INFINITY;
+
+        resolver = tmp_r;
+        ctr_var = resolver.in_plan;
+        return true;
+    }
+
+    private Collection<Flaw> get_inconsistencies() {
+        Set<Type> c_types = new HashSet<>();
+        LinkedList<Type> queue = new LinkedList<>();
+        queue.addAll(types.values());
+        while (!queue.isEmpty()) {
+            Type c_type = queue.pollFirst();
+            if (!c_types.contains(c_type)) {
+                c_types.add(c_type);
+                queue.addAll(c_type.getTypes());
+            }
+        }
+        Collection<Flaw> c_flaws = new HashSet<>();
+        for (Type type : c_types) {
+            if (type instanceof SmartType) {
+                c_flaws.addAll(((SmartType) type).getInconsistencies());
+            }
+        }
+        return c_flaws;
     }
 
     private boolean remove_inconsistencies() {
@@ -310,6 +326,7 @@ public class Solver extends Core {
     }
 
     private boolean backjump() {
+        LOG.info("backjumping..");
         // we compute the unsat-core..
         Collection<BoolVar> unsat_core = network.getUnsatCore();
 
@@ -351,26 +368,6 @@ public class Solver extends Core {
         assert propagate;
 
         return true;
-    }
-
-    private Collection<Flaw> get_inconsistencies() {
-        Set<Type> c_types = new HashSet<>();
-        LinkedList<Type> queue = new LinkedList<>();
-        queue.addAll(types.values());
-        while (!queue.isEmpty()) {
-            Type c_type = queue.pollFirst();
-            if (!c_types.contains(c_type)) {
-                c_types.add(c_type);
-                queue.addAll(c_type.getTypes());
-            }
-        }
-        Collection<Flaw> c_flaws = new HashSet<>();
-        for (Type type : c_types) {
-            if (type instanceof SmartType) {
-                c_flaws.addAll(((SmartType) type).getInconsistencies());
-            }
-        }
-        return c_flaws;
     }
 
     public boolean rootLevel() {

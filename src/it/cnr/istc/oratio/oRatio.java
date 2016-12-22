@@ -58,7 +58,7 @@ public class oRatio {
             frame.setVisible(true);
         }
 
-        LOG.log(Level.INFO, "Reading {0} files..", args.length);
+        LOG.log(Level.INFO, "Reading {0} files..", Stream.of(args).filter(arg -> !arg.startsWith("-")).count());
         long t0 = System.nanoTime();
         try {
             if (!s.read(Stream.of(args).filter(arg -> !arg.startsWith("-")).map(arg -> new File(arg)).toArray(File[]::new))) {
@@ -67,7 +67,8 @@ public class oRatio {
                 LOG.log(Level.INFO, "Parsing time: {0}s", TimeUnit.NANOSECONDS.toSeconds(t1 - t0));
             }
         } catch (IOException ex) {
-            LOG.log(Level.SEVERE, null, ex);
+            LOG.severe(ex.getLocalizedMessage());
+            System.exit(0);
         }
 
         long t1 = System.nanoTime();

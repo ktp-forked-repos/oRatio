@@ -74,17 +74,20 @@ public abstract class Flaw implements Propagator {
         expanded = true;
 
         if (resolvers.isEmpty()) {
+            // there is no way for solving this flaw..
             assert !solved;
             solver.network.add(solver.network.not(in_plan));
             if (!solver.network.propagate()) {
                 return false;
             }
         } else if (resolvers.size() == 1) {
+            // there is a unique way for solving this flaw: this is a trivial flaw..
             solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan));
             if (!solver.network.propagate()) {
                 return false;
             }
         } else {
+            // we need to take a decision for solving this flaw..
             solver.network.add(solver.network.imply(in_plan, solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
             if (!solver.network.propagate()) {
                 return false;
@@ -98,18 +101,12 @@ public abstract class Flaw implements Propagator {
     void updateCosts(Set<Flaw> visited) {
         if (!visited.contains(this)) {
             visited.add(this);
-            double c_cost = Double.POSITIVE_INFINITY;
-            for (Resolver r : resolvers) {
-                double r_cost = solver.network.evaluate(r.cost);
-                if (r.estimated_cost + r_cost < c_cost) {
-                    c_cost = r.estimated_cost + r_cost;
-                }
-            }
-            if (c_cost != estimated_cost) {
+            double computed_cost = resolvers.stream().mapToDouble(f -> f.estimated_cost).min().orElse(Double.POSITIVE_INFINITY);
+            if (computed_cost != estimated_cost) {
                 if (!solver.rootLevel() && !solver.flaw_costs.containsKey(this)) {
                     solver.flaw_costs.put(this, estimated_cost);
                 }
-                estimated_cost = c_cost;
+                estimated_cost = computed_cost;
                 solver.listeners.parallelStream().forEach(l -> l.updateFlaw(this));
                 if (cause != null) {
                     cause.updateCosts(new HashSet<>(visited));

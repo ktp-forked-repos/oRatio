@@ -24,7 +24,7 @@ public abstract class Constructor extends BaseScope {
 
     public final Field[] parameters;
 
-    Constructor(Core c, IScope s, Field... parameters) {
+    protected Constructor(Core c, IScope s, Field... parameters) {
         super(c, s);
         this.parameters = parameters;
 
