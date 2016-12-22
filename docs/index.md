@@ -32,6 +32,9 @@ where `<input-files>` is a list of input files containing [RDDL](language.md) co
 
 Using oRatio as a library is pretty simple. It is enough to create a `Solver` instance and interact with it.
 
+For example, the following code creates a solver instance, reads an RDDL script which requires the creation of a new `real` variable called `a` and retrieves the newly created variable through the `Solver`.
+At a later time, the solver reads the `/examples/test/test_sv_0.rddl` file from the file system and finds a solution.
+
 ```java
 Solver s = new Solver();
 
@@ -39,10 +42,18 @@ s.read("real a;");
 
 IArithItem a = s.get("a");
 
-s.read(new File("/examples/test/test_sv_0.ratio"));
+s.read(new File("/examples/test/test_sv_0.rddl"));
 
-s.solve();
+boolean solution = s.solve();
+
+if(solution) {
+    System.out.println("We have found a solution!!");
+} else {
+    System.out.println("The problem is unsolvable..");
+}
 ```
+
+More information about using oRatio as a library can be found [here](api.md).
 
 ## The oRatio Domain Description Language (RDDL)
 
