@@ -1,0 +1,10 @@
+class TestSV : StateVariable {
+
+    predicate P0() {
+        duration >= 10;
+    }
+
+    predicate P1() {
+        duration >= 10;
+    }
+}
