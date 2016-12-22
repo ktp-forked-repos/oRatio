@@ -22,6 +22,7 @@ import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Propagator;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.oratio.core.Atom;
+import it.cnr.istc.oratio.core.AtomState;
 import it.cnr.istc.oratio.core.Constructor;
 import it.cnr.istc.oratio.core.IArithItem;
 import it.cnr.istc.oratio.core.IBoolItem;
@@ -102,7 +103,7 @@ public class StateVariable extends SmartType {
         for (IItem i : to_check) {
             instances.put(i, new ArrayList<>());
         }
-        for (Atom atom : defined_predicates.stream().flatMap(p -> p.getInstances().stream()).map(a -> (Atom) a).collect(Collectors.toList())) {
+        for (Atom atom : defined_predicates.stream().flatMap(p -> p.getInstances().stream()).map(a -> (Atom) a).filter(a -> a.state.evaluate().isSingleton() && a.state.evaluate().contains(AtomState.Active)).collect(Collectors.toList())) {
             for (IItem i : ((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues()) {
                 if (instances.containsKey(i)) {
                     instances.get(i).add(atom);
