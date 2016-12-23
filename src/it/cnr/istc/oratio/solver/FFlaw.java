@@ -36,7 +36,9 @@ class FFlaw extends Flaw {
 
     @Override
     protected boolean computeResolvers(Collection<Resolver> rs) {
-        rs.add(new AddFact(solver, solver.network.newReal(0), this));
+        AddFact af = new AddFact(solver, solver.network.newReal(0), this);
+        af.fireNewResolver();
+        rs.add(af);
         return true;
     }
 

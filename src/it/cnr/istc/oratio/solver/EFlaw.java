@@ -41,7 +41,9 @@ class EFlaw extends Flaw {
         Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
         for (IItem v : vals) {
             enum_item.allows(v);
-            rs.add(new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v)));
+            ChooseValue cv = new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v));
+            cv.fireNewResolver();
+            rs.add(cv);
         }
         return true;
     }

@@ -255,11 +255,11 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     }
 
     @Override
-    public void choosenFlaw(Flaw f) {
+    public void currentFlaw(Flaw f) {
     }
 
     @Override
-    public void choosenResolver(Resolver r) {
+    public void currentResolver(Resolver r) {
     }
 
     /**

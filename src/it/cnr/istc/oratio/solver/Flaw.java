@@ -69,6 +69,7 @@ public abstract class Flaw implements Propagator {
 
     boolean expand() {
         assert !expanded;
+        assert resolvers.isEmpty();
 
         boolean solved = computeResolvers(resolvers);
         expanded = true;
@@ -101,18 +102,26 @@ public abstract class Flaw implements Propagator {
     void updateCosts(Set<Flaw> visited) {
         if (!visited.contains(this)) {
             visited.add(this);
-            double computed_cost = resolvers.stream().mapToDouble(f -> f.estimated_cost).min().orElse(Double.POSITIVE_INFINITY);
+            double computed_cost = resolvers.stream().mapToDouble(r -> r.estimated_cost).min().orElse(Double.POSITIVE_INFINITY);
             if (computed_cost != estimated_cost) {
                 if (!solver.rootLevel() && !solver.flaw_costs.containsKey(this)) {
                     solver.flaw_costs.put(this, estimated_cost);
                 }
                 estimated_cost = computed_cost;
-                solver.listeners.parallelStream().forEach(l -> l.updateFlaw(this));
+                fireFlawUpdate();
                 if (cause != null) {
                     cause.updateCosts(new HashSet<>(visited));
                 }
             }
         }
+    }
+
+    protected void fireNewFlaw() {
+        solver.newFlaw(this);
+    }
+
+    protected void fireFlawUpdate() {
+        solver.fireFlawUpdate(this);
     }
 
     @Override

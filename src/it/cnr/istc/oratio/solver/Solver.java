@@ -53,7 +53,7 @@ public class Solver extends Core {
     private final LinkedList<Layer> layers = new LinkedList<>();
     private Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
-    final Collection<SolverListener> listeners = new ArrayList<>();
+    private final Collection<SolverListener> listeners = new ArrayList<>();
 
     public Solver() {
         resolver = new FindSolution(this);
@@ -72,14 +72,11 @@ public class Solver extends Core {
     @Override
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
-        EFlaw flaw = new EFlaw(this, resolver, c_enum);
-        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.info("cannot create enum: inconsistent problem..");
+        if (newFlaw(new EFlaw(this, resolver, c_enum))) {
+            return c_enum;
+        } else {
+            return null;
         }
-        flaws.add(flaw);
-        flaw_q.add(flaw);
-        return c_enum;
     }
 
     @Override
@@ -88,14 +85,8 @@ public class Solver extends Core {
             return false;
         }
         FFlaw flaw = new FFlaw(this, resolver, atom);
-        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.info("cannot create fact: inconsistent problem..");
-            return false;
-        }
-        flaws.add(flaw);
-        flaw_q.add(flaw);
-        return true;
+        reasons.put(atom, flaw);
+        return newFlaw(flaw);
     }
 
     @Override
@@ -104,30 +95,52 @@ public class Solver extends Core {
             return false;
         }
         GFlaw flaw = new GFlaw(this, resolver, atom);
-        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.info("cannot create goal: inconsistent problem..");
-            return false;
-        }
-        flaws.add(flaw);
-        flaw_q.add(flaw);
-        return true;
+        reasons.put(atom, flaw);
+        return newFlaw(flaw);
     }
 
     @Override
     public boolean newDisjunction(IEnv env, Disjunction d) {
-        if (!super.newDisjunction(env, d)) {
+        return super.newDisjunction(env, d) && newFlaw(new DFlaw(this, resolver, env, d));
+    }
+
+    public boolean newFlaw(Flaw f) {
+        fireNewFlaw(f);
+        if (!resolver.addPrecondition(f)) {
+            LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
             return false;
         }
-        DFlaw flaw = new DFlaw(this, resolver, env, d);
-        listeners.parallelStream().forEach(l -> l.newFlaw(flaw));
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.info("cannot create disjunction: inconsistent problem..");
-            return false;
-        }
-        flaws.add(flaw);
-        flaw_q.add(flaw);
+        flaws.add(f);
+        flaw_q.add(f);
         return true;
+    }
+
+    void fireNewFlaw(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.newFlaw(f));
+    }
+
+    void fireNewResolver(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.newResolver(r));
+    }
+
+    void fireFlawUpdate(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.updateFlaw(f));
+    }
+
+    void fireResolverUpdate(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.updateResolver(r));
+    }
+
+    void fireNewCausalLink(Flaw f, Resolver r) {
+        listeners.parallelStream().forEach(l -> l.newCausalLink(f, r));
+    }
+
+    void fireCurrentFlaw(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.currentFlaw(f));
+    }
+
+    void fireCurrentResolver(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.currentResolver(r));
     }
 
     /**
@@ -154,12 +167,12 @@ public class Solver extends Core {
         while (!flaws.isEmpty()) {
             // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
             Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
-            listeners.parallelStream().forEach(l -> l.choosenFlaw(most_expensive_flaw));
+            fireCurrentFlaw(most_expensive_flaw);
             flaws.remove(most_expensive_flaw);
 
             // we select the least expensive resolver (i.e., the most promising for finding a solution)..
             Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
-            listeners.parallelStream().forEach(l -> l.choosenResolver(least_expensive_resolver));
+            fireCurrentResolver(least_expensive_resolver);
 
             // we create a new layer..
             Layer l = new Layer(flaw_costs, resolver_costs, flaws);
@@ -225,7 +238,6 @@ public class Solver extends Core {
                         return false;
                     }
                     for (Resolver r : flaw.getResolvers()) {
-                        listeners.parallelStream().forEach(l -> l.newResolver(r));
                         resolver = r;
                         ctr_var = resolver.in_plan;
                         if (!resolver.apply()) {
@@ -234,7 +246,7 @@ public class Solver extends Core {
                         if (resolver.getPreconditions().isEmpty()) {
                             // there are no requirements for this resolver..
                             resolver.estimated_cost = 0;
-                            listeners.parallelStream().forEach(l -> l.updateResolver(resolver));
+                            fireResolverUpdate(resolver);
                             flaw.updateCosts(new HashSet<>());
                         }
                     }
@@ -297,12 +309,12 @@ public class Solver extends Core {
             while (!incs.isEmpty()) {
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = incs.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
-                listeners.parallelStream().forEach(l -> l.choosenFlaw(most_expensive_flaw));
+                fireCurrentFlaw(most_expensive_flaw);
                 incs.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
-                listeners.parallelStream().forEach(l -> l.choosenResolver(least_expensive_resolver));
+                fireCurrentResolver(least_expensive_resolver);
 
                 // we create a new layer..
                 Layer l = new Layer(flaw_costs, resolver_costs, flaws);

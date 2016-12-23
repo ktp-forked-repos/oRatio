@@ -52,10 +52,10 @@ class GFlaw extends Flaw {
                 solver.network.add(unify.in_plan);
                 if (solver.network.propagate()) {
                     // unification is actually possible!
-                    solved = true;
-                    estimated_cost = 0;
-                    updateCosts(new HashSet<>());
+                    unify.fireNewResolver();
                     rs.add(unify);
+                    solved = true;
+                    updateCosts(new HashSet<>());
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
                 }
@@ -63,7 +63,9 @@ class GFlaw extends Flaw {
             }
         }
 
-        rs.add(new ExpandGoal(solver, solver.network.newReal(1), this));
+        ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this);
+        eg.fireNewResolver();
+        rs.add(eg);
 
         if (!solved) {
             // we remove unification from atom state..
@@ -132,6 +134,7 @@ class GFlaw extends Flaw {
                 f = f.cause.effect;
             }
             this.eq_expr = s.network.and(and.toArray(new BoolExpr[and.size()]));
+            estimated_cost = 0;
         }
 
         @Override

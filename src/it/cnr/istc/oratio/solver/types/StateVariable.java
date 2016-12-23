@@ -237,18 +237,9 @@ public class StateVariable extends SmartType {
         @Override
         protected boolean computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
-                rs.add(new Resolver(solver, solver.network.newReal(1.0 / or.size()), this) {
-                    @Override
-                    protected boolean apply() {
-                        solver.network.add(solver.network.imply(in_plan, expr));
-                        return solver.network.propagate();
-                    }
-
-                    @Override
-                    public String toSimpleString() {
-                        return expr.id();
-                    }
-                });
+                StateVariableResolver svr = new StateVariableResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
+                svr.fireNewResolver();
+                rs.add(svr);
             }
 
             return true;
@@ -262,6 +253,32 @@ public class StateVariable extends SmartType {
         @Override
         public String toString() {
             return or.stream().map(v -> v.toString()).collect(Collectors.joining(" || "));
+        }
+    }
+
+    private static class StateVariableResolver extends Resolver {
+
+        private final BoolExpr expr;
+
+        StateVariableResolver(Solver s, ArithExpr c, Flaw e, BoolExpr expr) {
+            super(s, c, e);
+            this.expr = expr;
+        }
+
+        @Override
+        protected void fireNewResolver() {
+            super.fireNewResolver();
+        }
+
+        @Override
+        protected boolean apply() {
+            solver.network.add(solver.network.imply(in_plan, expr));
+            return solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return expr.id();
         }
     }
 }
