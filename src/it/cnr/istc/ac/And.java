@@ -62,12 +62,12 @@ public class And implements BoolExpr {
                 if (i == 0) {
                     and += v.name;
                 } else {
-                    and += " && " + v.name;
+                    and += " & " + v.name;
                 }
             } else if (i == 0) {
                 and += "!" + v.name;
             } else {
-                and += " && !" + v.name;
+                and += " & !" + v.name;
             }
         }
         return and;

@@ -62,12 +62,12 @@ public class Or implements BoolExpr {
                 if (i == 0) {
                     or += v.name;
                 } else {
-                    or += " || " + v.name;
+                    or += " | " + v.name;
                 }
             } else if (i == 0) {
                 or += "!" + v.name;
             } else {
-                or += " || !" + v.name;
+                or += " | !" + v.name;
             }
         }
         return or;
