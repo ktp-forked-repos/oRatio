@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
  */
 public class Network {
 
+    private static final Logger LOG = Logger.getLogger(Network.class.getName());
     private int n_vars = 0;
     Map<Var<?>, Domain> domains = null;
     final Map<String, BoolVar> bool_vars = new HashMap<>();
@@ -128,6 +130,7 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="arithmetic constraints..">
     public ArithExpr minus(ArithExpr expr) {
+        System.out.println("computing -" + expr.id());
         if (expr instanceof ArithConst) {
             return new ArithConst(-((ArithConst) expr).val);
         } else {
@@ -150,6 +153,7 @@ public class Network {
     }
 
     public ArithExpr sum(ArithExpr... exprs) {
+        System.out.println("computing " + Stream.of(exprs).map(expr -> expr.id()).collect(Collectors.joining(" + ")));
         if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
             return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).sum());
         } else {
@@ -174,6 +178,7 @@ public class Network {
     }
 
     public ArithExpr sub(ArithExpr... exprs) {
+        System.out.println("computing " + Stream.of(exprs).map(expr -> expr.id()).collect(Collectors.joining(" - ")));
         ArithExpr[] c_exprs = new ArithExpr[exprs.length];
         for (int i = 0; i < c_exprs.length; i++) {
             c_exprs[i] = i == 0 ? exprs[i] : minus(exprs[i]);
@@ -182,6 +187,7 @@ public class Network {
     }
 
     public ArithExpr mult(ArithExpr... exprs) {
+        System.out.println("computing " + Stream.of(exprs).map(expr -> expr.id()).collect(Collectors.joining(" * ")));
         if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
             return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).reduce(1, (a, b) -> a * b));
         } else {
@@ -213,6 +219,7 @@ public class Network {
     }
 
     public ArithExpr div(ArithExpr left, ArithExpr right) {
+        System.out.println("computing " + left.id() + " / " + right.id());
         if (right instanceof ArithConst) {
             if (left instanceof ArithConst) {
                 return new ArithConst(((ArithConst) left).val / ((ArithConst) right).val);
@@ -225,6 +232,7 @@ public class Network {
     }
 
     public BoolExpr leq(ArithExpr left, ArithExpr right) {
+        System.out.println("computing " + left.id() + " <= " + right.id());
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val <= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
@@ -245,6 +253,7 @@ public class Network {
     }
 
     public BoolExpr eq(ArithExpr left, ArithExpr right) {
+        System.out.println("computing " + left.id() + " == " + right.id());
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val == ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
@@ -265,6 +274,7 @@ public class Network {
     }
 
     public BoolExpr geq(ArithExpr left, ArithExpr right) {
+        System.out.println("computing " + left.id() + " >= " + right.id());
         if (left instanceof ArithConst && right instanceof ArithConst) {
             return new BoolConst(((ArithConst) left).val >= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
         } else {
@@ -481,24 +491,31 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="simplex..">
     private void update(ArithVar x_i, double v) {
+        System.out.println("assigning " + v + " to " + x_i);
         assert !tableau.containsKey(x_i) : "x_i is a non-basic variable..";
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
+                System.out.println(entry.getKey().name + " " + entry.getKey().domain + " " + entry.getKey().val + " <- " + (entry.getKey().val + entry.getValue().vars.get(x_i) * (v - x_i.val)));
                 entry.getKey().val += entry.getValue().vars.get(x_i) * (v - x_i.val);
             }
         }
+        System.out.println(x_i.name + " " + x_i.domain + " " + x_i.val + " <- " + v);
         x_i.val = v;
     }
 
     private void pivotAndUpdate(ArithVar x_i, ArithVar x_j, double v) {
+        System.out.println("assigning " + v + " to " + x_i + " and pivoting " + x_i + " with " + x_j);
         assert tableau.containsKey(x_i) : "x_i is a basic variable..";
         assert !tableau.containsKey(x_j) : "x_j is a non-basic variable..";
         assert tableau.get(x_i).vars.containsKey(x_j);
         double theta = (v - x_i.val) / tableau.get(x_i).vars.get(x_j);
+        System.out.println(x_i.name + " " + x_i.domain + " " + x_i.val + " <- " + v);
         x_i.val = v;
+        System.out.println(x_j.name + " " + x_j.domain + " " + x_j.val + " <- " + (x_j.val + theta));
         x_j.val += theta;
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getKey() != x_i && entry.getValue().vars.containsKey(x_j)) {
+                System.out.println(entry.getKey().name + " " + entry.getKey().domain + " " + entry.getKey().val + " <- " + (entry.getKey().val + entry.getValue().vars.get(x_j) * theta));
                 entry.getKey().val += entry.getValue().vars.get(x_j) * theta;
             }
         }
