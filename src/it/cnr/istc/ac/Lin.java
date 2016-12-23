@@ -110,9 +110,10 @@ public class Lin implements ArithExpr {
             // we need to create a new variable..
             ArithVar sum;
             if (n.rootLevel()) {
-                sum = new ArithVar(n, id, evaluate());
+                assert !evaluate().isSingleton();
+                sum = new ArithVar(n, "s" + n.n_slack_vars++, evaluate());
             } else {
-                sum = new ArithVar(n, id);
+                sum = new ArithVar(n, "s" + n.n_slack_vars++);
                 sum.intersect(evaluate(), null);
             }
             System.out.println("asserting [" + sum.name + "] == " + id);

@@ -95,9 +95,10 @@ public class And implements BoolExpr {
             // we need to create a new variable..
             BoolVar and;
             if (n.rootLevel()) {
-                and = new BoolVar(n, id, evaluate());
+                assert !evaluate().isSingleton();
+                and = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                and = new BoolVar(n, id);
+                and = new BoolVar(n, "b" + n.n_bool_vars++);
                 and.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, and);

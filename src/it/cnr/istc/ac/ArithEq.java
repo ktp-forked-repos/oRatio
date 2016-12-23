@@ -56,9 +56,10 @@ public class ArithEq implements BoolExpr {
             // we need to create a new variable..
             BoolVar eq;
             if (n.rootLevel()) {
-                eq = new BoolVar(n, id, evaluate());
+                assert !evaluate().isSingleton();
+                eq = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                eq = new BoolVar(n, id);
+                eq = new BoolVar(n, "b" + n.n_bool_vars++);
                 eq.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, eq);

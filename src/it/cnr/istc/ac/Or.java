@@ -95,9 +95,10 @@ public class Or implements BoolExpr {
             // we need to create a new variable..
             BoolVar or;
             if (n.rootLevel()) {
-                or = new BoolVar(n, id, evaluate());
+                assert !evaluate().isSingleton();
+                or = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                or = new BoolVar(n, id);
+                or = new BoolVar(n, "b" + n.n_bool_vars++);
                 or.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, or);

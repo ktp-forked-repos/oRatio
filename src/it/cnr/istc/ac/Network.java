@@ -40,7 +40,10 @@ import java.util.stream.Stream;
 public class Network {
 
     private static final Logger LOG = Logger.getLogger(Network.class.getName());
-    private int n_vars = 0;
+    int n_bool_vars = 0;
+    int n_arith_vars = 0;
+    int n_slack_vars = 0;
+    int n_enum_vars = 0;
     Map<Var<?>, Domain> domains = null;
     final Map<String, BoolVar> bool_vars = new HashMap<>();
     final Map<String, ArithVar> arith_vars = new HashMap<>();
@@ -54,7 +57,7 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="variable creation..">
     public BoolVar newBool() {
-        BoolVar bv = new BoolVar(this, "b" + n_vars++);
+        BoolVar bv = new BoolVar(this, "b" + n_bool_vars++);
         bool_vars.put(bv.name, bv);
         return bv;
     }
@@ -64,7 +67,7 @@ public class Network {
     }
 
     public ArithVar newReal() {
-        ArithVar av = new ArithVar(this, "x" + n_vars++);
+        ArithVar av = new ArithVar(this, "x" + n_arith_vars++);
         arith_vars.put(av.name, av);
         return av;
     }
@@ -75,7 +78,7 @@ public class Network {
 
     @SafeVarargs
     public final <T> EnumVar<T> newEnum(T... allowed_vals) {
-        return new EnumVar<>(this, "e" + n_vars++, new EnumDomain<>(allowed_vals));
+        return new EnumVar<>(this, "e" + n_enum_vars++, new EnumDomain<>(allowed_vals));
     }
 
     public <T> EnumConst<T> newEnum(T value) {
