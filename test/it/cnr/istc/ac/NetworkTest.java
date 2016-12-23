@@ -116,6 +116,51 @@ public class NetworkTest {
     }
 
     @Test
+    public void testSimplex2() {
+        boolean propagate = true;
+        Network n = new Network();
+        ArithVar x0 = n.newReal();
+        ArithVar x1 = n.newReal();
+        n.add(n.geq(x0, n.newReal(0)), n.leq(x0, x1));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+
+        ArithVar x2 = n.newReal();
+        ArithVar x3 = n.newReal();
+        n.add(n.geq(x0, x0), n.leq(x2, x1), n.eq(x3, n.sub(x2, x0)), n.geq(x3, n.newReal(0)), n.geq(x3, n.newReal(10)));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+
+        ArithVar x4 = n.newReal();
+        ArithVar x5 = n.newReal();
+        n.add(n.geq(x4, x0), n.leq(x1, x1), n.eq(x5, n.sub(x1, x4)), n.geq(x5, n.newReal(0)), n.geq(x5, n.newReal(10)));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+
+        ArithVar x6 = n.newReal();
+        ArithVar x7 = n.newReal();
+        n.add(n.geq(x6, x0), n.leq(x4, x1), n.eq(x7, n.sub(x4, x6)), n.geq(x7, n.newReal(0)), n.geq(x7, n.newReal(10)));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+
+        ArithVar x8 = n.newReal();
+        ArithVar x9 = n.newReal();
+        n.add(n.geq(x8, x0), n.leq(x6, x1), n.eq(x9, n.sub(x6, x8)), n.geq(x9, n.newReal(0)), n.geq(x9, n.newReal(10)));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+
+        n.add(n.eq(x8, x0), n.eq(x6, x2), n.eq(x9, x3));
+
+        propagate = n.propagate();
+        assertTrue(propagate);
+    }
+
+    @Test
     public void testNoGood() {
         Network n = new Network();
         BoolVar b0 = n.newBool();
