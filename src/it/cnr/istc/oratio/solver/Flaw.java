@@ -97,6 +97,15 @@ public abstract class Flaw implements Propagator {
         return true;
     }
 
+    /**
+     * Computes the resolvers for this flaw, by adding them to the {@code rs}
+     * collection, and returns a boolean indicating if a solution has been found
+     * for the current flaw.
+     *
+     * @param rs an initially empty {@code Collection} of resolvers to be filled
+     * by available resolvers.
+     * @return {@code true} if a solution has been found for the flaw.
+     */
     protected abstract boolean computeResolvers(Collection<Resolver> rs);
 
     void updateCosts(Set<Flaw> visited) {
