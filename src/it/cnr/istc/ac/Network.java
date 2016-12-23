@@ -231,6 +231,9 @@ public class Network {
             ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
+                if (lin.vars.isEmpty()) {
+                    return new BoolConst(lin.known_term <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+                }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
                 ArithVar c_left = (ArithVar) lin.to_var(this);
@@ -248,6 +251,9 @@ public class Network {
             ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
+                if (lin.vars.isEmpty()) {
+                    return new BoolConst(lin.known_term == 0 ? LBool.L_TRUE : LBool.L_FALSE);
+                }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
                 ArithVar c_left = (ArithVar) lin.to_var(this);
@@ -265,6 +271,9 @@ public class Network {
             ArithExpr c_expr = sum(left, minus(right));
             if (c_expr instanceof Lin) {
                 Lin lin = (Lin) c_expr;
+                if (lin.vars.isEmpty()) {
+                    return new BoolConst(lin.known_term >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+                }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
                 ArithVar c_left = (ArithVar) lin.to_var(this);
