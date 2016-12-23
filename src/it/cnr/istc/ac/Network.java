@@ -476,7 +476,6 @@ public class Network {
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
                 entry.getKey().val += entry.getValue().vars.get(x_i) * (v - x_i.val);
-                assert entry.getKey().val >= entry.getKey().domain.lb && entry.getKey().val <= entry.getKey().domain.ub;
             }
         }
         x_i.val = v;
@@ -565,11 +564,10 @@ public class Network {
             boolean intersect = x_i.intersect(new Interval(Double.NEGATIVE_INFINITY, val), prop);
             assert intersect;
             if (x_i.val > val) {
-                if (tableau.containsKey(x_i)) {
-                    return check();
-                } else {
+                if (!tableau.containsKey(x_i)) {
                     update(x_i, val);
                 }
+                return check();
             }
             return true;
         }
@@ -585,11 +583,10 @@ public class Network {
             boolean intersect = x_i.intersect(new Interval(val, Double.POSITIVE_INFINITY), prop);
             assert intersect;
             if (x_i.val < val) {
-                if (tableau.containsKey(x_i)) {
-                    return check();
-                } else {
+                if (!tableau.containsKey(x_i)) {
                     update(x_i, val);
                 }
+                return check();
             }
             return true;
         }

@@ -208,6 +208,27 @@ public class Solver extends Core {
         return true;
     }
 
+    public boolean check(BoolExpr expr) {
+        switch (expr.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                network.push();
+                if (network.assign(expr)) {
+                    network.pop();
+                    return true;
+                } else {
+                    boolean backjump = backjump();
+                    assert backjump;
+                    return false;
+                }
+            default:
+                throw new AssertionError(expr.evaluate().name());
+        }
+    }
+
     private boolean build_planning_graph() {
         LOG.info("building the planning graph..");
         assert network.rootLevel();

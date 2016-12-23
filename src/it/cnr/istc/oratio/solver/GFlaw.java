@@ -47,11 +47,37 @@ class GFlaw extends Flaw {
             Atom a = (Atom) inst;
             if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
                 // this atom is a good candidate for unification
-                UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, a);
-                solver.network.push();
-                solver.network.add(unify.in_plan);
-                if (solver.network.propagate()) {
+                Collection<BoolExpr> and = new ArrayList<>();
+                Flaw f = solver.reasons.get(atom);
+                while (f != null) {
+                    assert f.in_plan.evaluate() != LBool.L_FALSE;
+                    assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
+                    if (!f.in_plan.isSingleton()) {
+                        and.add(f.in_plan);
+                    }
+                    if (!f.cause.in_plan.isSingleton()) {
+                        and.add(f.cause.in_plan);
+                    }
+                    f = f.cause.effect;
+                }
+                f = this;
+                while (f != null) {
+                    assert f.in_plan.evaluate() != LBool.L_FALSE;
+                    assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
+                    if (!f.in_plan.isSingleton()) {
+                        and.add(f.in_plan);
+                    }
+                    if (!f.cause.in_plan.isSingleton()) {
+                        and.add(f.cause.in_plan);
+                    }
+                    f = f.cause.effect;
+                }
+                and.add(solver.network.eq(atom.state, AtomState.Unified));
+                and.add(solver.network.eq(a.state, AtomState.Active));
+                BoolExpr eq = solver.network.and(and.toArray(new BoolExpr[and.size()]));
+                if (solver.check(eq)) {
                     // unification is actually possible!
+                    UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, a, eq);
                     unify.fireNewResolver();
                     rs.add(unify);
                     solved = true;
@@ -59,7 +85,6 @@ class GFlaw extends Flaw {
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
                 }
-                solver.network.pop();
             }
         }
 
@@ -105,45 +130,16 @@ class GFlaw extends Flaw {
         private final Atom atom;
         private final BoolExpr eq_expr;
 
-        UnifyGoal(Solver s, ArithExpr c, Flaw e, Atom atom) {
+        UnifyGoal(Solver s, ArithExpr c, Flaw e, Atom atom, BoolExpr eq_expr) {
             super(s, c, e);
             this.atom = atom;
-            Collection<BoolExpr> and = new ArrayList<>();
-            Flaw f = solver.reasons.get(atom);
-            while (f != null) {
-                assert f.in_plan.evaluate() != LBool.L_FALSE;
-                assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
-                if (!f.in_plan.isSingleton()) {
-                    and.add(f.in_plan);
-                }
-                if (!f.cause.in_plan.isSingleton()) {
-                    and.add(f.cause.in_plan);
-                }
-                f = f.cause.effect;
-            }
-            f = e;
-            while (f != null) {
-                assert f.in_plan.evaluate() != LBool.L_FALSE;
-                assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
-                if (!f.in_plan.isSingleton()) {
-                    and.add(f.in_plan);
-                }
-                if (!f.cause.in_plan.isSingleton()) {
-                    and.add(f.cause.in_plan);
-                }
-                f = f.cause.effect;
-            }
-            this.eq_expr = s.network.and(and.toArray(new BoolExpr[and.size()]));
+            this.eq_expr = eq_expr;
             estimated_cost = 0;
         }
 
         @Override
         protected boolean apply() {
-            estimated_cost = 0;
-            solver.network.add(
-                    solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Unified)),
-                    eq_expr
-            );
+            solver.network.add(solver.network.imply(in_plan, eq_expr));
             return solver.network.propagate();
         }
 
