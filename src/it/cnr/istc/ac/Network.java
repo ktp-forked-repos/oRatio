@@ -496,7 +496,6 @@ public class Network {
     }
 
     private void pivotAndUpdate(ArithVar x_i, ArithVar x_j, double v) {
-        System.out.println("assigning " + v + " to " + x_i + " and pivoting " + x_i + " with " + x_j);
         assert tableau.containsKey(x_i) : "x_i is a basic variable..";
         assert !tableau.containsKey(x_j) : "x_j is a non-basic variable..";
         assert tableau.get(x_i).vars.containsKey(x_j);
@@ -611,6 +610,17 @@ public class Network {
         return Collections.unmodifiableCollection(unsat_core);
     }
     //</editor-fold>
+
+    @Override
+    public String toString() {
+        String net = new String();
+        net += "*********************\n";
+        for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
+            net += entry.getKey().name + " = " + entry.getValue() + "\n";
+            net += evaluate(entry.getKey()) + " = " + evaluate(entry.getValue()) + "\n";
+        }
+        return net;
+    }
 
     private static class Layer {
 
