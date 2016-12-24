@@ -532,7 +532,7 @@ public class Network {
             }
             final ArithVar x_i = opt_x_i.get();
             if (x_i.val < x_i.domain.lb) {
-                Optional<ArithVar> opt_x_j = tableau.get(x_i).vars.keySet().stream().sorted((ArithVar v0, ArithVar v1) -> v0.name.compareTo(v1.name)).filter(v -> ((tableau.get(x_i).vars.get(v) > 0 && v.val < v.domain.lb) || (tableau.get(x_i).vars.get(v) < 0 && v.val > v.domain.ub))).findAny();
+                Optional<ArithVar> opt_x_j = tableau.get(x_i).vars.keySet().stream().sorted((ArithVar v0, ArithVar v1) -> v0.name.compareTo(v1.name)).filter(v -> ((tableau.get(x_i).vars.get(v) > 0 && v.val < v.domain.ub) || (tableau.get(x_i).vars.get(v) < 0 && v.val > v.domain.lb))).findAny();
                 if (opt_x_j.isPresent()) {
                     pivotAndUpdate(x_i, opt_x_j.get(), x_i.domain.lb);
                 } else {
