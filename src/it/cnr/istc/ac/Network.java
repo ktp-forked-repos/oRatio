@@ -486,7 +486,6 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="simplex..">
     private void update(ArithVar x_i, double v) {
-        System.out.println("assigning " + v + " to " + x_i);
         assert !tableau.containsKey(x_i) : "x_i is a non-basic variable..";
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
@@ -502,7 +501,6 @@ public class Network {
         assert !tableau.containsKey(x_j) : "x_j is a non-basic variable..";
         assert tableau.get(x_i).vars.containsKey(x_j);
         double theta = (v - x_i.val) / tableau.get(x_i).vars.get(x_j);
-        System.out.println(x_i.name + " " + x_i.domain + " " + x_i.val + " <- " + v);
         x_i.val = v;
         x_j.val += theta;
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
