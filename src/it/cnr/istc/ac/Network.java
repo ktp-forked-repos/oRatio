@@ -241,6 +241,14 @@ public class Network {
                 }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
+                if (rootLevel()) {
+                    Interval lin_v = lin.evaluate();
+                    if (lin_v.leq(c_right)) {
+                        return new BoolConst(LBool.L_TRUE);
+                    } else if (lin_v.gt(c_right)) {
+                        return new BoolConst(LBool.L_FALSE);
+                    }
+                }
                 ArithVar c_left = (ArithVar) lin.to_var(this);
                 return new ArithLEq(c_left, c_right);
             } else {
@@ -261,6 +269,14 @@ public class Network {
                 }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
+                if (rootLevel()) {
+                    Interval lin_v = lin.evaluate();
+                    if (lin_v.eq(c_right)) {
+                        return new BoolConst(LBool.L_TRUE);
+                    } else if (lin_v.neq(c_right)) {
+                        return new BoolConst(LBool.L_FALSE);
+                    }
+                }
                 ArithVar c_left = (ArithVar) lin.to_var(this);
                 return new ArithEq(c_left, c_right);
             } else {
@@ -281,6 +297,14 @@ public class Network {
                 }
                 double c_right = -lin.known_term;
                 lin.known_term = 0;
+                if (rootLevel()) {
+                    Interval lin_v = lin.evaluate();
+                    if (lin_v.geq(c_right)) {
+                        return new BoolConst(LBool.L_TRUE);
+                    } else if (lin_v.lt(c_right)) {
+                        return new BoolConst(LBool.L_FALSE);
+                    }
+                }
                 ArithVar c_left = (ArithVar) lin.to_var(this);
                 return new ArithGEq(c_left, c_right);
             } else {
