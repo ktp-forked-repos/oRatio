@@ -117,6 +117,7 @@ public class Lin implements ArithExpr {
                 sum.intersect(evaluate(), null);
             }
             sum.val = n.evaluate(this);
+            assert sum.val >= evaluate().lb && sum.val <= evaluate().ub;
             n.arith_vars.put(sum.name, sum);
             n.store(new Propagator() {
                 @Override
