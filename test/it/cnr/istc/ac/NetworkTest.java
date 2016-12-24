@@ -117,7 +117,7 @@ public class NetworkTest {
 
     @Test
     public void testSimplex2() {
-        boolean propagate = true;
+        boolean propagate;
         Network n = new Network();
         ArithVar x0 = n.newReal();
         ArithVar x1 = n.newReal();

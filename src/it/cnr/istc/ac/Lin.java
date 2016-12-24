@@ -116,7 +116,7 @@ public class Lin implements ArithExpr {
                 sum = new ArithVar(n, "s" + n.n_slack_vars++);
                 sum.intersect(evaluate(), null);
             }
-            System.out.println("asserting [" + sum.name + "] == " + id);
+            sum.val = n.evaluate(this);
             n.arith_vars.put(sum.name, sum);
             n.store(new Propagator() {
                 @Override
