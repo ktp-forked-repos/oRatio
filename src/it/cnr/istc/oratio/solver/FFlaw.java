@@ -36,7 +36,7 @@ class FFlaw extends Flaw {
 
     @Override
     protected boolean computeResolvers(Collection<Resolver> rs) {
-        AddFact af = new AddFact(solver, solver.network.newReal(0), this);
+        AddFact af = new AddFact(solver, solver.network.newReal(0), this, atom);
         af.fireNewResolver();
         rs.add(af);
         return true;
@@ -49,13 +49,16 @@ class FFlaw extends Flaw {
 
     private static class AddFact extends Resolver {
 
-        AddFact(Solver s, ArithExpr c, Flaw e) {
+        private final Atom atom;
+
+        AddFact(Solver s, ArithExpr c, Flaw e, Atom atom) {
             super(s, c, e);
+            this.atom = atom;
         }
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
+            return solver.fireFactLinked(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
         }
 
         @Override

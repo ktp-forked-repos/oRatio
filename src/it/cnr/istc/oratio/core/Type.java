@@ -122,6 +122,10 @@ public class Type extends BaseScope {
         return true;
     }
 
+    public Collection<Type> getSuperclasses() {
+        return Collections.unmodifiableCollection(superclasses);
+    }
+
     public Constructor getConstructor(Type... parameter_types) {
         assert Stream.of(parameter_types).noneMatch(Objects::isNull);
         boolean isCorrect;

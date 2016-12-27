@@ -89,7 +89,7 @@ class GFlaw extends Flaw {
             }
         }
 
-        ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this);
+        ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
         eg.fireNewResolver();
         rs.add(eg);
 
@@ -109,13 +109,16 @@ class GFlaw extends Flaw {
 
     private static class ExpandGoal extends Resolver {
 
-        ExpandGoal(Solver s, ArithExpr c, Flaw e) {
+        private final Atom atom;
+
+        ExpandGoal(Solver s, ArithExpr c, Flaw e, Atom atom) {
             super(s, c, e);
+            this.atom = atom;
         }
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
+            return solver.fireGoalLinked(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
         }
 
         @Override

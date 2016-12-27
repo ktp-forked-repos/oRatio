@@ -85,9 +85,6 @@ public class Solver extends Core {
 
     @Override
     public boolean newFact(Atom atom) {
-        if (!super.newFact(atom)) {
-            return false;
-        }
         FFlaw flaw = new FFlaw(this, resolver, atom);
         reasons.put(atom, flaw);
         return newFlaw(flaw);
@@ -95,9 +92,6 @@ public class Solver extends Core {
 
     @Override
     public boolean newGoal(Atom atom) {
-        if (!super.newGoal(atom)) {
-            return false;
-        }
         GFlaw flaw = new GFlaw(this, resolver, atom);
         reasons.put(atom, flaw);
         return newFlaw(flaw);
@@ -148,6 +142,14 @@ public class Solver extends Core {
 
     void fireCurrentResolver(Resolver r) {
         listeners.parallelStream().forEach(l -> l.currentResolver(r));
+    }
+
+    boolean fireFactLinked(Atom atom) {
+        return super.newFact(atom);
+    }
+
+    boolean fireGoalLinked(Atom atom) {
+        return super.newGoal(atom);
     }
 
     /**

@@ -79,7 +79,7 @@ public class StateVariable extends SmartType {
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
             core.network.store(new AtomPropagator(atom));
-            return true;
+            return core.getPredicate("IntervalPredicate").apply(atom);
         } else {
             return false;
         }
