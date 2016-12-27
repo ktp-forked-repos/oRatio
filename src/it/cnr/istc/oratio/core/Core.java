@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.parser.oRatioLexer;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
@@ -217,8 +218,13 @@ public class Core implements IScope, IEnv {
     }
 
     public boolean add(IBoolItem... vars) {
-        network.add(Stream.of(vars).map(var -> network.imply(ctr_var, var.getBoolVar())).toArray(BoolExpr[]::new));
-        return network.propagate();
+        BoolExpr[] exprs = Stream.of(vars).map(var -> network.imply(ctr_var, var.getBoolVar())).filter(expr -> expr.evaluate() != LBool.L_TRUE).toArray(BoolExpr[]::new);
+        if (exprs.length == 0) {
+            // there is nothing to add..
+            return true;
+        } else {
+            return network.add(exprs) && network.propagate();
+        }
     }
 
     @Override

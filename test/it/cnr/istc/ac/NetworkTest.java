@@ -96,7 +96,8 @@ public class NetworkTest {
         assertNotNull(leq_1);
         assertNotNull(geq_1);
 
-        n.add(leq_0, geq_0, leq_1, geq_1);
+        boolean add = n.add(leq_0, geq_0, leq_1, geq_1);
+        assertTrue(add);
         boolean sat = n.propagate();
         assertFalse(sat);
     }
@@ -110,7 +111,8 @@ public class NetworkTest {
         BoolExpr leq_0 = n.leq(n.sum(x0, n.newReal(1)), x1);
         BoolExpr leq_1 = n.leq(n.sum(x1, n.newReal(1)), x0);
 
-        n.add(leq_0, leq_1);
+        boolean add = n.add(leq_0, leq_1);
+        assertTrue(add);
         boolean sat = n.propagate();
         assertFalse(sat);
     }
@@ -128,33 +130,38 @@ public class NetworkTest {
 
         ArithVar x2 = n.newReal();
         ArithVar x3 = n.newReal();
-        n.add(n.geq(x0, x0), n.leq(x2, x1), n.eq(x3, n.sub(x2, x0)), n.geq(x3, n.newReal(0)), n.geq(x3, n.newReal(10)));
+        boolean add = n.add(n.geq(x0, x0), n.leq(x2, x1), n.eq(x3, n.sub(x2, x0)), n.geq(x3, n.newReal(0)), n.geq(x3, n.newReal(10)));
+        assertTrue(add);
 
         propagate = n.propagate();
         assertTrue(propagate);
 
         ArithVar x4 = n.newReal();
         ArithVar x5 = n.newReal();
-        n.add(n.geq(x4, x0), n.leq(x1, x1), n.eq(x5, n.sub(x1, x4)), n.geq(x5, n.newReal(0)), n.geq(x5, n.newReal(10)));
+        add = n.add(n.geq(x4, x0), n.leq(x1, x1), n.eq(x5, n.sub(x1, x4)), n.geq(x5, n.newReal(0)), n.geq(x5, n.newReal(10)));
+        assertTrue(add);
 
         propagate = n.propagate();
         assertTrue(propagate);
 
         ArithVar x6 = n.newReal();
         ArithVar x7 = n.newReal();
-        n.add(n.geq(x6, x0), n.leq(x4, x1), n.eq(x7, n.sub(x4, x6)), n.geq(x7, n.newReal(0)), n.geq(x7, n.newReal(10)));
+        add = n.add(n.geq(x6, x0), n.leq(x4, x1), n.eq(x7, n.sub(x4, x6)), n.geq(x7, n.newReal(0)), n.geq(x7, n.newReal(10)));
+        assertTrue(add);
 
         propagate = n.propagate();
         assertTrue(propagate);
 
         ArithVar x8 = n.newReal();
         ArithVar x9 = n.newReal();
-        n.add(n.geq(x8, x0), n.leq(x6, x1), n.eq(x9, n.sub(x6, x8)), n.geq(x9, n.newReal(0)), n.geq(x9, n.newReal(10)));
+        add = n.add(n.geq(x8, x0), n.leq(x6, x1), n.eq(x9, n.sub(x6, x8)), n.geq(x9, n.newReal(0)), n.geq(x9, n.newReal(10)));
+        assertTrue(add);
 
         propagate = n.propagate();
         assertTrue(propagate);
 
-        n.add(n.eq(x8, x0), n.eq(x6, x2), n.eq(x9, x3));
+        add = n.add(n.eq(x8, x0), n.eq(x6, x2), n.eq(x9, x3));
+        assertTrue(add);
 
         propagate = n.propagate();
         assertTrue(propagate);
@@ -165,25 +172,31 @@ public class NetworkTest {
         Network n = new Network();
         ArithVar x0 = n.newReal();
         ArithVar x1 = n.newReal();
-        n.add(n.geq(x0, n.newReal(0)), n.leq(x0, x1));
+        boolean add = n.add(n.geq(x0, n.newReal(0)), n.leq(x0, x1));
+        assertTrue(add);
 
         ArithVar x2 = n.newReal();
         ArithVar x3 = n.newReal();
-        n.add(n.geq(x0, x0), n.leq(x2, x1), n.eq(x3, n.sub(x2, x0)), n.geq(x3, n.newReal(0)), n.geq(x3, n.newReal(10)));
+        add = n.add(n.geq(x0, x0), n.leq(x2, x1), n.eq(x3, n.sub(x2, x0)), n.geq(x3, n.newReal(0)), n.geq(x3, n.newReal(10)));
+        assertTrue(add);
 
         ArithVar x4 = n.newReal();
         ArithVar x5 = n.newReal();
-        n.add(n.geq(x4, x0), n.leq(x1, x1), n.eq(x5, n.sub(x1, x4)), n.geq(x5, n.newReal(0)), n.geq(x5, n.newReal(10)));
+        add = n.add(n.geq(x4, x0), n.leq(x1, x1), n.eq(x5, n.sub(x1, x4)), n.geq(x5, n.newReal(0)), n.geq(x5, n.newReal(10)));
+        assertTrue(add);
 
         ArithVar x6 = n.newReal();
         ArithVar x7 = n.newReal();
-        n.add(n.geq(x6, x0), n.leq(x4, x1), n.eq(x7, n.sub(x4, x6)), n.geq(x7, n.newReal(0)), n.geq(x7, n.newReal(10)));
+        add = n.add(n.geq(x6, x0), n.leq(x4, x1), n.eq(x7, n.sub(x4, x6)), n.geq(x7, n.newReal(0)), n.geq(x7, n.newReal(10)));
+        assertTrue(add);
 
         ArithVar x8 = n.newReal();
         ArithVar x9 = n.newReal();
-        n.add(n.geq(x8, x0), n.leq(x6, x1), n.eq(x9, n.sub(x6, x8)), n.geq(x9, n.newReal(0)), n.geq(x9, n.newReal(10)));
+        add = n.add(n.geq(x8, x0), n.leq(x6, x1), n.eq(x9, n.sub(x6, x8)), n.geq(x9, n.newReal(0)), n.geq(x9, n.newReal(10)));
+        assertTrue(add);
 
-        n.add(n.eq(x8, x0), n.eq(x6, x2), n.eq(x9, x3));
+        add = n.add(n.eq(x8, x0), n.eq(x6, x2), n.eq(x9, x3));
+        assertTrue(add);
 
         boolean propagate = n.propagate();
         assertTrue(propagate);
@@ -202,12 +215,18 @@ public class NetworkTest {
         BoolVar b7 = n.newBool();
         BoolVar b8 = n.newBool();
 
-        n.add(n.or(b0, b1));
-        n.add(n.or(b0, b2, b6));
-        n.add(n.or(n.not(b1), n.not(b2), b3));
-        n.add(n.or(n.not(b3), b4, b7));
-        n.add(n.or(n.not(b3), b5, b8));
-        n.add(n.or(n.not(b4), n.not(b5)));
+        boolean add = n.add(n.or(b0, b1));
+        assertTrue(add);
+        add = n.add(n.or(b0, b2, b6));
+        assertTrue(add);
+        add = n.add(n.or(n.not(b1), n.not(b2), b3));
+        assertTrue(add);
+        add = n.add(n.or(n.not(b3), b4, b7));
+        assertTrue(add);
+        add = n.add(n.or(n.not(b3), b5, b8));
+        assertTrue(add);
+        add = n.add(n.or(n.not(b4), n.not(b5)));
+        assertTrue(add);
 
         boolean assign;
         assign = n.assign(n.not(b6));

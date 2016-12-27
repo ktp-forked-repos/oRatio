@@ -64,8 +64,7 @@ class EFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            solver.network.add(solver.network.imply(in_plan, eq_v));
-            return solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, eq_v)) && solver.network.propagate();
         }
 
         @Override

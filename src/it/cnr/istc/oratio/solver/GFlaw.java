@@ -94,9 +94,8 @@ class GFlaw extends Flaw {
 
         if (!solved) {
             // we remove unification from atom state..
-            solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
-            boolean propagate = solver.network.propagate();
-            assert propagate;
+            boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified))) && solver.network.propagate();
+            assert not_unify;
         }
 
         return solved;
@@ -115,8 +114,7 @@ class GFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active)));
-            return ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
         }
 
         @Override
@@ -139,8 +137,7 @@ class GFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            solver.network.add(solver.network.imply(in_plan, eq_expr));
-            return solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, eq_expr)) && solver.network.propagate();
         }
 
         @Override

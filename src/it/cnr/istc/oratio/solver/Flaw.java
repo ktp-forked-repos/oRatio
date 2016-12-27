@@ -74,27 +74,18 @@ public abstract class Flaw implements Propagator {
         boolean solved = computeResolvers(resolvers);
         expanded = true;
 
-        if (resolvers.isEmpty()) {
-            // there is no way for solving this flaw..
-            assert !solved;
-            solver.network.add(solver.network.not(in_plan));
-            if (!solver.network.propagate()) {
-                return false;
-            }
-        } else if (resolvers.size() == 1) {
-            // there is a unique way for solving this flaw: this is a trivial flaw..
-            solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan));
-            if (!solver.network.propagate()) {
-                return false;
-            }
-        } else {
-            // we need to take a decision for solving this flaw..
-            solver.network.add(solver.network.imply(in_plan, solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
-            if (!solver.network.propagate()) {
-                return false;
-            }
+        switch (resolvers.size()) {
+            case 0:
+                // there is no way for solving this flaw..
+                assert !solved;
+                return solver.network.add(solver.network.not(in_plan)) && solver.network.propagate();
+            case 1:
+                // there is a unique way for solving this flaw: this is a trivial flaw..
+                return solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan)) && solver.network.propagate();
+            default:
+                // we need to take a decision for solving this flaw..
+                return solver.network.add(solver.network.imply(in_plan, solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)))) && solver.network.propagate();
         }
-        return true;
     }
 
     /**

@@ -55,8 +55,7 @@ class FFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active)));
-            return solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
         }
 
         @Override

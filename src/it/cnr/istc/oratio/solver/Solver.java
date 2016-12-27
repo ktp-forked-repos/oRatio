@@ -60,8 +60,7 @@ public class Solver extends Core {
     public Solver() {
         resolver = new FindSolution(this);
         ctr_var = resolver.in_plan;
-        network.add(ctr_var);
-        boolean propagate = network.propagate();
+        boolean propagate = network.add(ctr_var) && network.propagate();
         assert propagate;
 
         types.put(StateVariable.NAME, new StateVariable(this));
@@ -438,8 +437,7 @@ public class Solver extends Core {
         }
 
         // we add the no-good..
-        network.add(no_good);
-        boolean propagate = network.propagate();
+        boolean propagate = network.add(no_good) && network.propagate();
         assert propagate;
 
         return true;

@@ -63,8 +63,7 @@ public abstract class Resolver implements Propagator {
         preconditions.add(f);
         solver.fireNewCausalLink(f, this);
         // if this choice is in plan, its preconditions must be in plan as well..
-        solver.network.add(solver.network.imply(in_plan, f.in_plan));
-        return solver.network.propagate();
+        return solver.network.add(solver.network.imply(in_plan, f.in_plan)) && solver.network.propagate();
     }
 
     protected void updateCosts(Set<Flaw> visited) {
