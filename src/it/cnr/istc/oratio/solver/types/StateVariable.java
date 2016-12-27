@@ -69,8 +69,10 @@ public class StateVariable extends SmartType {
 
     @Override
     protected void predicateDefined(Predicate predicate) {
-        extendPredicate(predicate, core.getPredicate("IntervalPredicate"));
-        defined_predicates.add(predicate);
+        if (!defined_predicates.contains(predicate)) {
+            extendPredicate(predicate, core.getPredicate("IntervalPredicate"));
+            defined_predicates.add(predicate);
+        }
     }
 
     @Override

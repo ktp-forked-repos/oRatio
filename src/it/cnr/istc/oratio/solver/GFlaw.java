@@ -74,6 +74,7 @@ class GFlaw extends Flaw {
                 }
                 and.add(solver.network.eq(atom.state, AtomState.Unified));
                 and.add(solver.network.eq(a.state, AtomState.Active));
+                and.add(atom.eq(a));
                 BoolExpr eq = solver.network.and(and.toArray(new BoolExpr[and.size()]));
                 if (solver.check(eq)) {
                     // unification is actually possible!
