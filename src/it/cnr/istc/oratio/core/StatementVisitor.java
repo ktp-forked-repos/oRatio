@@ -151,7 +151,7 @@ class StatementVisitor extends oRatioBaseVisitor<Boolean> {
 
         for (Type t : types) {
             for (Field f : t.fields.values()) {
-                if (!a.items.containsKey(f.name)) {
+                if (!f.synthetic && !a.items.containsKey(f.name)) {
                     if (f.type.primitive) {
                         a.items.put(f.name, f.type.newInstance(env));
                     } else {
