@@ -207,7 +207,11 @@ public class Network {
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
         }
-        return lin;
+        if (lin.vars.isEmpty()) {
+            return new ArithConst(lin.known_term);
+        } else {
+            return lin;
+        }
     }
 
     public ArithExpr sum(ArithExpr... exprs) {
@@ -237,7 +241,11 @@ public class Network {
                 throw new UnsupportedOperationException("non-linear expression..");
             }
         }
-        return lin;
+        if (lin.vars.isEmpty()) {
+            return new ArithConst(lin.known_term);
+        } else {
+            return lin;
+        }
     }
 
     public ArithExpr sub(ArithExpr... exprs) {
@@ -282,7 +290,12 @@ public class Network {
                 throw new UnsupportedOperationException("non-linear expression..");
             }
         }
-        return lin.multiply(k);
+        lin.multiply(k);
+        if (lin.vars.isEmpty()) {
+            return new ArithConst(lin.known_term);
+        } else {
+            return lin;
+        }
     }
 
     public ArithExpr div(ArithExpr left, ArithExpr right) {
@@ -302,31 +315,18 @@ public class Network {
     }
 
     public BoolExpr leq(ArithExpr left, ArithExpr right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
-            // we check if we can use consts rather than vars..
-            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
-            if (vals[0].leq(vals[1])) {
-                return new BoolConst(LBool.L_TRUE);
-            } else if (vals[0].gt(vals[1])) {
-                return new BoolConst(LBool.L_FALSE);
+        ArithExpr c_expr = sum(left, minus(right));
+        if (rootLevel() || c_expr instanceof ArithConst) {
+            Interval val = c_expr.evaluate();
+            if (val.isSingleton()) {
+                return new BoolConst(val.lb <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
             }
         }
-        ArithExpr c_expr = sum(left, minus(right));
         if (c_expr instanceof Lin) {
             Lin lin = (Lin) c_expr;
-            if (lin.vars.isEmpty()) {
-                return new BoolConst(lin.known_term <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
-            }
+            assert !lin.vars.isEmpty();
             double c_right = -lin.known_term;
             lin.known_term = 0;
-            if (rootLevel()) {
-                Interval lin_v = lin.evaluate();
-                if (lin_v.leq(c_right)) {
-                    return new BoolConst(LBool.L_TRUE);
-                } else if (lin_v.gt(c_right)) {
-                    return new BoolConst(LBool.L_FALSE);
-                }
-            }
             ArithVar c_left = (ArithVar) lin.to_var(this);
             return new ArithLEq(c_left, c_right);
         } else {
@@ -335,31 +335,18 @@ public class Network {
     }
 
     public BoolExpr eq(ArithExpr left, ArithExpr right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
-            // we check if we can use consts rather than vars..
-            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
-            if (vals[0].eq(vals[1])) {
-                return new BoolConst(LBool.L_TRUE);
-            } else if (vals[0].neq(vals[1])) {
-                return new BoolConst(LBool.L_FALSE);
+        ArithExpr c_expr = sum(left, minus(right));
+        if (rootLevel() || c_expr instanceof ArithConst) {
+            Interval val = c_expr.evaluate();
+            if (val.isSingleton()) {
+                return new BoolConst(val.lb == 0 ? LBool.L_TRUE : LBool.L_FALSE);
             }
         }
-        ArithExpr c_expr = sum(left, minus(right));
         if (c_expr instanceof Lin) {
             Lin lin = (Lin) c_expr;
-            if (lin.vars.isEmpty()) {
-                return new BoolConst(lin.known_term == 0 ? LBool.L_TRUE : LBool.L_FALSE);
-            }
+            assert !lin.vars.isEmpty();
             double c_right = -lin.known_term;
             lin.known_term = 0;
-            if (rootLevel()) {
-                Interval lin_v = lin.evaluate();
-                if (lin_v.eq(c_right)) {
-                    return new BoolConst(LBool.L_TRUE);
-                } else if (lin_v.neq(c_right)) {
-                    return new BoolConst(LBool.L_FALSE);
-                }
-            }
             ArithVar c_left = (ArithVar) lin.to_var(this);
             return new ArithEq(c_left, c_right);
         } else {
@@ -368,31 +355,18 @@ public class Network {
     }
 
     public BoolExpr geq(ArithExpr left, ArithExpr right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
-            // we check if we can use consts rather than vars..
-            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
-            if (vals[0].geq(vals[1])) {
-                return new BoolConst(LBool.L_TRUE);
-            } else if (vals[0].lt(vals[1])) {
-                return new BoolConst(LBool.L_FALSE);
+        ArithExpr c_expr = sum(left, minus(right));
+        if (rootLevel() || c_expr instanceof ArithConst) {
+            Interval val = c_expr.evaluate();
+            if (val.isSingleton()) {
+                return new BoolConst(val.lb >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
             }
         }
-        ArithExpr c_expr = sum(left, minus(right));
         if (c_expr instanceof Lin) {
             Lin lin = (Lin) c_expr;
-            if (lin.vars.isEmpty()) {
-                return new BoolConst(lin.known_term >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
-            }
+            assert !lin.vars.isEmpty();
             double c_right = -lin.known_term;
             lin.known_term = 0;
-            if (rootLevel()) {
-                Interval lin_v = lin.evaluate();
-                if (lin_v.geq(c_right)) {
-                    return new BoolConst(LBool.L_TRUE);
-                } else if (lin_v.lt(c_right)) {
-                    return new BoolConst(LBool.L_FALSE);
-                }
-            }
             ArithVar c_left = (ArithVar) lin.to_var(this);
             return new ArithGEq(c_left, c_right);
         } else {
