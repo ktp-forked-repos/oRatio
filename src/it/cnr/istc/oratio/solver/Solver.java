@@ -19,6 +19,7 @@ package it.cnr.istc.oratio.solver;
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.BoolVar;
 import it.cnr.istc.ac.LBool;
+import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.Disjunction;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,6 +60,9 @@ public class Solver extends Core {
     public Solver() {
         resolver = new FindSolution(this);
         ctr_var = resolver.in_plan;
+        network.add(ctr_var);
+        boolean propagate = network.propagate();
+        assert propagate;
 
         types.put(StateVariable.NAME, new StateVariable(this));
 
@@ -110,7 +115,10 @@ public class Solver extends Core {
             LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
             return false;
         }
-        flaws.add(f);
+        if (f.cause.effect == null) {
+            // we have a top-level flaw..
+            flaws.add(f);
+        }
         flaw_q.add(f);
         return true;
     }
@@ -153,6 +161,13 @@ public class Solver extends Core {
         return resolver;
     }
 
+    /**
+     * Solves the current problem returning {@code true} if a solution has been
+     * found and {@code false} if the problem is unsolvable.
+     *
+     * @return {@code true} if a solution has been found or {@code false} if the
+     * problem is unsolvable.
+     */
     public boolean solve() {
         LOG.info("solving the problem..");
 
@@ -162,7 +177,7 @@ public class Solver extends Core {
         }
 
         // we clean up trivial flaws..
-        flaws.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+        clear_flaws(flaws);
 
         while (!flaws.isEmpty()) {
             // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
@@ -186,7 +201,7 @@ public class Solver extends Core {
                 flaws.addAll(least_expensive_resolver.getPreconditions());
 
                 // we clean up trivial flaws..
-                flaws.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+                clear_flaws(flaws);
 
                 // we remove the inconsistencies..
                 if (!remove_inconsistencies()) {
@@ -208,6 +223,16 @@ public class Solver extends Core {
         return true;
     }
 
+    /**
+     * Checks if the given boolean expression can be made {@code true} in the
+     * current constraint network. This method saves the current state by
+     * calling {@link Network#push()}. If the expression can be made
+     * {@code true} the state of the network is restored, otherwise a no-good is
+     * added to the network and {@link #backjump()} is called.
+     *
+     * @param expr the boolean expression to be checked.
+     * @return {@code true} if the given boolean expression can be made true.
+     */
     public boolean check(BoolExpr expr) {
         switch (expr.evaluate()) {
             case L_TRUE:
@@ -285,7 +310,7 @@ public class Solver extends Core {
         return true;
     }
 
-    private Collection<Flaw> get_inconsistencies() {
+    private Set<Flaw> get_inconsistencies() {
         Set<Type> c_types = new HashSet<>();
         LinkedList<Type> queue = new LinkedList<>();
         queue.addAll(types.values());
@@ -296,7 +321,7 @@ public class Solver extends Core {
                 queue.addAll(c_type.getTypes());
             }
         }
-        Collection<Flaw> c_flaws = new HashSet<>();
+        Set<Flaw> c_flaws = new HashSet<>();
         for (Type type : c_types) {
             if (type instanceof SmartType) {
                 c_flaws.addAll(((SmartType) type).getInconsistencies());
@@ -305,10 +330,16 @@ public class Solver extends Core {
         return c_flaws;
     }
 
+    /**
+     * Groups all the inconsistencies and tries to solve all of them.
+     *
+     * @return {@code true} if there are no inconsistencies in the items and
+     * {@code false} if the problem is inconsistent.
+     */
     private boolean remove_inconsistencies() {
         LOG.info("removing inconsistencies..");
         // we update the planning graph with the inconsistencies..
-        Collection<Flaw> incs = get_inconsistencies();
+        Set<Flaw> incs = get_inconsistencies();
         while (!incs.isEmpty()) {
             for (Flaw f : incs) {
                 if (resolver.addPrecondition(f)) {
@@ -325,7 +356,7 @@ public class Solver extends Core {
             }
 
             // we clean up trivial flaws..
-            incs.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+            clear_flaws(incs);
 
             while (!incs.isEmpty()) {
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
@@ -349,7 +380,7 @@ public class Solver extends Core {
                     incs.addAll(least_expensive_resolver.getPreconditions());
 
                     // we clean up trivial flaws..
-                    incs.removeIf(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1);
+                    clear_flaws(incs);
                 } else {
                     // we need to back-jump..
                     return false;
@@ -361,6 +392,14 @@ public class Solver extends Core {
         return true;
     }
 
+    /**
+     * Generates a no-good and uses it to backjump until the no-good is
+     * admissible returning {@code true} if the no-good can be added to the
+     * constraint network or {@code false} if the problem is inconsistent.
+     *
+     * @return {@code true} if the no-good can be added to the constraint
+     * network and {@code false} if the problem is inconsistent.
+     */
     private boolean backjump() {
         LOG.info("backjumping..");
         // we compute the unsat-core..
@@ -404,6 +443,24 @@ public class Solver extends Core {
         assert propagate;
 
         return true;
+    }
+
+    /**
+     * Cleans up trivial flaws from the set of given flaws. Flaws are considered
+     * trivial if they have a single admissible resolver.
+     *
+     * @param c_flaws the set of flaws to be cleaned.
+     */
+    private void clear_flaws(Set<Flaw> c_flaws) {
+        Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+        while (trivial_flaw.isPresent()) {
+            assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+            assert trivial_flaw.get().getResolvers().iterator().next().in_plan.evaluate() == LBool.L_TRUE;
+            assert trivial_flaw.get().getResolvers().iterator().next().getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+            c_flaws.remove(trivial_flaw.get());
+            c_flaws.addAll(trivial_flaw.get().getResolvers().iterator().next().getPreconditions());
+            trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+        }
     }
 
     public boolean rootLevel() {
