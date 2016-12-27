@@ -130,7 +130,7 @@ public class StateVariable extends SmartType {
                 if (!starting_atoms.containsKey(atom)) {
                     starting_atoms.put(start, new ArrayList<>());
                 }
-                starting_atoms.get(end).add(atom);
+                starting_atoms.get(start).add(atom);
 
                 if (!ending_atoms.containsKey(atom)) {
                     ending_atoms.put(end, new ArrayList<>());
