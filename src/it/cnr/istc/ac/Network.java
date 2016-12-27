@@ -318,8 +318,10 @@ public class Network {
         ArithExpr c_expr = sum(left, minus(right));
         if (rootLevel() || c_expr instanceof ArithConst) {
             Interval val = c_expr.evaluate();
-            if (val.isSingleton()) {
-                return new BoolConst(val.lb <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            if (val.leq(0)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (val.gt(0)) {
+                return new BoolConst(LBool.L_FALSE);
             }
         }
         if (c_expr instanceof Lin) {
@@ -338,8 +340,10 @@ public class Network {
         ArithExpr c_expr = sum(left, minus(right));
         if (rootLevel() || c_expr instanceof ArithConst) {
             Interval val = c_expr.evaluate();
-            if (val.isSingleton()) {
-                return new BoolConst(val.lb == 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            if (val.eq(0)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (val.neq(0)) {
+                return new BoolConst(LBool.L_FALSE);
             }
         }
         if (c_expr instanceof Lin) {
@@ -358,8 +362,10 @@ public class Network {
         ArithExpr c_expr = sum(left, minus(right));
         if (rootLevel() || c_expr instanceof ArithConst) {
             Interval val = c_expr.evaluate();
-            if (val.isSingleton()) {
-                return new BoolConst(val.lb >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            if (val.geq(0)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (val.lt(0)) {
+                return new BoolConst(LBool.L_FALSE);
             }
         }
         if (c_expr instanceof Lin) {
@@ -429,7 +435,10 @@ public class Network {
                 case L_FALSE:
                     return false;
                 case L_UNKNOWN:
-                    return ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
+                    if (!((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null)) {
+                        return false;
+                    }
+                    break;
                 default:
                     throw new AssertionError(expr.evaluate().name());
             }
