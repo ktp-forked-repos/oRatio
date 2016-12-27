@@ -88,29 +88,72 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="sat constraints..">
     public BoolExpr not(BoolExpr expr) {
-        if (expr instanceof BoolConst) {
-            switch (((BoolConst) expr).val) {
+        if (rootLevel() || expr instanceof BoolConst) {
+            // we check if we can use consts rather than vars..
+            switch (expr.evaluate()) {
                 case L_TRUE:
                     return new BoolConst(LBool.L_FALSE);
                 case L_FALSE:
                     return new BoolConst(LBool.L_TRUE);
-                default:
-                    throw new AssertionError(((BoolConst) expr).val.name());
             }
-        } else {
-            return new Not((BoolVar) expr.to_var(this));
         }
+        assert !(expr instanceof BoolConst);
+        return new Not((BoolVar) expr.to_var(this));
     }
 
     public BoolExpr and(BoolExpr... exprs) {
+        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+            // we check if we can use consts rather than vars..
+            LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
+            if (Stream.of(vals).allMatch(val -> val == LBool.L_TRUE)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (Stream.of(vals).anyMatch(val -> val == LBool.L_FALSE)) {
+                return new BoolConst(LBool.L_FALSE);
+            }
+        }
+        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new And(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
     public BoolExpr or(BoolExpr... exprs) {
+        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+            // we check if we can use consts rather than vars..
+            LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
+            if (Stream.of(vals).anyMatch(val -> val == LBool.L_TRUE)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
+                return new BoolConst(LBool.L_FALSE);
+            }
+        }
+        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
     public BoolExpr exct_one(BoolExpr... exprs) {
+        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+            // we check if we can use consts rather than vars..
+            LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
+            int n_trues = 0;
+            int n_unknown = 0;
+            for (LBool val : vals) {
+                switch (val) {
+                    case L_TRUE:
+                        n_trues++;
+                        break;
+                    case L_FALSE:
+                        break;
+                    case L_UNKNOWN:
+                        n_unknown++;
+                        break;
+                    default:
+                        throw new AssertionError(val.name());
+                }
+            }
+            if (n_unknown == 0) {
+                return new BoolConst(n_trues == 1 ? LBool.L_TRUE : LBool.L_FALSE);
+            }
+        }
+        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new ExctOne(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
@@ -119,13 +162,23 @@ public class Network {
     }
 
     public BoolExpr eq(BoolExpr left, BoolExpr right) {
-        if (left instanceof BoolConst && right instanceof BoolConst) {
-            return new BoolConst(((BoolConst) left).val == ((BoolConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else if (left instanceof BoolConst) {
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof BoolConst)) {
+            // we check if we can use consts rather than vars..
+            LBool[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(LBool[]::new);
+            if (Stream.of(vals).allMatch(val -> val == LBool.L_TRUE) || Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if ((vals[0] == LBool.L_TRUE && vals[1] == LBool.L_FALSE) || (vals[0] == LBool.L_FALSE && vals[1] == LBool.L_TRUE)) {
+                return new BoolConst(LBool.L_FALSE);
+            }
+        }
+        if (left instanceof BoolConst) {
+            assert !(right instanceof BoolConst);
             return new BoolAssignment((BoolVar) right.to_var(this), ((BoolConst) left).val);
         } else if (right instanceof BoolConst) {
+            assert !(left instanceof BoolConst);
             return new BoolAssignment((BoolVar) left.to_var(this), ((BoolConst) right).val);
         } else {
+            assert !Stream.of(left, right).allMatch(expr -> expr instanceof BoolConst);
             return new BoolEq((BoolVar) left.to_var(this), (BoolVar) right.to_var(this));
         }
     }
@@ -133,49 +186,58 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="arithmetic constraints..">
     public ArithExpr minus(ArithExpr expr) {
-        if (expr instanceof ArithConst) {
-            return new ArithConst(-((ArithConst) expr).val);
-        } else {
-            Lin lin = new Lin();
-            if (expr instanceof ArithConst) {
-                lin.subtract(((ArithConst) expr).val);
-            } else if (expr instanceof ArithVar) {
-                if (tableau.containsKey(expr)) {
-                    lin.subtract(tableau.get(expr));
-                } else {
-                    lin.subtract((ArithVar) expr);
-                }
-            } else if (expr instanceof Lin) {
-                lin.subtract((Lin) expr);
-            } else {
-                throw new UnsupportedOperationException("non-linear expression..");
+        if (rootLevel() || expr instanceof ArithConst) {
+            // we check if we can use consts rather than vars..
+            Interval eval = expr.evaluate();
+            if (eval.isSingleton()) {
+                return new ArithConst(-eval.lb);
             }
-            return lin;
         }
+        Lin lin = new Lin();
+        if (expr instanceof ArithConst) {
+            lin.subtract(((ArithConst) expr).val);
+        } else if (expr instanceof ArithVar) {
+            if (tableau.containsKey(expr)) {
+                lin.subtract(tableau.get(expr));
+            } else {
+                lin.subtract((ArithVar) expr);
+            }
+        } else if (expr instanceof Lin) {
+            lin.subtract((Lin) expr);
+        } else {
+            throw new UnsupportedOperationException("non-linear expression..");
+        }
+        return lin;
     }
 
     public ArithExpr sum(ArithExpr... exprs) {
-        if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
-            return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).sum());
-        } else {
-            Lin lin = new Lin();
+        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval sum = new Interval(0);
             for (ArithExpr expr : exprs) {
-                if (expr instanceof ArithConst) {
-                    lin.add(((ArithConst) expr).val);
-                } else if (expr instanceof ArithVar) {
-                    if (tableau.containsKey(expr)) {
-                        lin.add(tableau.get(expr));
-                    } else {
-                        lin.add((ArithVar) expr);
-                    }
-                } else if (expr instanceof Lin) {
-                    lin.add((Lin) expr);
-                } else {
-                    throw new UnsupportedOperationException("non-linear expression..");
-                }
+                sum.add(expr.evaluate());
             }
-            return lin;
+            if (sum.isSingleton()) {
+                return new ArithConst(sum.lb);
+            }
         }
+        Lin lin = new Lin();
+        for (ArithExpr expr : exprs) {
+            if (expr instanceof ArithConst) {
+                lin.add(((ArithConst) expr).val);
+            } else if (expr instanceof ArithVar) {
+                if (tableau.containsKey(expr)) {
+                    lin.add(tableau.get(expr));
+                } else {
+                    lin.add((ArithVar) expr);
+                }
+            } else if (expr instanceof Lin) {
+                lin.add((Lin) expr);
+            } else {
+                throw new UnsupportedOperationException("non-linear expression..");
+            }
+        }
+        return lin;
     }
 
     public ArithExpr sub(ArithExpr... exprs) {
@@ -187,129 +249,154 @@ public class Network {
     }
 
     public ArithExpr mult(ArithExpr... exprs) {
-        if (Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
-            return new ArithConst(Stream.of(exprs).mapToDouble(expr -> ((ArithConst) expr).val).reduce(1, (a, b) -> a * b));
-        } else {
-            double k = 1;
-            Lin lin = new Lin();
+        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval prod = new Interval(1);
             for (ArithExpr expr : exprs) {
-                if (expr instanceof ArithConst) {
-                    k *= ((ArithConst) expr).val;
-                } else if (expr instanceof ArithVar) {
-                    if (!lin.vars.isEmpty()) {
-                        throw new UnsupportedOperationException("non-linear expression..");
-                    }
-                    if (tableau.containsKey(expr)) {
-                        lin.add(tableau.get(expr));
-                    } else {
-                        lin.add((ArithVar) expr);
-                    }
-                } else if (expr instanceof Lin) {
-                    if (!lin.vars.isEmpty()) {
-                        throw new UnsupportedOperationException("non-linear expression..");
-                    }
-                    lin.add((Lin) expr);
-                } else {
+                prod.multiply(expr.evaluate());
+            }
+            if (prod.isSingleton()) {
+                return new ArithConst(prod.lb);
+            }
+        }
+        double k = 1;
+        Lin lin = new Lin();
+        for (ArithExpr expr : exprs) {
+            if (expr instanceof ArithConst) {
+                k *= ((ArithConst) expr).val;
+            } else if (expr instanceof ArithVar) {
+                if (!lin.vars.isEmpty()) {
                     throw new UnsupportedOperationException("non-linear expression..");
                 }
+                if (tableau.containsKey(expr)) {
+                    lin.add(tableau.get(expr));
+                } else {
+                    lin.add((ArithVar) expr);
+                }
+            } else if (expr instanceof Lin) {
+                if (!lin.vars.isEmpty()) {
+                    throw new UnsupportedOperationException("non-linear expression..");
+                }
+                lin.add((Lin) expr);
+            } else {
+                throw new UnsupportedOperationException("non-linear expression..");
             }
-            return lin.multiply(k);
         }
+        return lin.multiply(k);
     }
 
     public ArithExpr div(ArithExpr left, ArithExpr right) {
-        if (right instanceof ArithConst) {
-            if (left instanceof ArithConst) {
-                return new ArithConst(((ArithConst) left).val / ((ArithConst) right).val);
-            } else {
-                return mult(newReal(1 / ((ArithConst) right).val), left);
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval div = left.evaluate().divide(right.evaluate());
+            if (div.isSingleton()) {
+                return new ArithConst(div.lb);
             }
+        }
+        if (right instanceof ArithConst) {
+            assert !(left instanceof ArithConst);
+            return mult(newReal(1 / ((ArithConst) right).val), left);
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
         }
     }
 
     public BoolExpr leq(ArithExpr left, ArithExpr right) {
-        if (left instanceof ArithConst && right instanceof ArithConst) {
-            return new BoolConst(((ArithConst) left).val <= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else {
-            ArithExpr c_expr = sum(left, minus(right));
-            if (c_expr instanceof Lin) {
-                Lin lin = (Lin) c_expr;
-                if (lin.vars.isEmpty()) {
-                    return new BoolConst(lin.known_term <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
-                }
-                double c_right = -lin.known_term;
-                lin.known_term = 0;
-                if (rootLevel()) {
-                    Interval lin_v = lin.evaluate();
-                    if (lin_v.leq(c_right)) {
-                        return new BoolConst(LBool.L_TRUE);
-                    } else if (lin_v.gt(c_right)) {
-                        return new BoolConst(LBool.L_FALSE);
-                    }
-                }
-                ArithVar c_left = (ArithVar) lin.to_var(this);
-                return new ArithLEq(c_left, c_right);
-            } else {
-                throw new UnsupportedOperationException("non-linear expression..");
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
+            if (vals[0].leq(vals[1])) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (vals[0].gt(vals[1])) {
+                return new BoolConst(LBool.L_FALSE);
             }
+        }
+        ArithExpr c_expr = sum(left, minus(right));
+        if (c_expr instanceof Lin) {
+            Lin lin = (Lin) c_expr;
+            if (lin.vars.isEmpty()) {
+                return new BoolConst(lin.known_term <= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            }
+            double c_right = -lin.known_term;
+            lin.known_term = 0;
+            if (rootLevel()) {
+                Interval lin_v = lin.evaluate();
+                if (lin_v.leq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (lin_v.gt(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
+            ArithVar c_left = (ArithVar) lin.to_var(this);
+            return new ArithLEq(c_left, c_right);
+        } else {
+            throw new UnsupportedOperationException("non-linear expression..");
         }
     }
 
     public BoolExpr eq(ArithExpr left, ArithExpr right) {
-        if (left instanceof ArithConst && right instanceof ArithConst) {
-            return new BoolConst(((ArithConst) left).val == ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else {
-            ArithExpr c_expr = sum(left, minus(right));
-            if (c_expr instanceof Lin) {
-                Lin lin = (Lin) c_expr;
-                if (lin.vars.isEmpty()) {
-                    return new BoolConst(lin.known_term == 0 ? LBool.L_TRUE : LBool.L_FALSE);
-                }
-                double c_right = -lin.known_term;
-                lin.known_term = 0;
-                if (rootLevel()) {
-                    Interval lin_v = lin.evaluate();
-                    if (lin_v.eq(c_right)) {
-                        return new BoolConst(LBool.L_TRUE);
-                    } else if (lin_v.neq(c_right)) {
-                        return new BoolConst(LBool.L_FALSE);
-                    }
-                }
-                ArithVar c_left = (ArithVar) lin.to_var(this);
-                return new ArithEq(c_left, c_right);
-            } else {
-                throw new UnsupportedOperationException("non-linear expression..");
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
+            if (vals[0].eq(vals[1])) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (vals[0].neq(vals[1])) {
+                return new BoolConst(LBool.L_FALSE);
             }
+        }
+        ArithExpr c_expr = sum(left, minus(right));
+        if (c_expr instanceof Lin) {
+            Lin lin = (Lin) c_expr;
+            if (lin.vars.isEmpty()) {
+                return new BoolConst(lin.known_term == 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            }
+            double c_right = -lin.known_term;
+            lin.known_term = 0;
+            if (rootLevel()) {
+                Interval lin_v = lin.evaluate();
+                if (lin_v.eq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (lin_v.neq(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
+            ArithVar c_left = (ArithVar) lin.to_var(this);
+            return new ArithEq(c_left, c_right);
+        } else {
+            throw new UnsupportedOperationException("non-linear expression..");
         }
     }
 
     public BoolExpr geq(ArithExpr left, ArithExpr right) {
-        if (left instanceof ArithConst && right instanceof ArithConst) {
-            return new BoolConst(((ArithConst) left).val >= ((ArithConst) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else {
-            ArithExpr c_expr = sum(left, minus(right));
-            if (c_expr instanceof Lin) {
-                Lin lin = (Lin) c_expr;
-                if (lin.vars.isEmpty()) {
-                    return new BoolConst(lin.known_term >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
-                }
-                double c_right = -lin.known_term;
-                lin.known_term = 0;
-                if (rootLevel()) {
-                    Interval lin_v = lin.evaluate();
-                    if (lin_v.geq(c_right)) {
-                        return new BoolConst(LBool.L_TRUE);
-                    } else if (lin_v.lt(c_right)) {
-                        return new BoolConst(LBool.L_FALSE);
-                    }
-                }
-                ArithVar c_left = (ArithVar) lin.to_var(this);
-                return new ArithGEq(c_left, c_right);
-            } else {
-                throw new UnsupportedOperationException("non-linear expression..");
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
+            // we check if we can use consts rather than vars..
+            Interval[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(Interval[]::new);
+            if (vals[0].geq(vals[1])) {
+                return new BoolConst(LBool.L_TRUE);
+            } else if (vals[0].lt(vals[1])) {
+                return new BoolConst(LBool.L_FALSE);
             }
+        }
+        ArithExpr c_expr = sum(left, minus(right));
+        if (c_expr instanceof Lin) {
+            Lin lin = (Lin) c_expr;
+            if (lin.vars.isEmpty()) {
+                return new BoolConst(lin.known_term >= 0 ? LBool.L_TRUE : LBool.L_FALSE);
+            }
+            double c_right = -lin.known_term;
+            lin.known_term = 0;
+            if (rootLevel()) {
+                Interval lin_v = lin.evaluate();
+                if (lin_v.geq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (lin_v.lt(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
+            ArithVar c_left = (ArithVar) lin.to_var(this);
+            return new ArithGEq(c_left, c_right);
+        } else {
+            throw new UnsupportedOperationException("non-linear expression..");
         }
     }
 
@@ -328,9 +415,17 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="enum constraints..">
     public <T> BoolExpr eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
-        if (left instanceof EnumConst && right instanceof EnumConst) {
-            return new BoolConst(((EnumConst<T>) left).val == ((EnumConst<T>) right).val ? LBool.L_TRUE : LBool.L_FALSE);
-        } else if (left instanceof EnumConst) {
+        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof EnumConst)) {
+            // we check if we can use consts rather than vars..
+            EnumDomain<T> left_d = left.evaluate();
+            EnumDomain<T> right_d = right.evaluate();
+            if (!left_d.isIntersecting(right_d)) {
+                return new BoolConst(LBool.L_FALSE);
+            } else if (left_d.isSingleton() && right_d.isSingleton()) {
+                return new BoolConst(LBool.L_TRUE);
+            }
+        }
+        if (left instanceof EnumConst) {
             return new EnumAssignment<>((EnumVar<T>) right.to_var(this), ((EnumConst<T>) left).val);
         } else if (right instanceof EnumConst) {
             return new EnumAssignment<>((EnumVar<T>) left.to_var(this), ((EnumConst<T>) right).val);
@@ -340,21 +435,32 @@ public class Network {
     }
 
     public <T> BoolExpr eq(Expr<EnumDomain<T>> left, T right) {
-        if (left instanceof EnumConst) {
-            return new BoolConst(((EnumConst<T>) left).val == right ? LBool.L_TRUE : LBool.L_FALSE);
-        } else {
-            return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right);
+        if (rootLevel() || left instanceof EnumConst) {
+            EnumDomain<T> ed = left.evaluate();
+            if (ed.isSingleton()) {
+                return new BoolConst(ed.allowed_vals.contains(right) ? LBool.L_TRUE : LBool.L_FALSE);
+            }
         }
+        return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right);
     }
     //</editor-fold>
 
-    public void add(BoolExpr... exprs) {
+    public boolean add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
         for (BoolExpr expr : exprs) {
-            boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
-            assert intersect;
+            switch (expr.evaluate()) {
+                case L_TRUE:
+                    break;
+                case L_FALSE:
+                    return false;
+                case L_UNKNOWN:
+                    return ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
+                default:
+                    throw new AssertionError(expr.evaluate().name());
+            }
         }
+        return true;
     }
 
     public boolean propagate() {
