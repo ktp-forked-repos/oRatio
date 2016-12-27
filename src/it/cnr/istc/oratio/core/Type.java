@@ -283,4 +283,9 @@ public class Type extends BaseScope {
     public Collection<Type> getTypes() {
         return Collections.unmodifiableCollection(types.values());
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

@@ -35,4 +35,9 @@ public class Field {
         this.name = n;
         this.synthetic = s;
     }
+
+    @Override
+    public String toString() {
+        return type.name + " " + name;
+    }
 }

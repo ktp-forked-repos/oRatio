@@ -30,4 +30,9 @@ public class Atom extends Item {
         super(c, e, p);
         this.state = c.network.newEnum(AtomState.values());
     }
+
+    @Override
+    public String toString() {
+        return type.name;
+    }
 }

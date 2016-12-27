@@ -19,6 +19,7 @@ TestSV test = new TestSV();
 
 // we create a fact on the 'test' state variable
 fact f0 = new test.P0(start:origin);
+f0.duration >= 10;
 
 // we create a goal on the 'test' state variable
 goal g0 = new test.P2(end:horizon);

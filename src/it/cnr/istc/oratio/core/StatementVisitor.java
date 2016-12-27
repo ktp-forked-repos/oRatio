@@ -20,8 +20,8 @@ import static it.cnr.istc.oratio.core.IScope.RETURN;
 import static it.cnr.istc.oratio.core.IScope.SCOPE;
 import it.cnr.istc.oratio.core.parser.oRatioBaseVisitor;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -113,7 +113,7 @@ class StatementVisitor extends oRatioBaseVisitor<Boolean> {
     @Override
     public Boolean visitFormula_statement(oRatioParser.Formula_statementContext ctx) {
         Predicate p;
-        Map<String, IItem> assignments = new HashMap<>();
+        Map<String, IItem> assignments = new LinkedHashMap<>();
         if (ctx.object != null) {
             IItem i = new ExpressionVisitor(core, env).visit(ctx.object);
             p = i.getType().getPredicate(ctx.predicate.getText());
