@@ -17,7 +17,7 @@
 package it.cnr.istc.oratio.core;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -28,7 +28,7 @@ public class BaseEnv implements IEnv {
 
     public final Core core;
     public final IEnv env;
-    protected final Map<String, IItem> items = new HashMap<>();
+    protected final Map<String, IItem> items = new LinkedHashMap<>();
 
     public BaseEnv(Core c, IEnv e) {
         this.core = c;

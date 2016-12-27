@@ -18,7 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,7 +29,7 @@ public class BaseScope implements IScope {
 
     public final Core core;
     public final IScope scope;
-    final Map<String, Field> fields = new HashMap<>();
+    final Map<String, Field> fields = new LinkedHashMap<>();
 
     public BaseScope(Core c, IScope s) {
         this.core = c;
