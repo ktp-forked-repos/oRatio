@@ -605,9 +605,8 @@ public class Network {
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
                 entry.getKey().val += entry.getValue().vars.get(x_i) * (v - x_i.val);
-                if (!causes.containsKey(entry.getKey())) {
-                    prop_q.add(entry.getKey());
-                    causes.put(entry.getKey(), null);
+                if (listeners.containsKey(entry.getKey())) {
+                    listeners.get(entry.getKey()).parallelStream().forEach(l -> l.domainChange(entry.getKey()));
                 }
             }
         }
