@@ -1,0 +1,18 @@
+ReusableResource rr = new ReusableResource(10);
+
+fact f0 = new rr.Use(amount:4);
+f0.duration >= 10;
+fact f1 = new rr.Use(amount:4);
+f1.duration >= 10;
+fact f2 = new rr.Use(amount:4);
+f2.duration >= 10;
+
+fact f3 = new rr.Use(amount:4);
+f3.duration >= 10;
+f3.start >= 10;
+fact f4 = new rr.Use(amount:4);
+f4.duration >= 10;
+f4.start >= 10;
+fact f5 = new rr.Use(amount:4);
+f5.duration >= 10;
+f5.start >= 10;
