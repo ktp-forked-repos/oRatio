@@ -18,8 +18,8 @@ package it.cnr.istc.oratio.solver.types;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.DomainListener;
 import it.cnr.istc.ac.LBool;
-import it.cnr.istc.ac.Propagator;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.AtomState;
@@ -78,7 +78,7 @@ public class StateVariable extends SmartType {
     @Override
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
-            core.network.store(new AtomPropagator(atom));
+            core.network.addDomainListener(new AtomListener(atom));
             to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return core.getPredicate("IntervalPredicate").apply(atom);
         } else {
@@ -89,7 +89,7 @@ public class StateVariable extends SmartType {
     @Override
     protected boolean goalCreated(Atom atom) {
         if (super.goalCreated(atom)) {
-            core.network.store(new AtomPropagator(atom));
+            core.network.addDomainListener(new AtomListener(atom));
             to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return true;
         } else {
@@ -200,16 +200,16 @@ public class StateVariable extends SmartType {
         return fs;
     }
 
-    private class AtomPropagator implements Propagator {
+    private class AtomListener implements DomainListener {
 
         private final Atom atom;
 
-        AtomPropagator(Atom atom) {
+        AtomListener(Atom atom) {
             this.atom = atom;
         }
 
         @Override
-        public Var<?>[] getArgs() {
+        public Var<?>[] getVars() {
             return atom.getItems().values().stream().filter(i -> (i instanceof IBoolItem || i instanceof IArithItem || i instanceof IEnumItem)).map(i -> {
                 if (i instanceof IBoolItem) {
                     return ((IBoolItem) i).getBoolVar().to_var(core.network);
@@ -222,11 +222,10 @@ public class StateVariable extends SmartType {
         }
 
         @Override
-        public boolean propagate(Var<?> v) {
+        public void domainChange(Var<?> var) {
             for (IItem i : ((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues()) {
                 to_check.add(i);
             }
-            return true;
         }
     }
 

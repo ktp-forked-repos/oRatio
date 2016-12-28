@@ -45,6 +45,7 @@ public class Network {
     int n_slack_vars = 0;
     int n_enum_vars = 0;
     Map<Var<?>, Domain> domains = null;
+    private final Map<Var<?>, Collection<DomainListener>> listeners = new IdentityHashMap<>();
     final Map<String, BoolVar> bool_vars = new HashMap<>();
     final Map<String, ArithVar> arith_vars = new HashMap<>();
     private final Map<Var<?>, Collection<Propagator>> watches = new IdentityHashMap<>();
@@ -566,13 +567,11 @@ public class Network {
 
     public void forget(Propagator prop) {
         for (Var<?> arg : prop.getArgs()) {
-            if (!arg.isSingleton()) {
-                if (watches.containsKey(arg)) {
-                    boolean remove = watches.get(arg).remove(prop);
-                    assert remove;
-                    if (watches.get(arg).isEmpty()) {
-                        watches.remove(arg);
-                    }
+            if (watches.containsKey(arg)) {
+                boolean remove = watches.get(arg).remove(prop);
+                assert remove;
+                if (watches.get(arg).isEmpty()) {
+                    watches.remove(arg);
                 }
             }
         }
@@ -595,6 +594,9 @@ public class Network {
             prop_q.add(var);
             causes.put(var, prop);
         }
+        if (listeners.containsKey(var)) {
+            listeners.get(var).parallelStream().forEach(l -> l.domainChange(var));
+        }
     }
 
     //<editor-fold defaultstate="collapsed" desc="simplex..">
@@ -610,9 +612,8 @@ public class Network {
             }
         }
         x_i.val = v;
-        if (!causes.containsKey(x_i)) {
-            prop_q.add(x_i);
-            causes.put(x_i, null);
+        if (listeners.containsKey(x_i)) {
+            listeners.get(x_i).parallelStream().forEach(l -> l.domainChange(x_i));
         }
     }
 
@@ -622,21 +623,18 @@ public class Network {
         assert tableau.get(x_i).vars.containsKey(x_j);
         double theta = (v - x_i.val) / tableau.get(x_i).vars.get(x_j);
         x_i.val = v;
-        if (!causes.containsKey(x_i)) {
-            prop_q.add(x_i);
-            causes.put(x_i, null);
+        if (listeners.containsKey(x_i)) {
+            listeners.get(x_i).parallelStream().forEach(l -> l.domainChange(x_i));
         }
         x_j.val += theta;
-        if (!causes.containsKey(x_j)) {
-            prop_q.add(x_j);
-            causes.put(x_j, null);
+        if (listeners.containsKey(x_j)) {
+            listeners.get(x_j).parallelStream().forEach(l -> l.domainChange(x_j));
         }
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getKey() != x_i && entry.getValue().vars.containsKey(x_j)) {
                 entry.getKey().val += entry.getValue().vars.get(x_j) * theta;
-                if (!causes.containsKey(entry.getKey())) {
-                    prop_q.add(entry.getKey());
-                    causes.put(entry.getKey(), null);
+                if (listeners.containsKey(entry.getKey())) {
+                    listeners.get(entry.getKey()).parallelStream().forEach(l -> l.domainChange(entry.getKey()));
                 }
             }
         }
@@ -743,6 +741,29 @@ public class Network {
         return Collections.unmodifiableCollection(unsat_core);
     }
     //</editor-fold>
+
+    public void addDomainListener(DomainListener listener) {
+        for (Var<?> var : listener.getVars()) {
+            if (!var.isSingleton()) {
+                if (!listeners.containsKey(var)) {
+                    listeners.put(var, new LinkedList<>());
+                }
+                listeners.get(var).add(listener);
+            }
+        }
+    }
+
+    public void removeDomainListener(DomainListener listener) {
+        for (Var<?> var : listener.getVars()) {
+            if (listeners.containsKey(var)) {
+                boolean remove = listeners.get(var).remove(listener);
+                assert remove;
+                if (listeners.get(var).isEmpty()) {
+                    listeners.remove(var);
+                }
+            }
+        }
+    }
 
     @Override
     public String toString() {
