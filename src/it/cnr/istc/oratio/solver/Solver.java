@@ -368,18 +368,21 @@ public class Solver extends Core {
      */
     private boolean remove_inconsistencies() {
         LOG.info("removing inconsistencies..");
-        // we update the planning graph with the inconsistencies..
+        // we collect the inconsistencies..
         Set<Flaw> incs = get_inconsistencies();
         while (!incs.isEmpty()) {
             for (Flaw f : incs) {
-                if (resolver.addPrecondition(f)) {
-                    flaw_q.add(f);
-                } else {
+                if (!newFlaw(f)) {
                     // the problem is unsolvable..
                     return false;
                 }
+                if (f.cause.effect != null) {
+                    // we add the flaw to the current set of flaws..
+                    flaws.add(f);
+                }
             }
 
+            // we update the planning graph..
             if (!build_planning_graph()) {
                 // the problem is unsolvable..
                 return false;
@@ -416,6 +419,7 @@ public class Solver extends Core {
                     return false;
                 }
             }
+            // we re-collect the inconsistencies..
             incs = get_inconsistencies();
         }
 

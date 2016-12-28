@@ -189,12 +189,7 @@ public class StateVariable extends SmartType {
                             }
                         }
                     }
-                    StateVariableFlaw flaw = new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or);
-                    if (((Solver) core).newFlaw(flaw)) {
-                        fs.add(flaw);
-                    } else {
-                        throw new AssertionError("the problem is unsolvable..");
-                    }
+                    fs.add(new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or));
                 }
             }
         }

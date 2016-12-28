@@ -61,6 +61,7 @@ public abstract class Resolver implements Propagator {
 
     protected boolean addPrecondition(Flaw f) {
         preconditions.add(f);
+        updateCosts(new HashSet<>());
         solver.fireNewCausalLink(f, this);
         // if this choice is in plan, its preconditions must be in plan as well..
         return solver.network.add(solver.network.imply(in_plan, f.in_plan)) && solver.network.propagate();
