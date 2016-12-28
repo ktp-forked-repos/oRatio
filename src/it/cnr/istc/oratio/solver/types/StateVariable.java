@@ -98,6 +98,7 @@ public class StateVariable extends SmartType {
     @Override
     public Collection<Flaw> getInconsistencies() {
         if (to_check.isEmpty()) {
+            // nothing has changed since last inconsistency check..
             return Collections.emptyList();
         }
 
@@ -254,7 +255,7 @@ public class StateVariable extends SmartType {
 
         @Override
         public String toString() {
-            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" || "));
+            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | "));
         }
     }
 

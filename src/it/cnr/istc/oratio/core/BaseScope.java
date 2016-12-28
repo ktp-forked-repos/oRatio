@@ -29,7 +29,7 @@ public class BaseScope implements IScope {
 
     public final Core core;
     public final IScope scope;
-    final Map<String, Field> fields = new LinkedHashMap<>();
+    protected final Map<String, Field> fields = new LinkedHashMap<>();
 
     public BaseScope(Core c, IScope s) {
         this.core = c;
