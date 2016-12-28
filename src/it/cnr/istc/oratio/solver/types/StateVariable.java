@@ -129,12 +129,12 @@ public class StateVariable extends SmartType {
                 double start = core.network.evaluate(((IArithItem) atom.get("start")).getArithVar());
                 double end = core.network.evaluate(((IArithItem) atom.get("end")).getArithVar());
 
-                if (!starting_atoms.containsKey(atom)) {
+                if (!starting_atoms.containsKey(start)) {
                     starting_atoms.put(start, new ArrayList<>());
                 }
                 starting_atoms.get(start).add(atom);
 
-                if (!ending_atoms.containsKey(atom)) {
+                if (!ending_atoms.containsKey(end)) {
                     ending_atoms.put(end, new ArrayList<>());
                 }
                 ending_atoms.get(end).add(atom);
@@ -189,7 +189,12 @@ public class StateVariable extends SmartType {
                             }
                         }
                     }
-                    fs.add(new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                    StateVariableFlaw flaw = new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or);
+                    if (((Solver) core).newFlaw(flaw)) {
+                        fs.add(flaw);
+                    } else {
+                        throw new AssertionError("the problem is unsolvable..");
+                    }
                 }
             }
         }

@@ -180,6 +180,18 @@ public class Solver extends Core {
         // we clean up trivial flaws..
         clear_flaws(flaws);
 
+        // we first remove the inconsistencies..
+        if (!remove_inconsistencies()) {
+            // we need to backjump..
+            if (!backjump()) {
+                // the problem is unsolvable..
+                return false;
+            }
+        }
+
+        // we clean up trivial flaws..
+        clear_flaws(flaws);
+
         while (!flaws.isEmpty()) {
             // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
             Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
@@ -212,6 +224,9 @@ public class Solver extends Core {
                         return false;
                     }
                 }
+
+                // we clean up trivial flaws..
+                clear_flaws(flaws);
             } else {
                 // we need to back-jump..
                 if (!backjump()) {
@@ -255,6 +270,14 @@ public class Solver extends Core {
         }
     }
 
+    /**
+     * Builds (or updates) the planning graph returning {@code true} if the
+     * building process succedes and {@code false} if the problem is detected as
+     * unsolvable.
+     *
+     * @return {@code true} if the building process succedes or {@code false} if
+     * the problem is detected as unsolvable.
+     */
     private boolean build_planning_graph() {
         LOG.info("building the planning graph..");
         assert network.rootLevel();
@@ -311,6 +334,12 @@ public class Solver extends Core {
         return true;
     }
 
+    /**
+     * Collects all the inconsistencies of the {@link SmartType} instances.
+     *
+     * @return a collection of {@link Flaw}s representing all the
+     * inconsistencies.
+     */
     private Set<Flaw> get_inconsistencies() {
         Set<Type> c_types = new HashSet<>();
         LinkedList<Type> queue = new LinkedList<>();
