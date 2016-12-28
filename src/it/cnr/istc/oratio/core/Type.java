@@ -96,12 +96,24 @@ public class Type extends BaseScope {
         }
     }
 
-    protected void enrichPredicate(Predicate p, Field f) {
+    protected final void enrichPredicate(Predicate p, Field f) {
         p.fields.put(f.name, f);
     }
 
-    protected void extendPredicate(Predicate derived, Predicate base) {
+    protected final void extendPredicate(Predicate derived, Predicate base) {
         derived.superclasses.add(base);
+    }
+
+    /**
+     * Sets the value for the field {@code f} of the item {@code i} to
+     * {@code v}.
+     *
+     * @param i the item whose field has to be set.
+     * @param f the field to set.
+     * @param v the value of the field.
+     */
+    protected void set(IItem i, Field f, IItem v) {
+        ((BaseEnv) i).items.put(f.name, v);
     }
 
     protected boolean factCreated(Atom atom) {

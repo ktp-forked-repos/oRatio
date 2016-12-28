@@ -79,6 +79,7 @@ public class StateVariable extends SmartType {
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
             core.network.store(new AtomPropagator(atom));
+            to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return core.getPredicate("IntervalPredicate").apply(atom);
         } else {
             return false;
@@ -89,6 +90,7 @@ public class StateVariable extends SmartType {
     protected boolean goalCreated(Atom atom) {
         if (super.goalCreated(atom)) {
             core.network.store(new AtomPropagator(atom));
+            to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return true;
         } else {
             return false;

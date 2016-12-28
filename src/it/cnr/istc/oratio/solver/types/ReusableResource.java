@@ -88,6 +88,7 @@ public class ReusableResource extends SmartType {
                 throw new AssertionError("this rule should never be applied..");
             }
         });
+        extendPredicate(predicates.get(USE_PREDICATE_NAME), core.getPredicate("IntervalPredicate"));
     }
 
     @Override
@@ -99,6 +100,7 @@ public class ReusableResource extends SmartType {
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
             core.network.store(new AtomPropagator(atom));
+            to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return core.getPredicate("IntervalPredicate").apply(atom);
         } else {
             return false;

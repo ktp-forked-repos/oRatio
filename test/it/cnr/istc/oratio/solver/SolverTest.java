@@ -33,7 +33,7 @@ public class SolverTest {
     private static final Logger LOG = Logger.getLogger(SolverTest.class.getName());
 
     @Test
-    public void test0() {
+    public void test_sv_0() {
         Solver s = new Solver();
 
         long t0 = System.nanoTime();
@@ -56,7 +56,7 @@ public class SolverTest {
     }
 
     @Test
-    public void test1() {
+    public void test_sv_1() {
         Solver s = new Solver();
 
         long t0 = System.nanoTime();
@@ -79,12 +79,35 @@ public class SolverTest {
     }
 
     @Test
-    public void test2() {
+    public void test_sv_2() {
         Solver s = new Solver();
 
         long t0 = System.nanoTime();
         try {
             boolean read = s.read(new File("examples/test/test_sv_2.rddl"));
+            Assert.assertTrue(read);
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            Assert.fail(ex.getLocalizedMessage());
+        }
+
+        long t1 = System.nanoTime();
+
+        boolean solve = s.solve();
+        Assert.assertTrue(solve);
+
+        long t2 = System.nanoTime();
+
+        LOG.log(Level.INFO, "parsing time: {0}s; solving time: {1}s; total time: {2}", new Object[]{TimeUnit.NANOSECONDS.toSeconds(t1 - t0), TimeUnit.NANOSECONDS.toSeconds(t2 - t1), TimeUnit.NANOSECONDS.toSeconds(t2 - t0)});
+    }
+
+    @Test
+    public void test_rr_0() {
+        Solver s = new Solver();
+
+        long t0 = System.nanoTime();
+        try {
+            boolean read = s.read(new File("examples/test/test_rr_0.rddl"));
             Assert.assertTrue(read);
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);

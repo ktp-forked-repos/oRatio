@@ -45,17 +45,5 @@ public abstract class Constructor extends BaseScope {
         return item;
     }
 
-    /**
-     * Sets the value for the field {@code f} of the item {@code i} to
-     * {@code v}.
-     *
-     * @param i the item whose field has to be set.
-     * @param f the field to set.
-     * @param v the value of the field.
-     */
-    protected void set(IItem i, Field f, IItem v) {
-        ((BaseEnv) i).items.put(f.name, v);
-    }
-
     public abstract boolean invoke(IItem item, IItem... expressions);
 }

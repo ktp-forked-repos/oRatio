@@ -64,15 +64,15 @@ public class Solver extends Core {
         boolean propagate = network.add(ctr_var) && network.propagate();
         assert propagate;
 
-        types.put(StateVariable.NAME, new StateVariable(this));
-        types.put(ReusableResource.NAME, new ReusableResource(this));
-
         try {
             boolean read = read(new File(Solver.class.getResource("time.rddl").getPath()));
             assert read;
         } catch (IOException ex) {
             Logger.getLogger(Solver.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        types.put(StateVariable.NAME, new StateVariable(this));
+        types.put(ReusableResource.NAME, new ReusableResource(this));
     }
 
     @Override
@@ -398,6 +398,7 @@ public class Solver extends Core {
                 Flaw most_expensive_flaw = incs.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
                 fireCurrentFlaw(most_expensive_flaw);
                 incs.remove(most_expensive_flaw);
+                flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
