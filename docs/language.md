@@ -32,6 +32,115 @@ Finally, if needed, the solution can be adapted, several times, by providing fur
 
 ![Compilation Units](compilation_units.png "Compilation Units")
 
+### Identifiers
+
+The names of variables, constants, methods, predicates, as well as types and objects, are called *identifiers*.
+A valid identifier for our domain description language is a sequence of one or more letters, digits, or underscore characters (`_`).
+Spaces, punctuation marks, and symbols cannot be part of an identifier.
+In addition, identifiers shall always begin either with a letter or with an underline character (`_`).
+
+The domain description language uses a number of keywords to identify operations and data descriptions; therefore, identifiers created by a domain modeler cannot match these keywords.
+The standard reserved keywords that cannot be used as identifiers are:
+`bool`, `class`, `enum`, `fact`, `false`, `goal`, `new`, `or`, `predicate`, `real`, `return`, `string`, `this`, `true`, `typedef`, `void`
+
+It is worth to notice that the domain description language is a "case sensitive" language.
+This means that an identifier written in capital letters is not equivalent to another one with the same name but written in small letters.
+For example, the variable names `MAX` and `max` will be considered as separate identifiers.
+Here are some examples of identifiers:
+
+```
+i
+MAX
+max
+first_name
+_second_name
+```
+
+### Primitive types
+
+The domain description language is a strongly-typed language therefore it requires every variable to be declared with its type before its first use.
+The oRatio framework needs to have precise information about the type of the variable we want to define.
+If we want to represent a number, for example, the framework needs to know that the declared variable represents a number and, furthermore, needs to know the specific type of the number (i.e., either an integer or a real).
+
+The simplest way for declaring and instantiating a variable is through the syntax `<type>` `<id>` that declares a variable of type `<type>` and identifier `<id>`.
+If it is needed to declare more than one variable of the same type, they can all be declared in a single statement by separating their identifiers with commas.
+Once declared, the variables can be used within the rest of their scope in the program.
+Unless explicitly specified, the variable will assume a default initial domain which is based on the type of the variable.
+It is worth to note that, unlike an ordinary programming language, like Java or C++, rather than assuming a value, variables assume a domain of values, therefore the semantic is similar to the variables of a CSP (refere to [ac-lib](ac.md) for further details).
+
+The domain description language provides a set of primitive types that allow us to define basic types of variables.
+Primitive types for our domain description language are: `bool`, `int`, `real`, `string`, `typedef` and `enum`.
+
+#### bool
+
+The boolean type is the simplest type provided by the domain description language.
+Booleans are used to represent boolean states (i.e., `true` and `false`).
+Unless explicitly specified, a boolean variable will assume possible values within the set `{true, false}`.
+This means that the allowed values of the variable is neither `true` nor `false` but it is decided by the solver according to the current constraints.
+For example, in the limit case in which no constraint insists on the variable, the domain of the variable will be maintained equal to the set `{true, false}`.
+
+#### int
+
+The integer type is used to represent the set of integers, so to speak "without comma", positive and negative (e.g., 1, 2, 43, -89, 4324).
+The internal representation format of integers (i.e., 16 bits, 32 bits, arbitrary-precision, etc.) is dependent on the implementation of the framework and is beyond the description of the language.
+Unless explicitly specified, an integer variable will assume possible values within the bounds `[-inf, +inf]`.
+Similar to the boolean variables, the allowed values of integer variables is decided by the solver according to the current constraints.
+
+#### real
+
+The real type is used to represent the set of reals, so to speak "with comma", positive and negative (e.g., 2.7, -3.14, 15.3).
+Similarly to the integers, the internal representation format of reals (i.e., 16 bits, 32 bits, arbitrary-precision, etc.) is dependent on the implementation of the framework and is beyond the description of the language.
+Unless explicitly specified, a real variable will assume possible values within the bounds `[-inf, +inf]`.
+This means, again, that the allowed values of the variable is decided by the solver according to the current constraints.
+
+#### string
+
+In order to represent texts, the domain description language provides the `string` type.
+Unless explicitly specified, a string variable will assume the empty string value (i.e., "").
+
+#### typedef
+
+The purpose of `typedef` is to assign alternative names to existing primitive types and possibly to redefine them
+ This allows us, for example, to define a primitive type called `Angle` which might be a real whose allowed values are within the bounds `[0, 360]`.
+In general, `typedef`s are utility constructs that allow the definition of more synthetic code.
+Indeed, the same behavior can be achieved by defining primitive type variables and imposing constraint on it.
+
+#### enum
+
+When defining an enumerated type variable, it is assigned a set of constants called enumeration set.
+The variable can assume any of the constants of the enumeration set.
+Unless explicitly specified, an enum variable will assume possible values within the constants of the enumeration set.
+This means that the allowed values of the variable is decided by the solver according to the current constraints, yet will contain some (or all) of the constants of the enumeration set.
+
+### Creating primitive type instances
+
+The following code snippet shows the deﬁnition of some primitive type variables:
+
+```
+//Primitives with (default) initial domains
+
+int x0; // Declares an int variable x0 with initial domain [-inf +inf]
+real x1; // Declares a real variable x1 with initial domain [-inf +inf]
+bool x2; // Declares a bool variable x2 with initial domain {true, false}
+
+// Enumerative custom type
+enum Speed {"High", "Medium", "Low"};
+
+// Declares a variable x3 with possible values {"High", "Medium", "Low"}
+Speed x3;
+
+// Custom type definitions
+typedef int [0, 360] Angle;
+Angle x4; // Declares an Angle (int) variable x7 with initial domain [0, 360]
+```
+
+Specifically, the first row defines an integer variable `x0` with initial domain `[-inf +inf]`.
+Follows the definition of a real variable `x1` with initial domain `[-inf +inf]` and a boolean variable `x2` with initial domain `{true, false}`.
+An enum type, called `Speed`, is defined for allowing the creation variables representing the speed as, for example, the `x3` variable, whose initial domain is the set `{High, Medium, Low}`.
+Finally, a typedef called `Angle` is defined as an integer whose initial domain is within bounds `[0, 360]`.
+The code snippet is closed with the definition of an `x4` variable of type `Angle`.
+Since none of these variables is subject to any constraint, their domain, at the end of the execution of the code snippet, will remain untouched.
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
