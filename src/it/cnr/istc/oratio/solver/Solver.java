@@ -203,6 +203,7 @@ public class Solver extends Core {
             // we select the least expensive resolver (i.e., the most promising for finding a solution)..
             Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
             fireCurrentResolver(least_expensive_resolver);
+            resolver = least_expensive_resolver;
 
             // we create a new layer..
             Layer l = new Layer(flaw_costs, resolver_costs, flaws);
@@ -282,7 +283,6 @@ public class Solver extends Core {
      */
     private boolean build_planning_graph() {
         LOG.info("building the planning graph..");
-        assert network.rootLevel();
 
         if (flaw_q.isEmpty()) {
             // there is nothing to reason on..
@@ -296,7 +296,7 @@ public class Solver extends Core {
                 // not all flaws require to be expanded..
                 boolean requires_expansion = true;
                 Flaw c_f = flaw;
-                while (c_f.cause.effect != null) {
+                while (c_f.cause != tmp_r) {
                     if (c_f.cause.effect.isSolved()) {
                         requires_expansion = false;
                         break;
@@ -403,6 +403,7 @@ public class Solver extends Core {
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
                 fireCurrentResolver(least_expensive_resolver);
+                resolver = least_expensive_resolver;
 
                 // we create a new layer..
                 Layer l = new Layer(flaw_costs, resolver_costs, flaws);

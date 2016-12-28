@@ -603,9 +603,17 @@ public class Network {
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getValue().vars.containsKey(x_i)) {
                 entry.getKey().val += entry.getValue().vars.get(x_i) * (v - x_i.val);
+                if (!causes.containsKey(entry.getKey())) {
+                    prop_q.add(entry.getKey());
+                    causes.put(entry.getKey(), null);
+                }
             }
         }
         x_i.val = v;
+        if (!causes.containsKey(x_i)) {
+            prop_q.add(x_i);
+            causes.put(x_i, null);
+        }
     }
 
     private void pivotAndUpdate(ArithVar x_i, ArithVar x_j, double v) {
@@ -614,10 +622,22 @@ public class Network {
         assert tableau.get(x_i).vars.containsKey(x_j);
         double theta = (v - x_i.val) / tableau.get(x_i).vars.get(x_j);
         x_i.val = v;
+        if (!causes.containsKey(x_i)) {
+            prop_q.add(x_i);
+            causes.put(x_i, null);
+        }
         x_j.val += theta;
+        if (!causes.containsKey(x_j)) {
+            prop_q.add(x_j);
+            causes.put(x_j, null);
+        }
         for (Map.Entry<ArithVar, Lin> entry : tableau.entrySet()) {
             if (entry.getKey() != x_i && entry.getValue().vars.containsKey(x_j)) {
                 entry.getKey().val += entry.getValue().vars.get(x_j) * theta;
+                if (!causes.containsKey(entry.getKey())) {
+                    prop_q.add(entry.getKey());
+                    causes.put(entry.getKey(), null);
+                }
             }
         }
 
