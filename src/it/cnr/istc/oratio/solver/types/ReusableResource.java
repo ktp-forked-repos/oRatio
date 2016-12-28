@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.solver.types;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Propagator;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.oratio.core.Atom;
@@ -35,11 +36,15 @@ import it.cnr.istc.oratio.solver.Flaw;
 import it.cnr.istc.oratio.solver.Resolver;
 import it.cnr.istc.oratio.solver.SmartType;
 import it.cnr.istc.oratio.solver.Solver;
+import it.cnr.istc.utils.CombinationGenerator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,7 +67,25 @@ public class ReusableResource extends SmartType {
         constructors.add(new Constructor(core, this) {
             @Override
             public boolean invoke(IItem item, IItem... expressions) {
-                return true;
+                assert expressions.length == 0;
+                IArithItem capacity = core.newReal();
+                set(item, scope.getField(CAPACITY), capacity);
+                return core.add(core.geq(capacity, core.newReal(0)));
+            }
+        });
+        constructors.add(new Constructor(core, this, new Field(core.getType(REAL), CAPACITY)) {
+            @Override
+            public boolean invoke(IItem item, IItem... expressions) {
+                assert expressions.length == 1;
+                IArithItem capacity = (IArithItem) expressions[0];
+                set(item, scope.getField(CAPACITY), capacity);
+                return core.add(core.geq(capacity, core.newReal(0)));
+            }
+        });
+        predicates.put(USE_PREDICATE_NAME, new Predicate(core, this, USE_PREDICATE_NAME, new Field(core.getType(REAL), AMOUNT)) {
+            @Override
+            public boolean apply(Atom atom) {
+                throw new AssertionError("this rule should never be applied..");
             }
         });
     }
@@ -107,7 +130,87 @@ public class ReusableResource extends SmartType {
         }
 
         Collection<Flaw> fs = new ArrayList<>();
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (IItem i : to_check) {
+            Collection<Atom> atoms = instances.get(i);
+
+            // For each pulse the atoms starting at that pulse
+            Map<Double, Collection<Atom>> starting_atoms = new HashMap<>(atoms.size());
+            // For each pulse the atoms ending at that pulse
+            Map<Double, Collection<Atom>> ending_atoms = new HashMap<>(atoms.size());
+
+            // The pulses of the timeline
+            Set<Double> c_pulses = new HashSet<>(atoms.size() * 2);
+
+            for (Atom atom : atoms) {
+                double start = core.network.evaluate(((IArithItem) atom.get("start")).getArithVar());
+                double end = core.network.evaluate(((IArithItem) atom.get("end")).getArithVar());
+
+                if (!starting_atoms.containsKey(start)) {
+                    starting_atoms.put(start, new ArrayList<>());
+                }
+                starting_atoms.get(start).add(atom);
+
+                if (!ending_atoms.containsKey(end)) {
+                    ending_atoms.put(end, new ArrayList<>());
+                }
+                ending_atoms.get(end).add(atom);
+
+                c_pulses.add(start);
+                c_pulses.add(end);
+            }
+
+            // we sort current pulses..
+            Double[] c_pulses_array = c_pulses.toArray(new Double[c_pulses.size()]);
+            Arrays.sort(c_pulses_array);
+
+            List<Atom> overlapping_atoms = new ArrayList<>();
+            for (Double p : c_pulses_array) {
+                if (starting_atoms.containsKey(p)) {
+                    overlapping_atoms.addAll(starting_atoms.get(p));
+                }
+                if (ending_atoms.containsKey(p)) {
+                    overlapping_atoms.removeAll(ending_atoms.get(p));
+                }
+                if (overlapping_atoms.size() > 1 && core.network.evaluate(core.network.sum(overlapping_atoms.stream().map(atom -> ((IArithItem) atom.get(AMOUNT)).getArithVar()).toArray(ArithExpr[]::new))) > core.network.evaluate(((IArithItem) i.get(CAPACITY)).getArithVar())) {
+                    Collection<BoolExpr> or = new ArrayList<>();
+                    for (Atom[] as : new CombinationGenerator<>(2, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]))) {
+                        ArithExpr a0_start = ((IArithItem) as[0].get("start")).getArithVar();
+                        ArithExpr a0_end = ((IArithItem) as[0].get("end")).getArithVar();
+
+                        ArithExpr a1_start = ((IArithItem) as[1].get("start")).getArithVar();
+                        ArithExpr a1_end = ((IArithItem) as[1].get("end")).getArithVar();
+
+                        BoolExpr a0_before_a1 = core.network.leq(a0_end, a1_start);
+                        if (a0_before_a1.evaluate() != LBool.L_FALSE) {
+                            or.add(a0_before_a1);
+                        }
+                        BoolExpr a1_before_a0 = core.network.leq(a1_end, a0_start);
+                        if (a1_before_a0.evaluate() != LBool.L_FALSE) {
+                            or.add(a1_before_a0);
+                        }
+
+                        IEnumItem a0_scope = (IEnumItem) as[0].get(SCOPE);
+                        Set<IItem> a0_scopes = a0_scope.getEnumVar().evaluate().getAllowedValues();
+                        if (a0_scopes.size() > 1) {
+                            for (IItem a0_s : a0_scopes) {
+                                or.add(core.network.not(a0_scope.allows(a0_s)));
+                            }
+                        }
+
+                        IEnumItem a1_scope = (IEnumItem) as[1].get(SCOPE);
+                        Set<IItem> a1_scopes = a1_scope.getEnumVar().evaluate().getAllowedValues();
+                        if (a1_scopes.size() > 1) {
+                            for (IItem a1_s : a1_scopes) {
+                                or.add(core.network.not(a1_scope.allows(a1_s)));
+                            }
+                        }
+                    }
+                    fs.add(new ReusableResourceFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                }
+            }
+        }
+        to_check.clear();
+        return fs;
     }
 
     private class AtomPropagator implements Propagator {

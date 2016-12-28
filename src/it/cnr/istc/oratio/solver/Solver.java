@@ -27,6 +27,7 @@ import it.cnr.istc.oratio.core.IEnumItem;
 import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Type;
+import it.cnr.istc.oratio.solver.types.ReusableResource;
 import it.cnr.istc.oratio.solver.types.StateVariable;
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +65,7 @@ public class Solver extends Core {
         assert propagate;
 
         types.put(StateVariable.NAME, new StateVariable(this));
+        types.put(ReusableResource.NAME, new ReusableResource(this));
 
         try {
             boolean read = read(new File(Solver.class.getResource("time.rddl").getPath()));
