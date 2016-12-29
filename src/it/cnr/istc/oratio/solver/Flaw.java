@@ -84,7 +84,7 @@ public abstract class Flaw implements Propagator {
                 return solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan)) && solver.network.propagate();
             default:
                 // we need to take a decision for solving this flaw..
-                return solver.network.add(solver.network.imply(in_plan, solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)))) && solver.network.propagate();
+                return solver.network.add(solver.network.imply(in_plan, solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)))) && solver.network.propagate();
         }
     }
 
