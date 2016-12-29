@@ -35,7 +35,7 @@ import java.util.Set;
 public abstract class Flaw implements Propagator {
 
     protected final Solver solver;
-    protected final Resolver cause;
+    protected final Collection<Resolver> causes = new ArrayList<>(1);
     protected final BoolVar in_plan;
     private final Collection<Resolver> resolvers = new ArrayList<>();
     protected double estimated_cost = Double.POSITIVE_INFINITY;
@@ -43,7 +43,7 @@ public abstract class Flaw implements Propagator {
 
     public Flaw(Solver s, Resolver c) {
         this.solver = s;
-        this.cause = c;
+        this.causes.add(c);
         this.in_plan = s.network.newBool();
     }
 
@@ -63,8 +63,8 @@ public abstract class Flaw implements Propagator {
         return Collections.unmodifiableCollection(resolvers);
     }
 
-    public Resolver getCause() {
-        return cause;
+    public Collection<Resolver> getCauses() {
+        return Collections.unmodifiableCollection(causes);
     }
 
     boolean expand() {
@@ -109,8 +109,8 @@ public abstract class Flaw implements Propagator {
                 }
                 estimated_cost = computed_cost;
                 fireFlawUpdate();
-                if (cause != null) {
-                    cause.updateCosts(new HashSet<>(visited));
+                for (Resolver cause : causes) {
+                    cause.updateCosts(visited);
                 }
             }
         }
@@ -133,8 +133,9 @@ public abstract class Flaw implements Propagator {
     public boolean propagate(Var<?> v) {
         if (in_plan.evaluate() == LBool.L_FALSE) {
             estimated_cost = Double.POSITIVE_INFINITY;
-            if (cause != null) {
-                cause.updateCosts(new HashSet<>(Arrays.asList(this)));
+            HashSet<Flaw> visited = new HashSet<>(Arrays.asList(this));
+            for (Resolver cause : causes) {
+                cause.updateCosts(visited);
             }
         }
         return true;
