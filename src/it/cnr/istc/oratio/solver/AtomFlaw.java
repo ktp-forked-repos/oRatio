@@ -31,13 +31,15 @@ import java.util.HashSet;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class GFlaw extends Flaw {
+class AtomFlaw extends Flaw {
 
     private final Atom atom;
+    private final boolean fact;
 
-    GFlaw(Solver s, Resolver c, Atom a) {
+    AtomFlaw(Solver s, Resolver c, Atom a, boolean fact) {
         super(s, c);
         this.atom = a;
+        this.fact = fact;
     }
 
     @Override
@@ -78,7 +80,7 @@ class GFlaw extends Flaw {
                 BoolExpr eq = solver.network.and(and.toArray(new BoolExpr[and.size()]));
                 if (solver.check(eq)) {
                     // unification is actually possible!
-                    UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, a, eq);
+                    UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
                     unify.fireNewResolver();
                     rs.add(unify);
                     solved = true;
@@ -89,22 +91,49 @@ class GFlaw extends Flaw {
             }
         }
 
-        ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
-        eg.fireNewResolver();
-        rs.add(eg);
+        if (fact) {
+            AddFact af = new AddFact(solver, solver.network.newReal(0), this, atom);
+            af.fireNewResolver();
+            rs.add(af);
+            return true;
+        } else {
+            ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
+            eg.fireNewResolver();
+            rs.add(eg);
 
-        if (!solved) {
-            // we remove unification from atom state..
-            boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified))) && solver.network.propagate();
-            assert not_unify;
+            if (!solved) {
+                // we remove unification from atom state..
+                boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified))) && solver.network.propagate();
+                assert not_unify;
+            }
+
+            return solved;
         }
-
-        return solved;
     }
 
     @Override
     public String toSimpleString() {
         return "goal " + atom.type.name;
+    }
+
+    private static class AddFact extends Resolver {
+
+        private final Atom atom;
+
+        AddFact(Solver s, ArithExpr c, Flaw e, Atom atom) {
+            super(s, c, e);
+            this.atom = atom;
+        }
+
+        @Override
+        protected boolean apply() {
+            return solver.activateFact(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "add fact";
+        }
     }
 
     private static class ExpandGoal extends Resolver {
@@ -118,7 +147,7 @@ class GFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.fireGoalLinked(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((GFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((GFlaw) effect).atom.type).apply(((GFlaw) effect).atom) && solver.network.propagate();
+            return solver.activateGoal(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom) && solver.network.propagate();
         }
 
         @Override
@@ -129,19 +158,21 @@ class GFlaw extends Flaw {
 
     private static class UnifyGoal extends Resolver {
 
-        private final Atom atom;
+        private final Atom unifying;
+        private final Atom with;
         private final BoolExpr eq_expr;
 
-        UnifyGoal(Solver s, ArithExpr c, Flaw e, Atom atom, BoolExpr eq_expr) {
+        UnifyGoal(Solver s, ArithExpr c, Flaw e, Atom unifying, Atom with, BoolExpr eq_expr) {
             super(s, c, e);
-            this.atom = atom;
+            this.unifying = unifying;
+            this.with = with;
             this.eq_expr = eq_expr;
             estimated_cost = 0;
         }
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, eq_expr)) && solver.network.propagate();
+            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.network.add(solver.network.imply(in_plan, eq_expr)) && solver.network.propagate();
         }
 
         @Override

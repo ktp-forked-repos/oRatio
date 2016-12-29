@@ -76,8 +76,8 @@ public class StateVariable extends SmartType {
     }
 
     @Override
-    protected boolean factCreated(Atom atom) {
-        if (super.factCreated(atom)) {
+    protected boolean factActivated(Atom atom) {
+        if (super.factActivated(atom)) {
             core.network.addDomainListener(new AtomListener(atom));
             to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return core.getPredicate("IntervalPredicate").apply(atom);
@@ -87,8 +87,8 @@ public class StateVariable extends SmartType {
     }
 
     @Override
-    protected boolean goalCreated(Atom atom) {
-        if (super.goalCreated(atom)) {
+    protected boolean goalActivated(Atom atom) {
+        if (super.goalActivated(atom)) {
             core.network.addDomainListener(new AtomListener(atom));
             to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return true;

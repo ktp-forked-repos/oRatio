@@ -125,9 +125,45 @@ public class Type extends BaseScope {
         return true;
     }
 
+    protected boolean factActivated(Atom atom) {
+        for (Type superclass : superclasses) {
+            if (!superclass.factActivated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean factUnified(Atom unifying, Atom with) {
+        for (Type superclass : superclasses) {
+            if (!superclass.factUnified(unifying, with)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     protected boolean goalCreated(Atom atom) {
         for (Type superclass : superclasses) {
             if (!superclass.goalCreated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean goalActivated(Atom atom) {
+        for (Type superclass : superclasses) {
+            if (!superclass.goalActivated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean goalUnified(Atom unifying, Atom with) {
+        for (Type superclass : superclasses) {
+            if (!superclass.goalUnified(unifying, with)) {
                 return false;
             }
         }

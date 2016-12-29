@@ -17,53 +17,59 @@
 package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.ArithExpr;
-import it.cnr.istc.oratio.core.Atom;
-import it.cnr.istc.oratio.core.AtomState;
+import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.oratio.core.IEnumItem;
+import it.cnr.istc.oratio.core.IItem;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class FFlaw extends Flaw {
+class EnumFlaw extends Flaw {
 
-    private final Atom atom;
+    private final IEnumItem enum_item;
 
-    FFlaw(Solver s, Resolver c, Atom a) {
+    EnumFlaw(Solver s, Resolver c, IEnumItem ei) {
         super(s, c);
-        this.atom = a;
+        this.enum_item = ei;
     }
 
     @Override
     protected boolean computeResolvers(Collection<Resolver> rs) {
-        AddFact af = new AddFact(solver, solver.network.newReal(0), this, atom);
-        af.fireNewResolver();
-        rs.add(af);
+        Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
+        for (IItem v : vals) {
+            enum_item.allows(v);
+            ChooseValue cv = new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v));
+            cv.fireNewResolver();
+            rs.add(cv);
+        }
         return true;
     }
 
     @Override
     public String toSimpleString() {
-        return "fact " + atom.type.name;
+        return "enum";
     }
 
-    private static class AddFact extends Resolver {
+    private static class ChooseValue extends Resolver {
 
-        private final Atom atom;
+        private final BoolExpr eq_v;
 
-        AddFact(Solver s, ArithExpr c, Flaw e, Atom atom) {
+        ChooseValue(Solver s, ArithExpr c, Flaw e, BoolExpr eq_v) {
             super(s, c, e);
-            this.atom = atom;
+            this.eq_v = eq_v;
         }
 
         @Override
         protected boolean apply() {
-            return solver.fireFactLinked(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((FFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, eq_v)) && solver.network.propagate();
         }
 
         @Override
         public String toSimpleString() {
-            return "add fact";
+            return "val";
         }
     }
 }

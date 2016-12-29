@@ -78,7 +78,7 @@ public class Solver extends Core {
     @Override
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
-        if (newFlaw(new EFlaw(this, resolver, c_enum))) {
+        if (newFlaw(new EnumFlaw(this, resolver, c_enum))) {
             return c_enum;
         } else {
             return null;
@@ -86,22 +86,48 @@ public class Solver extends Core {
     }
 
     @Override
-    public boolean newFact(Atom atom) {
-        FFlaw flaw = new FFlaw(this, resolver, atom);
-        reasons.put(atom, flaw);
-        return newFlaw(flaw);
+    protected boolean newFact(Atom atom) {
+        if (super.newFact(atom)) {
+            AtomFlaw flaw = new AtomFlaw(this, resolver, atom, true);
+            reasons.put(atom, flaw);
+            return newFlaw(flaw);
+        }
+        return false;
     }
 
     @Override
-    public boolean newGoal(Atom atom) {
-        GFlaw flaw = new GFlaw(this, resolver, atom);
-        reasons.put(atom, flaw);
-        return newFlaw(flaw);
+    protected boolean activateFact(Atom atom) {
+        return super.activateFact(atom);
+    }
+
+    @Override
+    protected boolean unifyFact(Atom unifying, Atom with) {
+        return super.unifyFact(unifying, with);
+    }
+
+    @Override
+    protected boolean newGoal(Atom atom) {
+        if (super.newGoal(atom)) {
+            AtomFlaw flaw = new AtomFlaw(this, resolver, atom, false);
+            reasons.put(atom, flaw);
+            return newFlaw(flaw);
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean activateGoal(Atom atom) {
+        return super.activateGoal(atom);
+    }
+
+    @Override
+    protected boolean unifyGoal(Atom unifying, Atom with) {
+        return super.unifyGoal(unifying, with);
     }
 
     @Override
     public boolean newDisjunction(IEnv env, Disjunction d) {
-        return super.newDisjunction(env, d) && newFlaw(new DFlaw(this, resolver, env, d));
+        return super.newDisjunction(env, d) && newFlaw(new DisjunctionFlaw(this, resolver, env, d));
     }
 
     public boolean newFlaw(Flaw f) {
@@ -144,14 +170,6 @@ public class Solver extends Core {
 
     void fireCurrentResolver(Resolver r) {
         listeners.parallelStream().forEach(l -> l.currentResolver(r));
-    }
-
-    boolean fireFactLinked(Atom atom) {
-        return super.newFact(atom);
-    }
-
-    boolean fireGoalLinked(Atom atom) {
-        return super.newGoal(atom);
     }
 
     /**

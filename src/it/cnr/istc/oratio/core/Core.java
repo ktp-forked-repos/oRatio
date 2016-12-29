@@ -143,7 +143,7 @@ public class Core implements IScope, IEnv {
         return new StringItem(this, types.get(REAL), val);
     }
 
-    public boolean newFact(Atom atom) {
+    protected boolean newFact(Atom atom) {
         if (atom.type.scope instanceof Type) {
             if (!((Type) atom.type.scope).factCreated(atom)) {
                 return false;
@@ -152,9 +152,47 @@ public class Core implements IScope, IEnv {
         return true;
     }
 
-    public boolean newGoal(Atom atom) {
+    protected boolean activateFact(Atom atom) {
+        if (atom.type.scope instanceof Type) {
+            if (!((Type) atom.type.scope).factActivated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean unifyFact(Atom unifying, Atom with) {
+        assert unifying.type == with.type;
+        if (unifying.type.scope instanceof Type) {
+            if (!((Type) unifying.type.scope).factUnified(unifying, with)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean newGoal(Atom atom) {
         if (atom.type.scope instanceof Type) {
             if (!((Type) atom.type.scope).goalCreated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean activateGoal(Atom atom) {
+        if (atom.type.scope instanceof Type) {
+            if (!((Type) atom.type.scope).goalActivated(atom)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean unifyGoal(Atom unifying, Atom with) {
+        assert unifying.type == with.type;
+        if (unifying.type.scope instanceof Type) {
+            if (!((Type) unifying.type.scope).goalUnified(unifying, with)) {
                 return false;
             }
         }

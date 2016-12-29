@@ -17,59 +17,60 @@
 package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.ArithExpr;
-import it.cnr.istc.ac.BoolExpr;
-import it.cnr.istc.oratio.core.IEnumItem;
-import it.cnr.istc.oratio.core.IItem;
+import it.cnr.istc.oratio.core.Conjunction;
+import it.cnr.istc.oratio.core.Disjunction;
+import it.cnr.istc.oratio.core.IEnv;
 import java.util.Collection;
-import java.util.Set;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-class EFlaw extends Flaw {
+class DisjunctionFlaw extends Flaw {
 
-    private final IEnumItem enum_item;
+    private final IEnv env;
+    private final Disjunction disjunction;
 
-    EFlaw(Solver s, Resolver c, IEnumItem ei) {
+    DisjunctionFlaw(Solver s, Resolver c, IEnv env, Disjunction d) {
         super(s, c);
-        this.enum_item = ei;
+        this.env = env;
+        this.disjunction = d;
     }
 
     @Override
     protected boolean computeResolvers(Collection<Resolver> rs) {
-        Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
-        for (IItem v : vals) {
-            enum_item.allows(v);
-            ChooseValue cv = new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v));
-            cv.fireNewResolver();
-            rs.add(cv);
+        for (Conjunction conjunction : disjunction.getConjunctions()) {
+            ChooseConjunction cc = new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction);
+            cc.fireNewResolver();
+            rs.add(cc);
         }
         return true;
     }
 
     @Override
     public String toSimpleString() {
-        return "enum";
+        return "disj";
     }
 
-    private static class ChooseValue extends Resolver {
+    private static class ChooseConjunction extends Resolver {
 
-        private final BoolExpr eq_v;
+        private final IEnv env;
+        private final Conjunction conjunction;
 
-        ChooseValue(Solver s, ArithExpr c, Flaw e, BoolExpr eq_v) {
+        ChooseConjunction(Solver s, ArithExpr c, Flaw e, IEnv env, Conjunction conjunction) {
             super(s, c, e);
-            this.eq_v = eq_v;
+            this.env = env;
+            this.conjunction = conjunction;
         }
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, eq_v)) && solver.network.propagate();
+            return conjunction.apply(env);
         }
 
         @Override
         public String toSimpleString() {
-            return "val";
+            return "conj";
         }
     }
 }

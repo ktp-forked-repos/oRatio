@@ -99,6 +99,15 @@ public class ReusableResource extends SmartType {
     @Override
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
+            return core.network.add(core.network.not(core.network.eq(atom.state, AtomState.Unified))) && core.network.propagate();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean factActivated(Atom atom) {
+        if (super.factActivated(atom)) {
             core.network.addDomainListener(new AtomListener(atom));
             to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
             return core.getPredicate("IntervalPredicate").apply(atom);
@@ -108,8 +117,23 @@ public class ReusableResource extends SmartType {
     }
 
     @Override
+    protected boolean factUnified(Atom unifying, Atom with) {
+        throw new AssertionError("facts cannot unify on reusable resources..");
+    }
+
+    @Override
     protected boolean goalCreated(Atom atom) {
-        throw new AssertionError("it is not possible to create goals on reusable resources..");
+        throw new AssertionError("goals cannot be created on reusable resources..");
+    }
+
+    @Override
+    protected boolean goalActivated(Atom atom) {
+        throw new AssertionError("goals cannot be activated on reusable resources..");
+    }
+
+    @Override
+    protected boolean goalUnified(Atom unifying, Atom with) {
+        throw new AssertionError("goals cannot be unified on reusable resources..");
     }
 
     @Override
