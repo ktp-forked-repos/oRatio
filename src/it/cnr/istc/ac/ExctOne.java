@@ -132,36 +132,55 @@ public class ExctOne implements BoolExpr {
                             Map<BoolVar, LBool> vals = vars.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()));
                             int n_trues = 0;
                             int n_unknown = 0;
-                            BoolVar unknown = null;
+                            BoolVar the_true = null;
+                            BoolVar the_unknown = null;
                             for (Map.Entry<BoolVar, LBool> entry : vals.entrySet()) {
                                 switch (entry.getValue()) {
                                     case L_TRUE:
                                         n_trues++;
+                                        the_true = entry.getKey();
                                         break;
                                     case L_FALSE:
                                         break;
                                     case L_UNKNOWN:
                                         n_unknown++;
-                                        unknown = entry.getKey();
+                                        the_unknown = entry.getKey();
                                         break;
                                     default:
                                         throw new AssertionError(entry.getValue().name());
                                 }
                             }
-                            switch (n_unknown) {
-                                case 0:
-                                    return n_trues == 1;
-                                case 1:
-                                    switch (n_trues) {
-                                        case 0:
-                                            return unknown.intersect(LBool.L_TRUE, this);
-                                        case 1:
-                                            return unknown.intersect(LBool.L_FALSE, this);
-                                        default:
-                                            return false;
+                            if (n_trues == 1 && n_unknown == vals.size() - 1) {
+                                for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
+                                    if (entry.getKey() != the_true) {
+                                        if (entry.getValue()) {
+                                            if (!entry.getKey().intersect(LBool.L_FALSE, this)) {
+                                                return false;
+                                            }
+                                        } else {
+                                            if (!entry.getKey().intersect(LBool.L_TRUE, this)) {
+                                                return false;
+                                            }
+                                        }
                                     }
-                                default:
-                                    return true;
+                                }
+                                return true;
+                            } else {
+                                switch (n_unknown) {
+                                    case 0:
+                                        return n_trues == 1;
+                                    case 1:
+                                        switch (n_trues) {
+                                            case 0:
+                                                return the_unknown.intersect(LBool.L_TRUE, this);
+                                            case 1:
+                                                return the_unknown.intersect(LBool.L_FALSE, this);
+                                            default:
+                                                return false;
+                                        }
+                                    default:
+                                        return true;
+                                }
                             }
                         }
                         case L_FALSE: {
