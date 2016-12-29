@@ -377,6 +377,8 @@ class TypeRefinementListener extends oRatioBaseListener {
             }
         };
 
+        ((Disjunction) scope).conjunctions.add(c);
+
         core.scopes.put(ctx, c);
 
         scope = c;
