@@ -47,7 +47,7 @@ class AtomFlaw extends Flaw {
         boolean solved = false;
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
-            if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
+            if (atom != a && solver.reasons.get(a).isSolved() && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
                 // this atom is a good candidate for unification
                 Collection<BoolExpr> and = new ArrayList<>();
                 Flaw f = solver.reasons.get(atom);
@@ -113,7 +113,7 @@ class AtomFlaw extends Flaw {
 
     @Override
     public String toSimpleString() {
-        return "goal " + atom.type.name;
+        return (fact ? "fact " : "goal ") + atom.type.name;
     }
 
     private static class AddFact extends Resolver {

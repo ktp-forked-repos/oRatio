@@ -277,7 +277,6 @@ public class Solver extends Core {
             case L_FALSE:
                 return false;
             case L_UNKNOWN:
-                network.push();
                 if (network.assign(expr)) {
                     network.pop();
                     return true;
