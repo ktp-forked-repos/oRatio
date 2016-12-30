@@ -213,27 +213,26 @@ public class Solver extends Core {
         clear_flaws(flaws);
 
         while (!flaws.isEmpty()) {
+            // we create a new layer..
+            Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws);
+            flaw_costs = new IdentityHashMap<>();
+            resolver_costs = new IdentityHashMap<>();
+            layers.add(l);
+
             // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
             Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
             fireCurrentFlaw(most_expensive_flaw);
             flaws.remove(most_expensive_flaw);
 
             // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-            Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
-            fireCurrentResolver(least_expensive_resolver);
-            resolver = least_expensive_resolver;
-
-            // we create a new layer..
-            Layer l = new Layer(flaw_costs, resolver_costs, flaws);
-            flaw_costs = new IdentityHashMap<>();
-            resolver_costs = new IdentityHashMap<>();
-            layers.add(l);
+            resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+            fireCurrentResolver(resolver);
 
             // we try to enforce the resolver..
             network.push();
-            if (network.assign(least_expensive_resolver.in_plan)) {
+            if (network.assign(resolver.in_plan)) {
                 // we add sub-goals..
-                flaws.addAll(least_expensive_resolver.getPreconditions());
+                flaws.addAll(resolver.getPreconditions());
 
                 // we clean up trivial flaws..
                 clear_flaws(flaws);
@@ -413,6 +412,12 @@ public class Solver extends Core {
             clear_flaws(incs);
 
             while (!incs.isEmpty()) {
+                // we create a new layer..
+                Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws);
+                flaw_costs = new IdentityHashMap<>();
+                resolver_costs = new IdentityHashMap<>();
+                layers.add(l);
+
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = incs.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
                 fireCurrentFlaw(most_expensive_flaw);
@@ -420,21 +425,14 @@ public class Solver extends Core {
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
-                fireCurrentResolver(least_expensive_resolver);
-                resolver = least_expensive_resolver;
-
-                // we create a new layer..
-                Layer l = new Layer(flaw_costs, resolver_costs, flaws);
-                flaw_costs = new IdentityHashMap<>();
-                resolver_costs = new IdentityHashMap<>();
-                layers.add(l);
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+                fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
                 network.push();
-                if (network.assign(least_expensive_resolver.in_plan)) {
+                if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
-                    incs.addAll(least_expensive_resolver.getPreconditions());
+                    incs.addAll(resolver.getPreconditions());
 
                     // we clean up trivial flaws..
                     clear_flaws(incs);
@@ -489,6 +487,7 @@ public class Solver extends Core {
             }
 
             Layer l_l = layers.getLast();
+            resolver = l_l.resolver;
             flaw_costs = l_l.flaw_costs;
             resolver_costs = l_l.resolver_costs;
             flaws = l_l.flaws;
@@ -552,11 +551,13 @@ public class Solver extends Core {
 
     static class Layer {
 
+        private final Resolver resolver;
         private final Map<Flaw, Double> flaw_costs;
         private final Map<Resolver, Double> resolver_costs;
         private final Set<Flaw> flaws;
 
-        Layer(Map<Flaw, Double> flaw_costs, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws) {
+        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws) {
+            this.resolver = resolver;
             this.flaw_costs = flaw_costs;
             this.resolver_costs = resolver_costs;
             this.flaws = flaws;
