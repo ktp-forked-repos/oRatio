@@ -256,7 +256,7 @@ public class StateVariable extends SmartType {
 
         @Override
         public String toString() {
-            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | "));
+            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | ")) + " " + in_plan.evaluate() + " " + estimated_cost;
         }
     }
 
