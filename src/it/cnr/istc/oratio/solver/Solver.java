@@ -469,7 +469,7 @@ public class Solver extends Core {
         BoolExpr no_good = network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
 
         // we backtrack till we can enforce the no-good.. 
-        while (no_good.evaluate() == LBool.L_FALSE) {
+        while (!(network.add(no_good) && network.propagate())) {
             if (rootLevel()) {
                 // the problem is inconsistent..
                 return false;
@@ -493,10 +493,6 @@ public class Solver extends Core {
             flaws = l_l.flaws;
             layers.pollLast();
         }
-
-        // we add the no-good..
-        boolean propagate = network.add(no_good) && network.propagate();
-        assert propagate;
 
         return true;
     }
