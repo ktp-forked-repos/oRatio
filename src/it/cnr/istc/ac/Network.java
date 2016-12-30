@@ -518,19 +518,12 @@ public class Network {
 
     public boolean assign(BoolExpr var) {
         assert var.evaluate() == LBool.L_UNKNOWN;
-        if (!prop_q.isEmpty() && !propagate()) {
-            return false;
-        }
-        push();
+        assert prop_q.isEmpty();
         BoolVar bv = (BoolVar) var.to_var(this);
         boolean intersect = bv.intersect(LBool.L_TRUE, null);
         assert intersect;
         layers.getLast().decision_variable = bv;
-        boolean propagate = propagate();
-        if (!propagate) {
-            pop();
-        }
-        return propagate;
+        return propagate();
     }
 
     public boolean rootLevel() {

@@ -230,6 +230,7 @@ public class Solver extends Core {
             layers.add(l);
 
             // we try to enforce the resolver..
+            network.push();
             if (network.assign(least_expensive_resolver.in_plan)) {
                 // we add sub-goals..
                 flaws.addAll(least_expensive_resolver.getPreconditions());
@@ -277,6 +278,7 @@ public class Solver extends Core {
             case L_FALSE:
                 return false;
             case L_UNKNOWN:
+                network.push();
                 if (network.assign(expr)) {
                     network.pop();
                     return true;
@@ -429,6 +431,7 @@ public class Solver extends Core {
                 layers.add(l);
 
                 // we try to enforce the resolver..
+                network.push();
                 if (network.assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
                     incs.addAll(least_expensive_resolver.getPreconditions());

@@ -228,14 +228,21 @@ public class NetworkTest {
         add = n.add(n.or(n.not(b4), n.not(b5)));
         assertTrue(add);
 
+        boolean propagate = n.propagate();
+        assertTrue(propagate);
+
         boolean assign;
+        n.push();
         assign = n.assign(n.not(b6));
         assertTrue(assign);
+        n.push();
         assign = n.assign(n.not(b7));
         assertTrue(assign);
+        n.push();
         assign = n.assign(n.not(b8));
         assertTrue(assign);
 
+        n.push();
         assign = n.assign(n.not(b0));
         assertFalse(assign);
 
@@ -250,7 +257,7 @@ public class NetworkTest {
         }
         n.add(no_good);
 
-        boolean propagate = n.propagate();
+        propagate = n.propagate();
         assertTrue(propagate);
     }
 }
