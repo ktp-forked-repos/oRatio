@@ -213,9 +213,16 @@ public class Solver extends Core {
     public boolean solve() {
         LOG.info("solving the problem..");
 
-        assert inconsistencies.isEmpty();
+        // we build the planning graph..
+        if (!build_planning_graph()) {
+            // the problem is unsolvable..
+            return false;
+        }
+
         // we collect the inconsistencies..
+        assert inconsistencies.isEmpty();
         inconsistencies.addAll(get_inconsistencies());
+        // we remove the inconsistencies..
         while (!inconsistencies.isEmpty()) {
             while (!inconsistencies.isEmpty()) {
                 for (Flaw f : inconsistencies) {
