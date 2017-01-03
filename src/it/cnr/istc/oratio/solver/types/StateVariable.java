@@ -239,14 +239,12 @@ public class StateVariable extends SmartType {
         }
 
         @Override
-        protected boolean computeResolvers(Collection<Resolver> rs) {
+        protected void computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
                 StateVariableResolver svr = new StateVariableResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
                 svr.fireNewResolver();
                 rs.add(svr);
             }
-
-            return true;
         }
 
         @Override

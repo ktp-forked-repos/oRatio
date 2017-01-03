@@ -37,7 +37,7 @@ class EnumFlaw extends Flaw {
     }
 
     @Override
-    protected boolean computeResolvers(Collection<Resolver> rs) {
+    protected void computeResolvers(Collection<Resolver> rs) {
         Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
         for (IItem v : vals) {
             enum_item.allows(v);
@@ -45,7 +45,6 @@ class EnumFlaw extends Flaw {
             cv.fireNewResolver();
             rs.add(cv);
         }
-        return true;
     }
 
     @Override

@@ -71,13 +71,12 @@ public abstract class Flaw implements Propagator {
         assert !expanded;
         assert resolvers.isEmpty();
 
-        boolean solved = computeResolvers(resolvers);
+        computeResolvers(resolvers);
         expanded = true;
 
         switch (resolvers.size()) {
             case 0:
                 // there is no way for solving this flaw..
-                assert !solved;
                 return solver.network.add(solver.network.not(in_plan)) && solver.network.propagate();
             case 1:
                 // there is a unique way for solving this flaw: this is a trivial flaw..
@@ -90,14 +89,12 @@ public abstract class Flaw implements Propagator {
 
     /**
      * Computes the resolvers for this flaw, by adding them to the {@code rs}
-     * collection, and returns a boolean indicating if a solution has been found
-     * for the current flaw.
+     * collection.
      *
      * @param rs an initially empty {@code Collection} of resolvers to be filled
      * by available resolvers.
-     * @return {@code true} if a solution has been found for the flaw.
      */
-    protected abstract boolean computeResolvers(Collection<Resolver> rs);
+    protected abstract void computeResolvers(Collection<Resolver> rs);
 
     void updateCosts(Set<Flaw> visited) {
         if (!visited.contains(this)) {

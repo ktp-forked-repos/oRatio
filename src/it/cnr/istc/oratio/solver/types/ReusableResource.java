@@ -278,14 +278,12 @@ public class ReusableResource extends SmartType {
         }
 
         @Override
-        protected boolean computeResolvers(Collection<Resolver> rs) {
+        protected void computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
                 ReusableResourceResolver rrr = new ReusableResourceResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
                 rrr.fireNewResolver();
                 rs.add(rrr);
             }
-
-            return true;
         }
 
         @Override

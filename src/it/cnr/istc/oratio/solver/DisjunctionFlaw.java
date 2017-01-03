@@ -38,13 +38,12 @@ class DisjunctionFlaw extends Flaw {
     }
 
     @Override
-    protected boolean computeResolvers(Collection<Resolver> rs) {
+    protected void computeResolvers(Collection<Resolver> rs) {
         for (Conjunction conjunction : disjunction.getConjunctions()) {
             ChooseConjunction cc = new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction);
             cc.fireNewResolver();
             rs.add(cc);
         }
-        return true;
     }
 
     @Override

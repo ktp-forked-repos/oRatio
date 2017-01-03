@@ -43,8 +43,7 @@ class AtomFlaw extends Flaw {
     }
 
     @Override
-    protected boolean computeResolvers(Collection<Resolver> rs) {
-        boolean solved = false;
+    protected void computeResolvers(Collection<Resolver> rs) {
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
             if (atom != a && solver.reasons.get(a).isSolved() && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
@@ -83,7 +82,6 @@ class AtomFlaw extends Flaw {
                     UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
                     unify.fireNewResolver();
                     rs.add(unify);
-                    solved = true;
                     updateCosts(new HashSet<>());
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
@@ -95,19 +93,15 @@ class AtomFlaw extends Flaw {
             AddFact af = new AddFact(solver, solver.network.newReal(0), this, atom);
             af.fireNewResolver();
             rs.add(af);
-            return true;
         } else {
-            ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
-            eg.fireNewResolver();
-            rs.add(eg);
-
-            if (!solved) {
+            if (rs.isEmpty()) {
                 // we remove unification from atom state..
                 boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified))) && solver.network.propagate();
                 assert not_unify;
             }
-
-            return solved;
+            ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
+            eg.fireNewResolver();
+            rs.add(eg);
         }
     }
 
