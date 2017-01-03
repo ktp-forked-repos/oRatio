@@ -243,10 +243,6 @@ public class Solver extends Core {
                 if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
                     inconsistencies.addAll(resolver.getPreconditions());
-
-                    // we clean up trivial flaws..
-                    clear_flaws(flaws);
-                    clear_flaws(inconsistencies);
                 } else {
                     // we need to backjump..
                     if (!backjump()) {
@@ -254,6 +250,10 @@ public class Solver extends Core {
                         return false;
                     }
                 }
+
+                // we clean up trivial flaws..
+                clear_flaws(flaws);
+                clear_flaws(inconsistencies);
             }
 
             // we collect the inconsistencies..
@@ -305,10 +305,6 @@ public class Solver extends Core {
                 if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
                     flaws.addAll(resolver.getPreconditions());
-
-                    // we clean up trivial flaws..
-                    clear_flaws(flaws);
-                    clear_flaws(inconsistencies);
                 } else {
                     // we need to back-jump..
                     if (!backjump()) {
@@ -316,6 +312,10 @@ public class Solver extends Core {
                         return false;
                     }
                 }
+
+                // we clean up trivial flaws..
+                clear_flaws(flaws);
+                clear_flaws(inconsistencies);
             } else {
                 // Hurray!! We have found a solution..
                 return true;
