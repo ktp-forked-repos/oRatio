@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ public class Solver extends Core {
     Map<Flaw, Double> flaw_costs;
     Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
+    Set<Flaw> inconsistencies = new HashSet<>();
     private final LinkedList<Layer> layers = new LinkedList<>();
     private Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
@@ -78,11 +79,18 @@ public class Solver extends Core {
     @Override
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
-        if (newFlaw(new EnumFlaw(this, resolver, c_enum))) {
-            return c_enum;
-        } else {
+        EnumFlaw flaw = new EnumFlaw(this, resolver, c_enum);
+        fireNewFlaw(flaw);
+        if (!resolver.addPrecondition(flaw)) {
+            LOG.log(Level.INFO, "cannot create enum {0}: inconsistent problem..", flaw.toSimpleString());
             return null;
         }
+        if (flaw.cause.effect == null) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
+        }
+        flaw_q.add(flaw);
+        return c_enum;
     }
 
     @Override
@@ -90,9 +98,20 @@ public class Solver extends Core {
         if (super.newFact(atom)) {
             AtomFlaw flaw = new AtomFlaw(this, resolver, atom, true);
             reasons.put(atom, flaw);
-            return newFlaw(flaw);
+            fireNewFlaw(flaw);
+            if (!resolver.addPrecondition(flaw)) {
+                LOG.log(Level.INFO, "cannot create fact {0}: inconsistent problem..", flaw.toSimpleString());
+                return false;
+            }
+            if (flaw.cause.effect == null) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+            flaw_q.add(flaw);
+            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -110,9 +129,20 @@ public class Solver extends Core {
         if (super.newGoal(atom)) {
             AtomFlaw flaw = new AtomFlaw(this, resolver, atom, false);
             reasons.put(atom, flaw);
-            return newFlaw(flaw);
+            fireNewFlaw(flaw);
+            if (!resolver.addPrecondition(flaw)) {
+                LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
+                return false;
+            }
+            if (flaw.cause.effect == null) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+            flaw_q.add(flaw);
+            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -127,21 +157,22 @@ public class Solver extends Core {
 
     @Override
     public boolean newDisjunction(IEnv env, Disjunction d) {
-        return super.newDisjunction(env, d) && newFlaw(new DisjunctionFlaw(this, resolver, env, d));
-    }
-
-    public boolean newFlaw(Flaw f) {
-        fireNewFlaw(f);
-        if (!resolver.addPrecondition(f)) {
-            LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+        if (super.newDisjunction(env, d)) {
+            DisjunctionFlaw flaw = new DisjunctionFlaw(this, resolver, env, d);
+            fireNewFlaw(flaw);
+            if (!resolver.addPrecondition(flaw)) {
+                LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
+                return false;
+            }
+            if (flaw.cause.effect == null) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+            flaw_q.add(flaw);
+            return true;
+        } else {
             return false;
         }
-        if (f.cause.effect == null) {
-            // we have a top-level flaw..
-            flaws.add(f);
-        }
-        flaw_q.add(f);
-        return true;
     }
 
     void fireNewFlaw(Flaw f) {
@@ -173,16 +204,6 @@ public class Solver extends Core {
     }
 
     /**
-     * Returns an instance of {@code Resolver} representing the current
-     * resolver.
-     *
-     * @return the current resolver.
-     */
-    public Resolver getResolver() {
-        return resolver;
-    }
-
-    /**
      * Solves the current problem returning {@code true} if a solution has been
      * found and {@code false} if the problem is unsolvable.
      *
@@ -192,31 +213,51 @@ public class Solver extends Core {
     public boolean solve() {
         LOG.info("solving the problem..");
 
-        if (!build_planning_graph()) {
-            // the problem is unsolvable..
-            return false;
-        }
+        assert inconsistencies.isEmpty();
+        // we collect the inconsistencies..
+        inconsistencies.addAll(get_inconsistencies());
+        while (!inconsistencies.isEmpty()) {
+            while (!inconsistencies.isEmpty()) {
+                for (Flaw f : inconsistencies) {
+                    fireNewFlaw(f);
+                    if (!resolver.addPrecondition(f)) {
+                        // the problem is unsolvable..
+                        LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+                        return false;
+                    }
+                    flaw_q.add(f);
+                }
 
-        // we clean up trivial flaws..
-        clear_flaws(flaws);
+                // we update the planning graph..
+                if (!build_planning_graph()) {
+                    // the problem is unsolvable..
+                    return false;
+                }
 
-        // we first remove the inconsistencies..
-        if (!remove_inconsistencies()) {
-            // we need to backjump..
-            if (!backjump()) {
-                // the problem is unsolvable..
-                return false;
+                // we clean up trivial flaws..
+                clear_flaws(inconsistencies);
+
+                if (!clear_inconsistencies()) {
+                    // we need to backjump..
+                    if (!backjump()) {
+                        // the problem is unsolvable..
+                        return false;
+                    }
+                }
             }
+
+            // we re-collect the inconsistencies..
+            inconsistencies.addAll(get_inconsistencies());
         }
 
         // we clean up trivial flaws..
         clear_flaws(flaws);
-
         while (!flaws.isEmpty()) {
             // we create a new layer..
-            Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws);
+            Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
             flaw_costs = new IdentityHashMap<>();
             resolver_costs = new IdentityHashMap<>();
+            flaws = new HashSet<>(flaws);
             layers.add(l);
 
             // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
@@ -237,13 +278,41 @@ public class Solver extends Core {
                 // we clean up trivial flaws..
                 clear_flaws(flaws);
 
-                // we remove the inconsistencies..
-                if (!remove_inconsistencies()) {
-                    // we need to backjump..
-                    if (!backjump()) {
-                        // the problem is unsolvable..
-                        return false;
+                assert inconsistencies.isEmpty();
+                // we collect the inconsistencies..
+                inconsistencies.addAll(get_inconsistencies());
+                while (!inconsistencies.isEmpty()) {
+                    while (!inconsistencies.isEmpty()) {
+                        for (Flaw f : inconsistencies) {
+                            fireNewFlaw(f);
+                            if (!resolver.addPrecondition(f)) {
+                                // the problem is unsolvable..
+                                LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+                                return false;
+                            }
+                            flaw_q.add(f);
+                        }
+
+                        // we update the planning graph..
+                        if (!build_planning_graph()) {
+                            // the problem is unsolvable..
+                            return false;
+                        }
+
+                        // we clean up trivial flaws..
+                        clear_flaws(inconsistencies);
+
+                        if (!clear_inconsistencies()) {
+                            // we need to backjump..
+                            if (!backjump()) {
+                                // the problem is unsolvable..
+                                return false;
+                            }
+                        }
                     }
+
+                    // we re-collect the inconsistencies..
+                    inconsistencies.addAll(get_inconsistencies());
                 }
 
                 // we clean up trivial flaws..
@@ -258,6 +327,59 @@ public class Solver extends Core {
         }
 
         return true;
+    }
+
+    /**
+     * Groups all the inconsistencies and tries to solve all of them.
+     *
+     * @return {@code true} if there are no inconsistencies in the items and
+     * {@code false} if the current state is inconsistent.
+     */
+    private boolean clear_inconsistencies() {
+        LOG.info("removing inconsistencies..");
+
+        while (!inconsistencies.isEmpty()) {
+            // we create a new layer..
+            Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
+            flaw_costs = new IdentityHashMap<>();
+            resolver_costs = new IdentityHashMap<>();
+            inconsistencies = new HashSet<>(inconsistencies);
+            layers.add(l);
+
+            // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
+            Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
+            fireCurrentFlaw(most_expensive_flaw);
+            inconsistencies.remove(most_expensive_flaw);
+
+            // we select the least expensive resolver (i.e., the most promising for finding a solution)..
+            resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+            fireCurrentResolver(resolver);
+
+            // we try to enforce the resolver..
+            network.push();
+            if (network.assign(resolver.in_plan)) {
+                // we add sub-goals..
+                inconsistencies.addAll(resolver.getPreconditions());
+
+                // we clean up trivial flaws..
+                clear_flaws(inconsistencies);
+            } else {
+                // we need to back-jump..
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns an instance of {@code Resolver} representing the current
+     * resolver.
+     *
+     * @return the current resolver.
+     */
+    public Resolver getResolver() {
+        return resolver;
     }
 
     /**
@@ -381,74 +503,6 @@ public class Solver extends Core {
     }
 
     /**
-     * Groups all the inconsistencies and tries to solve all of them.
-     *
-     * @return {@code true} if there are no inconsistencies in the items and
-     * {@code false} if the problem is inconsistent.
-     */
-    private boolean remove_inconsistencies() {
-        LOG.info("removing inconsistencies..");
-        // we collect the inconsistencies..
-        Set<Flaw> incs = get_inconsistencies();
-        while (!incs.isEmpty()) {
-            for (Flaw f : incs) {
-                if (!newFlaw(f)) {
-                    // the problem is unsolvable..
-                    return false;
-                }
-                if (f.cause.effect != null) {
-                    // we add the flaw to the current set of flaws..
-                    flaws.add(f);
-                }
-            }
-
-            // we update the planning graph..
-            if (!build_planning_graph()) {
-                // the problem is unsolvable..
-                return false;
-            }
-
-            // we clean up trivial flaws..
-            clear_flaws(incs);
-
-            while (!incs.isEmpty()) {
-                // we create a new layer..
-                Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws);
-                flaw_costs = new IdentityHashMap<>();
-                resolver_costs = new IdentityHashMap<>();
-                layers.add(l);
-
-                // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
-                Flaw most_expensive_flaw = incs.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
-                fireCurrentFlaw(most_expensive_flaw);
-                incs.remove(most_expensive_flaw);
-                flaws.remove(most_expensive_flaw);
-
-                // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
-                fireCurrentResolver(resolver);
-
-                // we try to enforce the resolver..
-                network.push();
-                if (network.assign(resolver.in_plan)) {
-                    // we add sub-goals..
-                    incs.addAll(resolver.getPreconditions());
-
-                    // we clean up trivial flaws..
-                    clear_flaws(incs);
-                } else {
-                    // we need to back-jump..
-                    return false;
-                }
-            }
-            // we re-collect the inconsistencies..
-            incs = get_inconsistencies();
-        }
-
-        return true;
-    }
-
-    /**
      * Generates a no-good and uses it to backjump until the no-good is
      * admissible returning {@code true} if the no-good can be added to the
      * constraint network or {@code false} if the problem is inconsistent.
@@ -491,6 +545,7 @@ public class Solver extends Core {
             flaw_costs = l_l.flaw_costs;
             resolver_costs = l_l.resolver_costs;
             flaws = l_l.flaws;
+            inconsistencies = l_l.inconsistencies;
             layers.pollLast();
         }
 
@@ -551,12 +606,14 @@ public class Solver extends Core {
         private final Map<Flaw, Double> flaw_costs;
         private final Map<Resolver, Double> resolver_costs;
         private final Set<Flaw> flaws;
+        private final Set<Flaw> inconsistencies;
 
-        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws) {
+        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
             this.resolver = resolver;
             this.flaw_costs = flaw_costs;
             this.resolver_costs = resolver_costs;
             this.flaws = flaws;
+            this.inconsistencies = inconsistencies;
         }
     }
 }

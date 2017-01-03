@@ -116,10 +116,6 @@ public abstract class Flaw implements Propagator {
         }
     }
 
-    protected void fireNewFlaw() {
-        solver.newFlaw(this);
-    }
-
     protected void fireFlawUpdate() {
         solver.fireFlawUpdate(this);
     }
