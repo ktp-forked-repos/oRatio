@@ -222,9 +222,31 @@ public class Solver extends Core {
         // we collect the inconsistencies..
         assert inconsistencies.isEmpty();
         inconsistencies.addAll(get_inconsistencies());
+        for (Flaw f : inconsistencies) {
+            fireNewFlaw(f);
+            if (!resolver.addPrecondition(f)) {
+                // the problem is unsolvable..
+                LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+                return false;
+            }
+            flaw_q.add(f);
+        }
+
+        // we update the planning graph..
+        if (!build_planning_graph()) {
+            // the problem is unsolvable..
+            return false;
+        }
+
+        // we clean up trivial flaws..
+        clear_flaws(inconsistencies);
+
         // we remove the inconsistencies..
         while (!inconsistencies.isEmpty()) {
-            while (!inconsistencies.isEmpty()) {
+            if (clear_inconsistencies()) {
+                // we re-collect the inconsistencies..
+                assert inconsistencies.isEmpty();
+                inconsistencies.addAll(get_inconsistencies());
                 for (Flaw f : inconsistencies) {
                     fireNewFlaw(f);
                     if (!resolver.addPrecondition(f)) {
@@ -243,18 +265,13 @@ public class Solver extends Core {
 
                 // we clean up trivial flaws..
                 clear_flaws(inconsistencies);
-
-                if (!clear_inconsistencies()) {
-                    // we need to backjump..
-                    if (!backjump()) {
-                        // the problem is unsolvable..
-                        return false;
-                    }
+            } else {
+                // we need to backjump..
+                if (!backjump()) {
+                    // the problem is unsolvable..
+                    return false;
                 }
             }
-
-            // we re-collect the inconsistencies..
-            inconsistencies.addAll(get_inconsistencies());
         }
 
         // we clean up trivial flaws..
@@ -285,11 +302,33 @@ public class Solver extends Core {
                 // we clean up trivial flaws..
                 clear_flaws(flaws);
 
-                assert inconsistencies.isEmpty();
                 // we collect the inconsistencies..
+                assert inconsistencies.isEmpty();
                 inconsistencies.addAll(get_inconsistencies());
+                for (Flaw f : inconsistencies) {
+                    fireNewFlaw(f);
+                    if (!resolver.addPrecondition(f)) {
+                        // the problem is unsolvable..
+                        LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+                        return false;
+                    }
+                    flaw_q.add(f);
+                }
+
+                // we update the planning graph..
+                if (!build_planning_graph()) {
+                    // the problem is unsolvable..
+                    return false;
+                }
+
+                // we clean up trivial flaws..
+                clear_flaws(inconsistencies);
+
                 while (!inconsistencies.isEmpty()) {
-                    while (!inconsistencies.isEmpty()) {
+                    if (clear_inconsistencies()) {
+                        // we re-collect the inconsistencies..
+                        assert inconsistencies.isEmpty();
+                        inconsistencies.addAll(get_inconsistencies());
                         for (Flaw f : inconsistencies) {
                             fireNewFlaw(f);
                             if (!resolver.addPrecondition(f)) {
@@ -308,18 +347,13 @@ public class Solver extends Core {
 
                         // we clean up trivial flaws..
                         clear_flaws(inconsistencies);
-
-                        if (!clear_inconsistencies()) {
-                            // we need to backjump..
-                            if (!backjump()) {
-                                // the problem is unsolvable..
-                                return false;
-                            }
+                    } else {
+                        // we need to backjump..
+                        if (!backjump()) {
+                            // the problem is unsolvable..
+                            return false;
                         }
                     }
-
-                    // we re-collect the inconsistencies..
-                    inconsistencies.addAll(get_inconsistencies());
                 }
 
                 // we clean up trivial flaws..
