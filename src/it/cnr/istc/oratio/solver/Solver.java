@@ -506,10 +506,11 @@ public class Solver extends Core {
         Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
         while (trivial_flaw.isPresent()) {
             assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-            assert trivial_flaw.get().getResolvers().iterator().next().in_plan.evaluate() == LBool.L_TRUE;
-            assert trivial_flaw.get().getResolvers().iterator().next().getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+            Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+            assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+            assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
             c_flaws.remove(trivial_flaw.get());
-            c_flaws.addAll(trivial_flaw.get().getResolvers().iterator().next().getPreconditions());
+            c_flaws.addAll(unique_resolver.getPreconditions());
             trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
         }
     }
