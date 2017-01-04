@@ -220,8 +220,12 @@ public class Solver extends Core {
         }
 
         while (true) {
+            // we clean up trivial flaws..
+            clear_flaws(flaws);
+            clear_flaws(inconsistencies);
+
             // we remove the inconsistencies..
-            while (!inconsistencies.isEmpty()) {
+            if (!inconsistencies.isEmpty()) {
                 // we create a new layer..
                 Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
                 flaw_costs = new IdentityHashMap<>();
@@ -250,10 +254,7 @@ public class Solver extends Core {
                         return false;
                     }
                 }
-
-                // we clean up trivial flaws..
-                clear_flaws(flaws);
-                clear_flaws(inconsistencies);
+                continue;
             }
 
             // we collect the inconsistencies..
@@ -274,10 +275,6 @@ public class Solver extends Core {
                     // the problem is unsolvable..
                     return false;
                 }
-
-                // we clean up trivial flaws..
-                clear_flaws(flaws);
-                clear_flaws(inconsistencies);
                 continue;
             }
 
@@ -312,10 +309,6 @@ public class Solver extends Core {
                         return false;
                     }
                 }
-
-                // we clean up trivial flaws..
-                clear_flaws(flaws);
-                clear_flaws(inconsistencies);
             } else {
                 // Hurray!! We have found a solution..
                 return true;
