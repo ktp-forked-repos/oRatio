@@ -31,12 +31,12 @@ import java.util.Collections;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class PropositionalAgent extends SmartType {
+public class PropositionalImpulsiveAgent extends SmartType {
 
-    public static final String NAME = "PropositionalAgent";
+    public static final String NAME = "PropositionalImpulsiveAgent";
     private final Collection<Predicate> defined_predicates = new ArrayList<>();
 
-    public PropositionalAgent(Solver s) {
+    public PropositionalImpulsiveAgent(Solver s) {
         super(s, s, NAME);
         constructors.add(new Constructor(core, this) {
             @Override
@@ -49,7 +49,7 @@ public class PropositionalAgent extends SmartType {
     @Override
     protected void predicateDefined(Predicate predicate) {
         if (!defined_predicates.contains(predicate)) {
-            extendPredicate(predicate, core.getPredicate("IntervalPredicate"));
+            extendPredicate(predicate, core.getPredicate("ImpulsivePredicate"));
             defined_predicates.add(predicate);
         }
     }
@@ -57,7 +57,7 @@ public class PropositionalAgent extends SmartType {
     @Override
     protected boolean factActivated(Atom atom) {
         if (super.factActivated(atom)) {
-            return core.getPredicate("IntervalPredicate").apply(atom);
+            return core.getPredicate("ImpulsivePredicate").apply(atom);
         } else {
             return false;
         }
