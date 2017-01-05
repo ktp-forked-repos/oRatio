@@ -31,6 +31,7 @@ import it.cnr.istc.oratio.solver.types.Agent;
 import it.cnr.istc.oratio.solver.types.ImpulsiveAgent;
 import it.cnr.istc.oratio.solver.types.PropositionalAgent;
 import it.cnr.istc.oratio.solver.types.PropositionalImpulsiveAgent;
+import it.cnr.istc.oratio.solver.types.PropositionalState;
 import it.cnr.istc.oratio.solver.types.ReusableResource;
 import it.cnr.istc.oratio.solver.types.StateVariable;
 import java.io.File;
@@ -82,6 +83,7 @@ public class Solver extends Core {
         types.put(ImpulsiveAgent.NAME, new ImpulsiveAgent(this));
         types.put(PropositionalAgent.NAME, new PropositionalAgent(this));
         types.put(PropositionalImpulsiveAgent.NAME, new PropositionalImpulsiveAgent(this));
+        types.put(PropositionalState.NAME, new PropositionalState(this));
     }
 
     @Override
