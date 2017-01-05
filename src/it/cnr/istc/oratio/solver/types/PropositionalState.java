@@ -17,6 +17,7 @@
 package it.cnr.istc.oratio.solver.types;
 
 import it.cnr.istc.ac.DomainListener;
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.AtomState;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -109,10 +111,37 @@ public class PropositionalState extends SmartType {
         Collection<Flaw> fs = new ArrayList<>();
         Map<Type, List<Atom>> c_atoms = to_check.stream().filter(a -> a.state.evaluate().isSingleton() && a.state.evaluate().contains(AtomState.Active)).collect(Collectors.groupingBy(Atom::getType));
         for (Type type : c_atoms.keySet()) {
+            Collection<Field> c_fields = new ArrayList<>();
+            Set<Type> c_types = new HashSet<>();
+            LinkedList<Type> queue = new LinkedList<>();
+            queue.add(type);
+            while (!queue.isEmpty()) {
+                Type c_type = queue.pollFirst();
+                if (!c_types.contains(c_type)) {
+                    c_types.add(c_type);
+                    queue.addAll(c_type.getSuperclasses());
+                }
+            }
+
+            for (Type t : c_types) {
+                for (Field f : t.getFields()) {
+                    if (!f.synthetic && !f.name.equals(POLARITY)) {
+                        c_fields.add(f);
+                    }
+                }
+            }
+
             List<Atom> atoms = c_atoms.get(type);
             for (Atom a0 : atoms) {
                 for (Atom a1 : atoms) {
                     if (a0 != a1) {
+                        LBool a0_polarity = ((IBoolItem) a0.get(POLARITY)).getBoolVar().evaluate();
+                        LBool a1_polarity = ((IBoolItem) a1.get(POLARITY)).getBoolVar().evaluate();
+                        assert a0_polarity.isSingleton();
+                        assert a1_polarity.isSingleton();
+                        if (a0_polarity != a1_polarity) {
+                            // the polarity is different.. we might need to order..
+                        }
                     }
                 }
             }
