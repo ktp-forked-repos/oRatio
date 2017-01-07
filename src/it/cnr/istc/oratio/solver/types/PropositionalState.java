@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.solver.types;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.DomainListener;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Var;
@@ -31,6 +33,7 @@ import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
 import it.cnr.istc.oratio.core.Type;
 import it.cnr.istc.oratio.solver.Flaw;
+import it.cnr.istc.oratio.solver.Resolver;
 import it.cnr.istc.oratio.solver.SmartType;
 import it.cnr.istc.oratio.solver.Solver;
 import java.util.ArrayList;
@@ -125,7 +128,7 @@ public class PropositionalState extends SmartType {
 
             for (Type t : c_types) {
                 for (Field f : t.getFields()) {
-                    if (!f.synthetic && !f.name.equals(POLARITY)) {
+                    if (!f.synthetic && !(f.name.equals(POLARITY) || f.name.equals("start") || f.name.equals("end") || f.name.equals("duration"))) {
                         c_fields.add(f);
                     }
                 }
@@ -140,7 +143,53 @@ public class PropositionalState extends SmartType {
                         assert a0_polarity.isSingleton();
                         assert a1_polarity.isSingleton();
                         if (a0_polarity != a1_polarity) {
-                            // the polarity is different.. we might need to order..
+                            // the polarity is different.. we might need to generate a flaw..
+                            if (c_fields.stream().allMatch(f -> a0.get(f.name).equates(a1.get(f.name)))) {
+                                // the two atoms are on the same propositional predicate..
+                                ArithExpr a0_start = ((IArithItem) a0.get("start")).getArithVar();
+                                ArithExpr a0_end = ((IArithItem) a0.get("end")).getArithVar();
+
+                                ArithExpr a1_start = ((IArithItem) a1.get("start")).getArithVar();
+                                ArithExpr a1_end = ((IArithItem) a1.get("end")).getArithVar();
+
+                                if (core.network.evaluate(a0_end) > core.network.evaluate(a1_start) && core.network.evaluate(a0_start) < core.network.evaluate(a1_end)) {
+                                    // they also overlap..
+                                    Collection<BoolExpr> or = new ArrayList<>();
+
+                                    // either we order..
+                                    BoolExpr a0_before_a1 = core.network.leq(a0_end, a1_start);
+                                    if (a0_before_a1.evaluate() != LBool.L_FALSE) {
+                                        or.add(a0_before_a1);
+                                    }
+                                    BoolExpr a1_before_a0 = core.network.leq(a1_end, a0_start);
+                                    if (a1_before_a0.evaluate() != LBool.L_FALSE) {
+                                        or.add(a1_before_a0);
+                                    }
+
+                                    // or we force on another propositional predicate..
+                                    for (Field f : c_fields) {
+                                        IEnumItem a0_arg = (IEnumItem) a0.get(f.name);
+                                        Set<IItem> a0_arg_vals = a0_arg.getEnumVar().evaluate().getAllowedValues();
+                                        if (a0_arg_vals.size() > 1) {
+                                            for (IItem a0_arg_val : a0_arg_vals) {
+                                                or.add(core.network.not(a0_arg.allows(a0_arg_val)));
+                                            }
+                                        }
+
+                                        IEnumItem a1_arg = (IEnumItem) a1.get(f.name);
+                                        Set<IItem> a1_arg_vals = a1_arg.getEnumVar().evaluate().getAllowedValues();
+                                        if (a1_arg_vals.size() > 1) {
+                                            for (IItem a1_arg_val : a1_arg_vals) {
+                                                or.add(core.network.not(a1_arg.allows(a1_arg_val)));
+                                            }
+                                        }
+                                    }
+                                    if (or.isEmpty()) {
+                                        throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
+                                    }
+                                    fs.add(new PropositionalStateFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                                }
+                            }
                         }
                     }
                 }
@@ -175,6 +224,60 @@ public class PropositionalState extends SmartType {
         @Override
         public void domainChange(Var<?> var) {
             to_check.add(atom);
+        }
+    }
+
+    private static class PropositionalStateFlaw extends Flaw {
+
+        private final Collection<BoolExpr> or;
+
+        PropositionalStateFlaw(Solver s, Resolver c, Collection<BoolExpr> or) {
+            super(s, c);
+            this.or = or;
+        }
+
+        @Override
+        protected void computeResolvers(Collection<Resolver> rs) {
+            for (BoolExpr expr : or) {
+                PropositionalStateResolver psr = new PropositionalStateResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
+                psr.fireNewResolver();
+                rs.add(psr);
+            }
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "ps-flaw";
+        }
+
+        @Override
+        public String toString() {
+            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | ")) + " " + in_plan.evaluate() + " " + estimated_cost;
+        }
+    }
+
+    private static class PropositionalStateResolver extends Resolver {
+
+        private final BoolExpr expr;
+
+        PropositionalStateResolver(Solver s, ArithExpr c, Flaw e, BoolExpr expr) {
+            super(s, c, e);
+            this.expr = expr;
+        }
+
+        @Override
+        protected void fireNewResolver() {
+            super.fireNewResolver();
+        }
+
+        @Override
+        protected boolean apply() {
+            return solver.network.add(solver.network.imply(in_plan, expr)) && solver.network.propagate();
+        }
+
+        @Override
+        public String toSimpleString() {
+            return expr.id();
         }
     }
 }

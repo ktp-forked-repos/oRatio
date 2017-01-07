@@ -192,6 +192,9 @@ public class StateVariable extends SmartType {
                             }
                         }
                     }
+                    if (or.isEmpty()) {
+                        throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
+                    }
                     fs.add(new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or));
                 }
             }
