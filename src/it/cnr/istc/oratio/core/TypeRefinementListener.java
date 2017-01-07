@@ -149,7 +149,7 @@ class TypeRefinementListener extends oRatioBaseListener {
                 }
 
                 for (oRatioParser.Initializer_elementContext el : ctx.initializer_element()) {
-                    if (fields.containsKey(el.name.getText())) {
+                    if (((BaseScope) scope).fields.containsKey(el.name.getText())) {
                         // field instantiation..
                         ((BaseEnv) item).items.put(el.name.getText(), new ExpressionVisitor(core, c_env).visit(el.expr_list().expr(0)));
                     } else {
