@@ -135,7 +135,7 @@ class StatementVisitor extends oRatioBaseVisitor<Boolean> {
             }
         }
 
-        Atom a = p.newInstance(env);
+        Atom a = p.newInstance(assignments.get(SCOPE));
         a.items.putAll(assignments);
 
         Set<Type> types = new HashSet<>();

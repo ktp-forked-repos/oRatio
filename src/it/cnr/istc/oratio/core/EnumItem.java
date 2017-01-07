@@ -19,7 +19,9 @@ package it.cnr.istc.oratio.core;
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.EnumDomain;
 import it.cnr.istc.ac.Expr;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,6 +49,37 @@ class EnumItem extends Item implements IEnumItem {
     @Override
     public BoolExpr allows(IItem val) {
         return eqs.get(val);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends IItem> T get(String name) {
+        if (!type.fields.containsKey(name)) {
+            return env.get(name);
+        } else if (!items.containsKey(name)) {
+            EnumDomain<IItem> e_dom = expr.evaluate();
+            if (e_dom.isSingleton()) {
+                return (T) e_dom.getAllowedValues().iterator().next().get(name);
+            } else {
+                List<IItem> c_vals = new ArrayList<>();
+                List<IItem> f_vals = new ArrayList<>();
+                for (IItem val : e_dom.getAllowedValues()) {
+                    c_vals.add(val);
+                    f_vals.add(val.get(name));
+                    if (val.get(name) instanceof IEnumItem) {
+                        throw new AssertionError("invalid use: enum of enums..");
+                    }
+                }
+                IEnumItem ei = core.newEnum(type.getField(name).type, f_vals.toArray(new IItem[f_vals.size()]));
+                for (int i = 0; i < c_vals.size(); i++) {
+                    boolean add = core.network.add(core.network.eq(allows(c_vals.get(i)), ei.allows(f_vals.get(i))));
+                    assert add;
+                }
+
+                items.put(name, ei);
+            }
+        }
+        return (T) items.get(name);
     }
 
     @Override
