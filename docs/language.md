@@ -222,6 +222,68 @@ The third statement compares the variable `x` with the value `7` returning a boo
 The fourth statement compares the variable `x` with the value `5` returning a boolean constant `false`.
 Finally, the fifth statement compares the variable `x` with the domain `[6, 8]` returning a boolean variable with domain `{true, false}`.
 
+#### Logical operators ( `!`, `&`, `|` )
+
+Logical operators return boolean variables representing the validity of the operator.
+To begin, the operator `!` is the domain description language operator for the Boolean operation NOT.
+It has only one operand, to its right, and inverts it, producing false if its operand is true, and true if its operand is false.
+Basically, it returns the opposite Boolean value of evaluating its operand.
+The logical operators `&` and `|` are used when evaluating two (or more) expressions to obtain a single relational result.
+Specifically, the operator `&` corresponds to the Boolean logical operation AND, which yields true if both (all of) its operands are true, and false otherwise.
+Finally, the operator `|` corresponds to the Boolean logical operation OR, which yields true if any of its operands is true, thus being false only when both (all of) its operands are false.
+
+#### Assertions
+
+An *assertion* is a statement asserting that a boolean expression must be `true`.
+To assert a boolean expression it is enough to specify the boolean expression as a statement.
+Notice that enforcing a boolean expression to be `true` (or, more generally, to `false`), can result in the updating of the values of the involved variables through constraint propagation.
+Suppose, for example, we send the following unit to the solver:
+
+```
+int x = [0, 10];
+int y = [10, 20];
+bool x_eq_y = x == y;
+
+// Assertion: x_eq_y must be equal to true
+x_eq_y;
+```
+
+In the above example we are creating an integer variable `x` having domain `[0, 10]`, an integer variable `y` having domain `[10, 20]`, and a boolean variable `x_eq_y` having domain `{true, false}`.
+With the execution of the assertion represented by the fourth statement, however, the value of the variable `x_eq_y` is constrained to be equal to `true`.
+This, in turn, results in forcing the constraint `x == y` to be equal to `true` which, in turn, results in assigning to both variables `x` and `y` the value `10` (i.e., the only allowed value that makes the two variables equal).
+
+What happens now if we provide an infeasible problem?
+Suppose, for example, we provide the following code:
+
+```
+int x = [0, 10];
+int y = [20, 30];
+x == y;
+```
+
+The third statement *asserts* that the constraint `x == y` must be `true`, however the initial domains of the variables `x` and `y` do not allow the constraint to be satisfied.
+When these situations occur, we say that we have an *inconsistency*.
+The solver detects the inconsistency and returns `NO`.
+The domains of the variables, after an inconsistency has been detected, are no more valid.
+
+In conclusion, it is worth to notice that the combined use of operators allows to obtain quite complex behaviors.
+As an example, consider the following code snippet:
+
+```
+// assert linear relations
+x0 - x1 > x2 * 3;
+x0 != x1;
+
+// assert nonlinear relations
+x0 == x2 * x3;
+
+// assert conjunction of relations
+x0 + x1 < 2 * x2 & x0 == x2 * x3 & x0 != x4;
+
+// assert disjunction of relations
+x0 < 10 | x0 > 100;
+```
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
