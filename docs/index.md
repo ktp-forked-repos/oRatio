@@ -61,7 +61,7 @@ The oRatio input language is called oRatio Domain Description Language (RDDL).
 The basic core of the oRatio architecture provides an object-oriented virtual environment for the definition of objects and constraints among them.
 Every object in the oRatio environment is an instance of a specific *type*.
 oRatio distinguishes among *primitive types* (i.e., bools, ints, reals, enums and strings) and user defined *complex types* (e.g., robots, trucks, locations, etc.).
-More information can be found [here](language.md).
+More information about the RDDL can be found [here](language.md).
 
 ## ac-lib
 
