@@ -141,6 +141,47 @@ Finally, a typedef called `Angle` is defined as an integer whose initial domain 
 The code snippet is closed with the definition of an `x4` variable of type `Angle`.
 Since none of these variables is subject to any constraint, their domain, at the end of the execution of the code snippet, will remain untouched.
 
+### Operators
+
+Once variables and constants have been introduced, we can begin to operate with them by using *operators*.
+We use operators to impose constraints on declared variables.
+What follows is a complete list of operators.
+
+#### Assignment operator (`=`)
+
+The assignment operator assigns a value to a variable.
+For example
+
+```
+x = 5;
+y = [0, 20];
+```
+
+assigns the value `5` to the variable `x` and the domain `[0, 20]` to the variable `y`.
+The assignment operation always takes place from right to left, and never the other way around.
+For example
+
+```
+x = y;
+```
+
+assigns the value `y` to variable `x`.
+The value of `x`, at the moment this statement is executed, is lost and replaced by `y`.
+
+It is worth noticing that we are assigning `y` to `x` therefore, if `y` changes at a later moment, it will reflect on the value taken by `x` and the other way around.
+Variables `x` and `y` will represent exactly the same object after this assignment statement is executed.
+
+The assignment operator can be used, also, during variable declaration for assigning to variables an initial domain through the syntax `<type> <id> = <expr>`.
+
+#### Arithmetic operators ( `+`, `-`, `*`, `/` )
+
+Operations of addition, subtraction, multiplication and division correspond literally to their respective mathematical operators.
+The semantic, however, is taken by interval arithmetic.
+Specifically, arithmetic operations are defined as:
+
+ * [x<sub>0</sub>, x<sub>1</sub>] + [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> + y<sub>0</sub>, x<sub>1</sub> + y<sub>1</sub>]
+ * [x<sub>0</sub>, x<sub>1</sub>] - [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> - y<sub>0</sub>, x<sub>1</sub> - y<sub>1</sub>]
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
