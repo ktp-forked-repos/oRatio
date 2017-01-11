@@ -179,8 +179,25 @@ Operations of addition, subtraction, multiplication and division correspond lite
 The semantic, however, is taken by interval arithmetic.
 Specifically, arithmetic operations are defined as:
 
+ * - [x<sub>0</sub>, x<sub>1</sub>] = [ - x<sub>1</sub>, - x<sub>0</sub>]
  * [x<sub>0</sub>, x<sub>1</sub>] + [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> + y<sub>0</sub>, x<sub>1</sub> + y<sub>1</sub>]
  * [x<sub>0</sub>, x<sub>1</sub>] - [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> - y<sub>0</sub>, x<sub>1</sub> - y<sub>1</sub>]
+ * [x<sub>0</sub>, x<sub>1</sub>] * [y<sub>0</sub>, y<sub>1</sub>] = [min(x<sub>0</sub> * y<sub>0</sub>, x<sub>0</sub> * y<sub>1</sub>, x<sub>1</sub> * y<sub>0</sub>, x<sub>1</sub> * y<sub>1</sub>), max(x<sub>0</sub> * y<sub>0</sub>, x<sub>0</sub> * y<sub>1</sub>, x<sub>1</sub> * y<sub>0</sub>, x<sub>1</sub> * y<sub>1</sub>)]
+ * [x<sub>0</sub>, x<sub>1</sub>] / [y<sub>0</sub>, y<sub>1</sub>] = [min(x<sub>0</sub> / y<sub>0</sub>, x<sub>0</sub> / y<sub>1</sub>, x<sub>1</sub> / y<sub>0</sub>, x<sub>1</sub> / y<sub>1</sub>), max(x<sub>0</sub> / y<sub>0</sub>, x<sub>0</sub> / y<sub>1</sub>, x<sub>1</sub> / y<sub>0</sub>, x<sub>1</sub> / y<sub>1</sub>)]
+
+For example:
+
+```
+x = 5 + y;
+```
+
+assigns to the variable `x` the expression `5 + y`.
+Suppose the domain of variable `y` is `[10, 20]`, the domain of variable `x` will be `[15, 25]` after the execution of the statement.
+
+It is worth noticing that, similar to what happens for the simple assignment case, we are assigning the expression `5 + y` to `x` therefore, if `y` changes at a later moment, it will reflect on the value taken by `x` and the other way around.
+Specifically, the variable `x` and the expression `5 + y` will represent exactly the same object after this assignment statement is executed.
+As a consequence, if the domain of `y` becomes, for example, `[15, 20]`, the domain of `x` will become `[20, 25]`.
+The value of `x`, at the moment this statement is executed, is lost and replaced by the expression `5 + y`.
 
 ## The Extended Backus-Naur form
 
