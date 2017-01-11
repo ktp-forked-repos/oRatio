@@ -237,11 +237,7 @@ public class Solver extends Core {
             // we remove the inconsistencies..
             if (!inconsistencies.isEmpty()) {
                 // we create a new layer..
-                Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
-                flaw_costs = new IdentityHashMap<>();
-                resolver_costs = new IdentityHashMap<>();
-                inconsistencies = new HashSet<>(inconsistencies);
-                layers.add(l);
+                push();
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
@@ -253,7 +249,6 @@ public class Solver extends Core {
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
-                network.push();
                 if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
                     inconsistencies.addAll(resolver.getPreconditions());
@@ -290,13 +285,8 @@ public class Solver extends Core {
 
             assert inconsistencies.isEmpty();
             if (!flaws.isEmpty()) {
-                // we remove a resolution flaw..
                 // we create a new layer..
-                Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
-                flaw_costs = new IdentityHashMap<>();
-                resolver_costs = new IdentityHashMap<>();
-                flaws = new HashSet<>(flaws);
-                layers.add(l);
+                push();
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
@@ -308,7 +298,6 @@ public class Solver extends Core {
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
-                network.push();
                 if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
                     flaws.addAll(resolver.getPreconditions());
@@ -353,9 +342,9 @@ public class Solver extends Core {
             case L_FALSE:
                 return false;
             case L_UNKNOWN:
-                network.push();
+                push();
                 if (network.assign(expr)) {
-                    network.pop();
+                    pop();
                     return true;
                 } else {
                     boolean backjump = backjump();
@@ -483,27 +472,45 @@ public class Solver extends Core {
                 return false;
             }
 
-            // we restore the constraint network state..
-            network.pop();
-
-            // we restore updated flaws and resolvers costs..
-            for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-                entry.getKey().estimated_cost = entry.getValue();
-            }
-            for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
-                entry.getKey().estimated_cost = entry.getValue();
-            }
-
-            Layer l_l = layers.getLast();
-            resolver = l_l.resolver;
-            flaw_costs = l_l.flaw_costs;
-            resolver_costs = l_l.resolver_costs;
-            flaws = l_l.flaws;
-            inconsistencies = l_l.inconsistencies;
-            layers.pollLast();
+            // we restore flaws and resolvers state..
+            pop();
         }
 
         return true;
+    }
+
+    private void push() {
+        // we create a new layer..
+        Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
+        flaw_costs = new IdentityHashMap<>();
+        resolver_costs = new IdentityHashMap<>();
+        flaws = new HashSet<>(flaws);
+        inconsistencies = new HashSet<>(inconsistencies);
+        layers.add(l);
+
+        // we also create a new layer in the constraint network..
+        network.push();
+    }
+
+    private void pop() {
+        // we restore the constraint network state..
+        network.pop();
+
+        // we also restore updated flaws and resolvers costs..
+        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+
+        Layer l_l = layers.getLast();
+        resolver = l_l.resolver;
+        flaw_costs = l_l.flaw_costs;
+        resolver_costs = l_l.resolver_costs;
+        flaws = l_l.flaws;
+        inconsistencies = l_l.inconsistencies;
+        layers.pollLast();
     }
 
     /**
