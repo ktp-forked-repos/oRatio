@@ -337,6 +337,34 @@ Indeed, it can also be used directly in an expression.
 It is important to clearly differentiate between what is the type name (e.g., `Block`), and what is an object of this type (e.g., `b0`, `b1` and `b2`).
 As can be noted by the above example, many objects (such as `b0`, `b1` and `b2`) can be declared from a single type (`Block`).
 
+### Type inheritance
+
+Inheritance allows us to define a class in terms of other classes.
+When creating a class, instead of writing completely new fields and methods, the modeler can designate that the new class should inherit the members of existing classes.
+Similarly to object oriented programming, we call the existing classes the *base* classes, while the new class is referred to as the *derived* class.
+The idea of inheritance implements the *is-a* relationship.
+For example, mammal IS-A animal, dog IS-A mammal hence dog IS-A animal as well and so on.
+For example, through the code
+
+```
+class HeavyBlock : Block {
+
+  real weight;
+  
+  HeavyBlock(int id, real weight) : Block(id), weight(weight) {
+  }
+}
+```
+
+we create a derived type `HeavyBlock` which *inherits* from the base type `Block`.
+Since an `HeavyBlock` *is-a* `Block`, all instances of `HeavyBlock` will have a `weight` field of type `real` as well as an `id` field of type `int` which, we say, is inherited from base type `Block`.
+
+Notice that a derived type must explicitly call a constructor of the base class from which inherits.
+This explicit call, however, can be omitted in the case the base class has a default constructor.
+
+A class may inherit from more than one class by simply specifying more base classes, separated by commas, in the list of a class's base classes (i.e., after the colon).
+Unless the base classes have a default constructor, the derived class must explicitly call a constructor of each of the base classes.
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
