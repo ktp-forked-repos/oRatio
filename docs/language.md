@@ -199,6 +199,29 @@ Specifically, the variable `x` and the expression `5 + y` will represent exactly
 As a consequence, if the domain of `y` becomes, for example, `[15, 20]`, the domain of `x` will become `[20, 25]`.
 The value of `x`, at the moment this statement is executed, is lost and replaced by the expression `5 + y`.
 
+#### Relational and comparison operators ( `==`, `!=`, `>`, `<`, `>=`, `<=` )
+
+Two expressions can be compared using relational and equality operators, for example, to know if two values are equal or if one is greater than the other.
+The result of such an operation is a boolean variable representing the validity of the relation.
+
+Be careful!
+The assignment operator (operator `=`, with one equal sign) is not the same as the equality comparison operator (operator `==`, with two equal signs); the first one (`=`) assigns the expression on the right-hand to the variable on its left, while the other (`==`) compares whether the values on both sides of the operator are equal.
+Consider, for example, the following code snippet:
+
+```
+x = 5;       // assigns 5 to x
+x = 7;       // assigns 7 to x
+x == 7;      // compares x with 7 returning true
+x == 5;      // compares x with 5 returning false
+x == [6, 8]; // compares x with [6, 8] returning {true, false}
+```
+
+The first statement assigns value `5` to variable `x`.
+The second statement assigns value `7` to variable `x`.
+The third statement compares the variable `x` with the value `7` returning a boolean constant `true`.
+The fourth statement compares the variable `x` with the value `5` returning a boolean constant `false`.
+Finally, the fifth statement compares the variable `x` with the domain `[6, 8]` returning a boolean variable with domain `{true, false}`.
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
