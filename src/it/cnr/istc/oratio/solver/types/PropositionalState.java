@@ -168,19 +168,23 @@ public class PropositionalState extends SmartType {
 
                                     // or we force on another propositional predicate..
                                     for (Field f : c_fields) {
-                                        IEnumItem a0_arg = (IEnumItem) a0.get(f.name);
-                                        Set<IItem> a0_arg_vals = a0_arg.getEnumVar().evaluate().getAllowedValues();
-                                        if (a0_arg_vals.size() > 1) {
-                                            for (IItem a0_arg_val : a0_arg_vals) {
-                                                or.add(core.network.not(a0_arg.allows(a0_arg_val)));
+                                        IItem a0_arg = a0.get(f.name);
+                                        if (a0_arg instanceof IEnumItem) {
+                                            Set<IItem> a0_arg_vals = ((IEnumItem) a0_arg).getEnumVar().evaluate().getAllowedValues();
+                                            if (a0_arg_vals.size() > 1) {
+                                                for (IItem a0_arg_val : a0_arg_vals) {
+                                                    or.add(core.network.not(((IEnumItem) a0_arg).allows(a0_arg_val)));
+                                                }
                                             }
                                         }
 
-                                        IEnumItem a1_arg = (IEnumItem) a1.get(f.name);
-                                        Set<IItem> a1_arg_vals = a1_arg.getEnumVar().evaluate().getAllowedValues();
-                                        if (a1_arg_vals.size() > 1) {
-                                            for (IItem a1_arg_val : a1_arg_vals) {
-                                                or.add(core.network.not(a1_arg.allows(a1_arg_val)));
+                                        IItem a1_arg = a1.get(f.name);
+                                        if (a1_arg instanceof IEnumItem) {
+                                            Set<IItem> a1_arg_vals = ((IEnumItem) a1_arg).getEnumVar().evaluate().getAllowedValues();
+                                            if (a1_arg_vals.size() > 1) {
+                                                for (IItem a1_arg_val : a1_arg_vals) {
+                                                    or.add(core.network.not(((IEnumItem) a1_arg).allows(a1_arg_val)));
+                                                }
                                             }
                                         }
                                     }
