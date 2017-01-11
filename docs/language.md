@@ -400,6 +400,192 @@ b != b1;
 
 removes the instance represented by `b1` from the allowed values of the variable `b`.
 
+## Predicates
+
+Since the solver reasons in terms of first-order Horn clauses therefore each predicate is associated to a rule that must be complied with in order for the atom, unifying with the head of the rule, to be valid.
+Consequently, the language has been designed to define both predicates and rules together.
+Specifically, predicates (and their associated rules) are defined through the following syntax:
+
+```
+predicate <id> (<type> <id>, <type> <id>, ...) {
+  <rule body>
+}
+```
+
+in which is represented the identifier of the predicate, a typed list of arguments, and the body of the rule.
+Suppose, for example, we are interested in representing the location of an agent, we might use the following rule:
+
+```
+predicate At (Location l) {
+}
+```
+
+The arguments of the predicates are considered as existentially quantified variables within the body of the rule which might contain constraints on them and/or on other variables.
+Specifically, the body of the rule contains a list of statement which is executed for each atomic formula that does not unify.
+Suppose, for example, we want to express the fact that our agent cannot go on a location outside of the first quadrant of the Cartesian space, we might use the following rule:
+
+```
+predicate At (Location l) {
+  l.x >= 0;
+  l.y >= 0;
+}
+```
+
+Predicates can be also defined within complex types.
+Each predicate defined within a class has an implicit parameter called `scope` of the same type within which the predicate has been defined.
+As an example, the following code defines a predicate `At` with an argument named `l` of type `Location` and an implicit argument named `scope` of type `Robot`.
+The associated rule enforces that a robot cannot go on a location outside of the first quadrant of the Cartesian space.
+
+```
+class Robot {
+
+  predicate At(Location l) {
+    l.x >= 0;
+    l.y >= 0;
+  }
+}
+```
+
+A similar result can be achieved by defining a predicate through
+
+```
+predicate At(Robot scope, Location l) {
+  l.x >= 0;
+  l.y >= 0;
+}
+```
+
+Notice that the language does not allow the definition of predicates having the same identifier within the same class.
+
+Finally, taking advantage of the similarity that a predicate (with its arguments) has a with complex type (with its members) the domain description language gives to the modeler the possibility to define inheritance among predicates, just as is the case of complex types.
+Just note that the body of the base rules will be executed, in sequence, before the body of the derived rule.
+The syntax for predicate inheritance is similar to the syntax used for type inheritance.
+
+```
+predicate LimitedAt() : At {
+  l.x <= 10;
+  l.y <= 10;
+}
+```
+
+### Facts and goals
+
+Once defined predicates and rules, we can now show how to describe facts and goals for our problems.
+Still following the object-oriented paradigm, we consider facts and goals as objects and, as such, we will create them through the `new` operator.
+However, since, unlike other languages, we have no means to distinguish facts and goals, we have to distinguish them explicitly through the keywords `fact` and `goal` as a prefix of the identifier.
+Suppose, for example, we want to express the fact that our agent is at some location, we might use the following statement:
+
+```
+fact at_0 = new At();
+```
+
+We can now address the arguments of the fact just as if they are members of the object represented by `at_0`.
+So we can, for example, put constraints on the coordinates of the locations.
+
+```
+at_0.l.x <= 10;
+```
+
+It is worth to note that creating a fact or a goal will, unless specified, create existentially scoped variables for each of its arguments.
+As a result, the same rule valid for existentially scoped variables, stating that at least one instance of the type must have been previously created, applies also to the creation of facts and goals.
+Executing the previous example, without previously creating instances of locations, would result in an inconsistent problem and, therefore, the solver would have returned `NO`.
+
+A convenient method to avoid the creation of existentially scoped variables is to explicitly state the allowed values for an argument.
+This can be achieved by making use of the syntax `<id>:<expr>`, where `<id>` represents the identifier of an argument and `<expr>` is an expression, within the parenthesis of the new fact or goal.
+For example
+
+```
+Location l0 = new Location();
+fact at_0 = new At(l:l0);
+```
+
+creates a new location `l0` and a new fact `at_0` whose parameter `l` assumes the value `l0`;
+
+In order to better understand, let us consider a complete example:
+
+```
+// we define a Location class
+class Location {
+
+  real x;
+  real y;
+  
+  Location(real x, real y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+// we define a predicate At
+predicate At(Location l) {
+  l.x >= 0;
+  l.y >= 0;
+}
+
+// we create three instances of location
+Location l0 = new Location(0, 0);
+Location l1 = new Location(1, 1);
+Location l2 = new Location(2, 2);
+
+// we create an At fact
+fact at_0 = new At();
+
+// we add some constraints on the fact
+at_0.l.x <= 1;
+at_0.l != l0;
+
+// we create an At goal specifying its l parameter
+goal at_1 = new At(l:l2);
+```
+
+It is worth to note that both facts and goals can be created within the body of a rule.
+This allows us to define subgoals for the reasoning process.
+Suppose, for example, we want to express the fact that "All men are mortal", we might use the following rule:
+
+```
+predicate Mortal (Thing x) {
+  goal m = new Man(x:x);
+}
+```
+
+The creation of scoped formulas (i.e., formulas with a `scope` parameter), either facts or goals, follows a similar syntax.
+However it is required that the scope is explicitly specified.
+This can be achieved through the following syntax:
+
+```
+[fact | goal] <id> = new <qualified_id>.<id>(<id>:<expr>, <id>:<expr>, ...);
+```
+
+where `<qualified_id>` identifies the scope.
+The following code, for example, creates two robots and two facts having a different scope.
+
+```
+Robot r0 = new Robot();
+Robot r1 = new Robot();
+
+fact f0 = new r0.At(l:l0);
+fact f1 = new r1.At(l:l1);
+```
+
+Note that the `scope` argument of the fact `f0` is constituted by an object variable whose domain contains the sole robot `r0`.
+Similarly, the `scope` argument of the fact `f1` is constituted by an object variable whose domain contains the sole robot `r1`.
+
+It is worth to notice that nothing prevents to create facts and goals having existentially scoped variables as `scope` argument.
+As an example
+
+```
+Robot r0 = new Robot();
+Robot r1 = new Robot();
+
+// we create the existential variable
+Robot r;
+
+goal g = new r.At(l:l0);
+```
+
+creates a goal `g` whose scope has, as allowed values, the two robots `r0` and `r1` (i.e., its allowed values is constituted by the set `{r0, r1}`).
+This syntax allows the possibility to leave to the solver the responsibility to decide which robot is at location `l0`.
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
