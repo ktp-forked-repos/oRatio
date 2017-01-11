@@ -365,6 +365,41 @@ This explicit call, however, can be omitted in the case the base class has a def
 A class may inherit from more than one class by simply specifying more base classes, separated by commas, in the list of a class's base classes (i.e., after the colon).
 Unless the base classes have a default constructor, the derived class must explicitly call a constructor of each of the base classes.
 
+### Existentially scoped variables
+
+Existential quantification is a type of quantifier which can be interpreted as "there exists", "there is at least one", or "for some".
+Specifically, the domain description language allows the modeler to retrieve a specific instance of a given type which meets certain requirements.
+Creating an existentially scoped variable can be done, simply, by indicating the type of the possible instances and an identifier for representing the desired instance.
+For example:
+
+```
+Block b;
+```
+
+searches for a block `b` among all the instances of type `Block`.
+In other words, it creates an object variable, called `b`, whose allowed values are all the instances of type `Block`.
+Notice that, since `HeavyBlock` is actually a `Block`, the allowed values for the variable `b` will include, also, all the instances of `HeavyBlock`.
+It is worth to note that, in case no instances exist, the domain of the variable `b` will be empty and the solver will return `NO` (or, if possible, will backtrack).
+
+The desired requirements are expressed by means of constraints.
+Consider, for example, the following code:
+
+```
+Block b;
+b.id <= 10;
+```
+
+In this case the assertion will limit the domain of `b` to all the instances of `Block` whose `id` is lower than or equal to `10`.
+
+It is worth to note that it is possible to use comparison operators on existentially scoped variables.
+For example
+
+```
+b != b1;
+```
+
+removes the instance represented by `b1` from the allowed values of the variable `b`.
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
