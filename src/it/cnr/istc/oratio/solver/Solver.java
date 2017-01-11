@@ -474,7 +474,7 @@ public class Solver extends Core {
         for (BoolVar v : unsat_core) {
             ng_vars.add((BoolVar) network.not(v).to_var(network));
         }
-        BoolExpr no_good = network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
+        BoolExpr no_good = ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
 
         // we backtrack till we can enforce the no-good.. 
         while (!(network.add(no_good) && network.propagate())) {
