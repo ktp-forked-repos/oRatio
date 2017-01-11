@@ -28,7 +28,7 @@ Options:
 -show-planning-graph    Shows the generated planning graph
 ```
 
-where `<input-files>` is a list of input files containing [RDDL](language.md) code snippets.
+where `<input-files>` is a list of input files containing [RDDL](https://oratiosolver.github.io/oRatio/language) code snippets.
 
 Using oRatio as a library is pretty simple. It is enough to create a `Solver` instance and interact with it.
 
@@ -61,8 +61,8 @@ The oRatio input language is called oRatio Domain Description Language (RDDL).
 The basic core of the oRatio architecture provides an object-oriented virtual environment for the definition of objects and constraints among them.
 Every object in the oRatio environment is an instance of a specific *type*.
 oRatio distinguishes among *primitive types* (i.e., bools, ints, reals, enums and strings) and user defined *complex types* (e.g., robots, trucks, locations, etc.).
-More information about the RDDL can be found [here](language.md).
+More information about the RDDL can be found [here](https://oratiosolver.github.io/oRatio/language).
 
 ## ac-lib
 
-The constraint network is maintained by means of the [ac-lib](ac.md) library which provides features for creating variables and for enforcing constraints among them.
+The constraint network is maintained by means of the [ac-lib](https://github.com/oRatioSolver/oRatio/blob/master/src/it/cnr/istc/ac/README.md) library which provides features for creating variables and for enforcing constraints among them.
