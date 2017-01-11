@@ -284,6 +284,59 @@ x0 + x1 < 2 * x2 & x0 == x2 * x3 & x0 != x4;
 x0 < 10 | x0 > 100;
 ```
 
+### Complex types
+
+A *complex data type* (a.k.a. *composite data type* or *compound data type*) is any data type which can be constructed using the language's primitive data types and other complex types.
+Roughly speaking, a complex type is a group of data elements grouped together under one name.
+These data elements, known as members, can have different, either primitive or complex, types.
+
+The best way for defining new types is by means of the `class` keyword.
+It is, however, also possible to define complex types natively (refere [here](api.md) for more information on how to extend the solver capabilities).
+Classes define data types and allow the creation of objects according to characteristics defined inside the class itself.
+In addition, classes allow fields of any type as well as methods and constructors with any kind of arguments.
+Classes can be declared in our domain description language using the following syntax:
+
+```
+class type_name {
+  member_type1 member_name1;
+  member_type2 member_name2;
+  member_type3 member_name3;
+  .
+  .
+}
+```
+
+In order to allow an initialization of the member variables of the type, classes can include a special function called its *constructor*, which is automatically called whenever a new object of the class is created.
+This constructor function is declared just like a regular member function, but with a name that matches the class name and without any return type.
+Furthermore, when a constructor is used to initialize other members, these other members can be initialized directly, without resorting to statements in its body.
+This is done by inserting, before the constructor's body, a colon (`:`) and a list of initializations for class members.
+All types have at least one constructor.
+If a type does not explicitly declare any, the solver automatically provides a no-argument constructor, called the *default constructor*.
+
+The following code, for example, defines a new data type (or class) called `Block` containing an `int` field named `id`.
+
+```
+class Block {
+
+  int id;
+  
+  Block(int id) : id(id) {
+  }
+}
+
+Block b0 = new Block(0);
+Block b1 = new Block(1), b2 = new Block(2);
+```
+
+The declared type `Block` is then used for instantiating three objects (variables) called `b0`, `b1` and `b2`.
+Note how, for creating a new instance of a complex type, the `new` operator is used.
+Specifically, the `new` operator instantiates a class and, also, invokes the object constructor, returning a reference to the newly created object.
+Notice that the reference returned by the `new` operator does not have, necessarily, to be assigned to a variable.
+Indeed, it can also be used directly in an expression.
+
+It is important to clearly differentiate between what is the type name (e.g., `Block`), and what is an object of this type (e.g., `b0`, `b1` and `b2`).
+As can be noted by the above example, many objects (such as `b0`, `b1` and `b2`) can be declared from a single type (`Block`).
+
 ## The Extended Backus-Naur form
 
 This section presents the complete grammar of the language in its Extended Backus-Naur form.
