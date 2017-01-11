@@ -179,7 +179,7 @@ Operations of addition, subtraction, multiplication and division correspond lite
 The semantic, however, is taken by interval arithmetic.
 Specifically, arithmetic operations are defined as:
 
- * - [x<sub>0</sub>, x<sub>1</sub>] = [ - x<sub>1</sub>, - x<sub>0</sub>]
+ * `- [x<sub>0</sub>, x<sub>1</sub>] = [ - x<sub>1</sub>, - x<sub>0</sub>]`
  * [x<sub>0</sub>, x<sub>1</sub>] + [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> + y<sub>0</sub>, x<sub>1</sub> + y<sub>1</sub>]
  * [x<sub>0</sub>, x<sub>1</sub>] - [y<sub>0</sub>, y<sub>1</sub>] = [x<sub>0</sub> - y<sub>0</sub>, x<sub>1</sub> - y<sub>1</sub>]
  * [x<sub>0</sub>, x<sub>1</sub>] * [y<sub>0</sub>, y<sub>1</sub>] = [min(x<sub>0</sub> * y<sub>0</sub>, x<sub>0</sub> * y<sub>1</sub>, x<sub>1</sub> * y<sub>0</sub>, x<sub>1</sub> * y<sub>1</sub>), max(x<sub>0</sub> * y<sub>0</sub>, x<sub>0</sub> * y<sub>1</sub>, x<sub>1</sub> * y<sub>0</sub>, x<sub>1</sub> * y<sub>1</sub>)]
