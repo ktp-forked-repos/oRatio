@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core.gui;
 
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Field;
+import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.IScope;
 import it.cnr.istc.oratio.core.Predicate;
@@ -41,9 +42,15 @@ public class ScopeTreeModel extends DefaultTreeModel {
         super(new DefaultMutableTreeNode());
     }
 
-    public void setScope(IScope scope) {
+    public void setScope(IScope scope, IEnv env) {
         this.scope = scope;
-        setRoot(new DefaultMutableTreeNode());
+        if (env instanceof Atom) {
+            setRoot(new AtomNode((Atom) env));
+        } else if (env instanceof IItem) {
+            setRoot(new ItemNode("root", (IItem) env));
+        } else {
+            setRoot(new DefaultMutableTreeNode());
+        }
         createChilds((DefaultMutableTreeNode) root);
         fireTreeNodesChanged(this, null, null, null);
     }

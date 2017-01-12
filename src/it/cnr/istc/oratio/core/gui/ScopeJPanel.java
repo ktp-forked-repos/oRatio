@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.core.gui;
 
+import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IScope;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
@@ -31,7 +32,7 @@ public class ScopeJPanel extends javax.swing.JPanel {
     /**
      * Creates new form ScopeJPanel
      */
-    public ScopeJPanel(IScope scope) {
+    public ScopeJPanel(IScope scope, IEnv env) {
         initComponents();
         this.scopeJTree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
@@ -43,7 +44,7 @@ public class ScopeJPanel extends javax.swing.JPanel {
             public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
             }
         });
-        this.scopeTreeModel.setScope(scope);
+        this.scopeTreeModel.setScope(scope, env);
     }
 
     /**
