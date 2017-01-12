@@ -45,6 +45,19 @@ public class oRatio {
         Set<String> opts = new HashSet<>(Arrays.asList(args));
         opts.removeIf(o -> !o.startsWith("-"));
 
+        if (!opts.isEmpty()) {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    try {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+                        Logger.getLogger(oRatio.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
+
         boolean show_planning_graph = opts.remove("-show-planning-graph");
 
         if (args.length - opts.size() == 0) {
@@ -56,16 +69,6 @@ public class oRatio {
         Solver s = new Solver();
 
         if (show_planning_graph) {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    try {
-                        UIManager.setLookAndFeel(info.getClassName());
-                        break;
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-                        Logger.getLogger(oRatio.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
             PlanningGraphJFrame frame = new PlanningGraphJFrame(s);
             frame.setVisible(true);
         }
