@@ -33,10 +33,10 @@ public class EnvJPanel extends javax.swing.JPanel {
      */
     public EnvJPanel() {
         initComponents();
-        this.scopeJTree.addTreeWillExpandListener(new TreeWillExpandListener() {
+        this.envJTree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
             public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-                scopeTreeModel.createChilds((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
+                envTreeModel.createChilds((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
             }
 
             @Override
@@ -46,7 +46,7 @@ public class EnvJPanel extends javax.swing.JPanel {
     }
 
     public void setEnv(IEnv env) {
-        this.scopeTreeModel.setEnv(env);
+        this.envTreeModel.setEnv(env);
     }
 
     /**
@@ -59,32 +59,32 @@ public class EnvJPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         itemTreeCellRenderer = new it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer();
-        scopeTreeModel = new it.cnr.istc.oratio.core.gui.EnvTreeModel();
-        scopeJScrollPane = new javax.swing.JScrollPane();
-        scopeJTree = new javax.swing.JTree();
+        envTreeModel = new it.cnr.istc.oratio.core.gui.EnvTreeModel();
+        envJScrollPane = new javax.swing.JScrollPane();
+        envJTree = new javax.swing.JTree();
 
         itemTreeCellRenderer.setText("itemTreeCellRenderer1");
 
-        scopeJTree.setModel(scopeTreeModel);
-        scopeJTree.setCellRenderer(itemTreeCellRenderer);
-        scopeJTree.setRootVisible(false);
-        scopeJScrollPane.setViewportView(scopeJTree);
+        envJTree.setModel(envTreeModel);
+        envJTree.setCellRenderer(itemTreeCellRenderer);
+        envJTree.setRootVisible(false);
+        envJScrollPane.setViewportView(envJTree);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scopeJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addComponent(envJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scopeJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(envJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JScrollPane envJScrollPane;
+    private javax.swing.JTree envJTree;
+    private it.cnr.istc.oratio.core.gui.EnvTreeModel envTreeModel;
     private it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer itemTreeCellRenderer;
-    private javax.swing.JScrollPane scopeJScrollPane;
-    private javax.swing.JTree scopeJTree;
-    private it.cnr.istc.oratio.core.gui.EnvTreeModel scopeTreeModel;
     // End of variables declaration//GEN-END:variables
 }

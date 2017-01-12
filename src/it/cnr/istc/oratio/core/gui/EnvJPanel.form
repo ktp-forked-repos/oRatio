@@ -7,7 +7,7 @@
         <Property name="text" type="java.lang.String" value="itemTreeCellRenderer1"/>
       </Properties>
     </Component>
-    <Component class="it.cnr.istc.oratio.core.gui.EnvTreeModel" name="scopeTreeModel">
+    <Component class="it.cnr.istc.oratio.core.gui.EnvTreeModel" name="envTreeModel">
     </Component>
   </NonVisualComponents>
   <AuxValues>
@@ -25,27 +25,27 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="scopeJScrollPane" alignment="0" pref="400" max="32767" attributes="0"/>
+          <Component id="envJScrollPane" alignment="0" pref="400" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="scopeJScrollPane" alignment="0" pref="300" max="32767" attributes="0"/>
+          <Component id="envJScrollPane" alignment="0" pref="300" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Container class="javax.swing.JScrollPane" name="scopeJScrollPane">
+    <Container class="javax.swing.JScrollPane" name="envJScrollPane">
       <AuxValues>
         <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
       </AuxValues>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JTree" name="scopeJTree">
+        <Component class="javax.swing.JTree" name="envJTree">
           <Properties>
             <Property name="model" type="javax.swing.tree.TreeModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-              <Connection component="scopeTreeModel" type="bean"/>
+              <Connection component="envTreeModel" type="bean"/>
             </Property>
             <Property name="cellRenderer" type="javax.swing.tree.TreeCellRenderer" editor="org.netbeans.modules.form.ComponentChooserEditor">
               <ComponentRef name="itemTreeCellRenderer"/>
