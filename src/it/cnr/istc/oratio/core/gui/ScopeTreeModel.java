@@ -134,7 +134,7 @@ public class ScopeTreeModel extends DefaultTreeModel {
         final Atom atom;
 
         AtomNode(Atom atom) {
-            super(atom, atom.getType().getFields().stream().anyMatch(f -> !f.synthetic));
+            super(atom, getFields(atom.getType()).stream().anyMatch(f -> !f.synthetic));
             this.atom = atom;
         }
 
