@@ -98,7 +98,7 @@ public class ScopeTreeModel extends DefaultTreeModel {
             Type c_type = queue.pollFirst();
             queue.addAll(c_type.getSuperclasses());
             for (Field f : c_type.getFields()) {
-                if (!fields.containsKey(f.name)) {
+                if (!f.synthetic && !fields.containsKey(f.name)) {
                     fields.put(f.name, f);
                 }
             }
