@@ -19,6 +19,7 @@ package it.cnr.istc.oratio.core.gui;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.Field;
+import it.cnr.istc.oratio.core.IEnumItem;
 import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
@@ -63,7 +64,9 @@ public class EnvTreeModel extends DefaultTreeModel {
             }
             for (Predicate p : ((ItemNode) tree_node).item.getType().getPredicates()) {
                 for (IItem i : p.getInstances()) {
-                    tree_node.add(new AtomNode((Atom) i));
+                    if (((IEnumItem) ((Atom) i).get(Core.SCOPE)).getEnumVar().evaluate().getAllowedValues().contains(((ItemNode) tree_node).item)) {
+                        tree_node.add(new AtomNode((Atom) i));
+                    }
                 }
             }
         } else if (tree_node instanceof AtomNode) {
