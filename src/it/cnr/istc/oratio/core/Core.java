@@ -281,6 +281,11 @@ public class Core implements IScope, IEnv {
     }
 
     @Override
+    public Collection<Field> getFields() {
+        return Collections.unmodifiableCollection(fields.values());
+    }
+
+    @Override
     public Method getMethod(String name, Type... parameterTypes) {
         boolean isCorrect;
         if (methods.containsKey(name)) {
