@@ -25,7 +25,7 @@ import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
 import it.cnr.istc.oratio.core.Type;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -93,7 +93,7 @@ public class EnvTreeModel extends DefaultTreeModel {
     }
 
     private static Collection<Field> getFields(Type type) {
-        Map<String, Field> fields = new HashMap<>();
+        Map<String, Field> fields = new LinkedHashMap<>();
 
         LinkedList<Type> queue = new LinkedList<>();
         queue.add(type);
