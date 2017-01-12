@@ -34,34 +34,34 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ItemTreeCellRenderer extends DefaultTreeCellRenderer {
+public class EnvTreeCellRenderer extends DefaultTreeCellRenderer {
 
-    private static final ImageIcon OBJECT_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/object.png"));
-    private static final ImageIcon ACTIVE_ATOM_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/formula.png"));
-    private static final ImageIcon INACTIVE_ATOM_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/inactive_formula.png"));
-    private static final ImageIcon UNIFIED_ATOM_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/unified_formula.png"));
-    private static final ImageIcon ENUM_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/enum.png"));
-    private static final ImageIcon BOOL_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/bool.png"));
-    private static final ImageIcon NUMBER_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/number.png"));
-    private static final ImageIcon STRING_ICON = new ImageIcon(ItemTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/enum.png"));
+    private static final ImageIcon OBJECT_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/object.png"));
+    private static final ImageIcon ACTIVE_ATOM_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/formula.png"));
+    private static final ImageIcon INACTIVE_ATOM_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/inactive_formula.png"));
+    private static final ImageIcon UNIFIED_ATOM_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/unified_formula.png"));
+    private static final ImageIcon ENUM_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/enum.png"));
+    private static final ImageIcon BOOL_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/bool.png"));
+    private static final ImageIcon NUMBER_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/number.png"));
+    private static final ImageIcon STRING_ICON = new ImageIcon(EnvTreeCellRenderer.class.getResource("/it/cnr/istc/oratio/core/gui/resources/enum.png"));
 
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-        if (value instanceof ScopeTreeModel.ItemNode) {
-            Type type = ((ScopeTreeModel.ItemNode) value).item.getType();
+        if (value instanceof EnvTreeModel.ItemNode) {
+            Type type = ((EnvTreeModel.ItemNode) value).item.getType();
             switch (type.name) {
                 case Core.BOOL:
                     setIcon(BOOL_ICON);
-                    setText(((ScopeTreeModel.ItemNode) value).name + " = " + ((IBoolItem) ((ScopeTreeModel.ItemNode) value).item).getBoolVar().evaluate());
+                    setText(((EnvTreeModel.ItemNode) value).name + " = " + ((IBoolItem) ((EnvTreeModel.ItemNode) value).item).getBoolVar().evaluate());
                     break;
                 case Core.REAL:
                     setIcon(NUMBER_ICON);
-                    setText(((ScopeTreeModel.ItemNode) value).name + " = " + ((ScopeTreeModel.ItemNode) value).item.getCore().network.evaluate(((IArithItem) ((ScopeTreeModel.ItemNode) value).item).getArithVar()));
+                    setText(((EnvTreeModel.ItemNode) value).name + " = " + ((EnvTreeModel.ItemNode) value).item.getCore().network.evaluate(((IArithItem) ((EnvTreeModel.ItemNode) value).item).getArithVar()));
                     break;
                 case Core.STRING:
                     setIcon(STRING_ICON);
-                    setText(((ScopeTreeModel.ItemNode) value).name + " = " + ((IStringItem) ((ScopeTreeModel.ItemNode) value).item).getValue());
+                    setText(((EnvTreeModel.ItemNode) value).name + " = " + ((IStringItem) ((EnvTreeModel.ItemNode) value).item).getValue());
                     break;
                 default:
                     if (value instanceof IEnumItem) {
@@ -69,11 +69,11 @@ public class ItemTreeCellRenderer extends DefaultTreeCellRenderer {
                     } else {
                         setIcon(OBJECT_ICON);
                     }
-                    setText(((ScopeTreeModel.ItemNode) value).name);
+                    setText(((EnvTreeModel.ItemNode) value).name);
                     break;
             }
-        } else if (value instanceof ScopeTreeModel.AtomNode) {
-            Atom atom = ((ScopeTreeModel.AtomNode) value).atom;
+        } else if (value instanceof EnvTreeModel.AtomNode) {
+            Atom atom = ((EnvTreeModel.AtomNode) value).atom;
             EnumDomain<AtomState> state = atom.state.evaluate();
             if (state.isSingleton()) {
                 switch (state.getAllowedValues().iterator().next()) {

@@ -2,12 +2,12 @@
 
 <Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <NonVisualComponents>
-    <Component class="it.cnr.istc.oratio.core.gui.ItemTreeCellRenderer" name="itemTreeCellRenderer">
+    <Component class="it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer" name="itemTreeCellRenderer">
       <Properties>
         <Property name="text" type="java.lang.String" value="itemTreeCellRenderer1"/>
       </Properties>
     </Component>
-    <Component class="it.cnr.istc.oratio.core.gui.ScopeTreeModel" name="scopeTreeModel">
+    <Component class="it.cnr.istc.oratio.core.gui.EnvTreeModel" name="scopeTreeModel">
     </Component>
   </NonVisualComponents>
   <AuxValues>

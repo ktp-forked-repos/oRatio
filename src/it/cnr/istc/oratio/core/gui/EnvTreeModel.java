@@ -17,10 +17,10 @@
 package it.cnr.istc.oratio.core.gui;
 
 import it.cnr.istc.oratio.core.Atom;
+import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.Field;
 import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
-import it.cnr.istc.oratio.core.IScope;
 import it.cnr.istc.oratio.core.Predicate;
 import it.cnr.istc.oratio.core.Type;
 import java.util.Collection;
@@ -34,16 +34,16 @@ import javax.swing.tree.DefaultTreeModel;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ScopeTreeModel extends DefaultTreeModel {
+public class EnvTreeModel extends DefaultTreeModel {
 
-    private IScope scope;
+    private Core core;
 
-    public ScopeTreeModel() {
+    public EnvTreeModel() {
         super(new DefaultMutableTreeNode());
     }
 
-    public void setScope(IScope scope, IEnv env) {
-        this.scope = scope;
+    public void setEnv(IEnv env) {
+        this.core = env.getCore();
         if (env instanceof Atom) {
             setRoot(new AtomNode((Atom) env));
         } else if (env instanceof IItem) {
@@ -71,10 +71,10 @@ public class ScopeTreeModel extends DefaultTreeModel {
                 tree_node.add(new ItemNode(f.name, ((AtomNode) tree_node).atom.get(f.name)));
             }
         } else {
-            for (Field f : scope.getCore().getFields()) {
+            for (Field f : core.getFields()) {
                 tree_node.add(new ItemNode(f.name, ((ItemNode) tree_node).item.get(f.name)));
             }
-            for (Predicate p : scope.getCore().getPredicates()) {
+            for (Predicate p : core.getPredicates()) {
                 for (IItem i : p.getInstances()) {
                     tree_node.add(new AtomNode((Atom) i));
                 }

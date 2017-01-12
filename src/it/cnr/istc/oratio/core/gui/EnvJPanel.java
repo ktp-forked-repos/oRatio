@@ -17,7 +17,6 @@
 package it.cnr.istc.oratio.core.gui;
 
 import it.cnr.istc.oratio.core.IEnv;
-import it.cnr.istc.oratio.core.IScope;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -27,12 +26,12 @@ import javax.swing.tree.ExpandVetoException;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ScopeJPanel extends javax.swing.JPanel {
+public class EnvJPanel extends javax.swing.JPanel {
 
     /**
      * Creates new form ScopeJPanel
      */
-    public ScopeJPanel() {
+    public EnvJPanel() {
         initComponents();
         this.scopeJTree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
@@ -46,8 +45,8 @@ public class ScopeJPanel extends javax.swing.JPanel {
         });
     }
 
-    public void setScope(IScope scope, IEnv env) {
-        this.scopeTreeModel.setScope(scope, env);
+    public void setEnv(IEnv env) {
+        this.scopeTreeModel.setEnv(env);
     }
 
     /**
@@ -59,8 +58,8 @@ public class ScopeJPanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        itemTreeCellRenderer = new it.cnr.istc.oratio.core.gui.ItemTreeCellRenderer();
-        scopeTreeModel = new it.cnr.istc.oratio.core.gui.ScopeTreeModel();
+        itemTreeCellRenderer = new it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer();
+        scopeTreeModel = new it.cnr.istc.oratio.core.gui.EnvTreeModel();
         scopeJScrollPane = new javax.swing.JScrollPane();
         scopeJTree = new javax.swing.JTree();
 
@@ -82,11 +81,10 @@ public class ScopeJPanel extends javax.swing.JPanel {
             .addComponent(scopeJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private it.cnr.istc.oratio.core.gui.ItemTreeCellRenderer itemTreeCellRenderer;
+    private it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer itemTreeCellRenderer;
     private javax.swing.JScrollPane scopeJScrollPane;
     private javax.swing.JTree scopeJTree;
-    private it.cnr.istc.oratio.core.gui.ScopeTreeModel scopeTreeModel;
+    private it.cnr.istc.oratio.core.gui.EnvTreeModel scopeTreeModel;
     // End of variables declaration//GEN-END:variables
 }
