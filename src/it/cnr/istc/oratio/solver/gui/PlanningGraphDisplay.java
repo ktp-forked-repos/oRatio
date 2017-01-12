@@ -180,6 +180,20 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
                 Display d = (Display) me.getSource();
                 d.setToolTipText(null);
             }
+
+            @Override
+            public void itemClicked(VisualItem vi, MouseEvent me) {
+                Display d = (Display) me.getSource();
+                if (vi.getSourceTuple() instanceof Node) {
+                    Node nodeData = (Node) vi.getSourceTuple();
+                    Object content = nodeData.get(NODE_CONTENT);
+                    if (content instanceof Flaw) {
+                        new FlawJDialog((Flaw) content).setVisible(true);
+                    } else if (content instanceof Resolver) {
+                        new ResolverJDialog((Resolver) content).setVisible(true);
+                    }
+                }
+            }
         });
 
         if (!Beans.isDesignTime()) {

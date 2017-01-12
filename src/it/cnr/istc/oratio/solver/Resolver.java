@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
  *
@@ -53,6 +55,10 @@ public abstract class Resolver implements Propagator {
 
     public Flaw getEffect() {
         return effect;
+    }
+
+    public BoolVar getInPlan() {
+        return in_plan;
     }
 
     public double getEstimatedCost() {
@@ -105,6 +111,10 @@ public abstract class Resolver implements Propagator {
             }
         }
         return true;
+    }
+
+    public JComponent getDetails() {
+        return new JPanel();
     }
 
     public abstract String toSimpleString();

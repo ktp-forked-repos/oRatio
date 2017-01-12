@@ -64,7 +64,7 @@ public class EnvTreeModel extends DefaultTreeModel {
             }
             for (Predicate p : ((ItemNode) tree_node).item.getType().getPredicates()) {
                 for (IItem i : p.getInstances()) {
-                    if (((IEnumItem) ((Atom) i).get(Core.SCOPE)).getEnumVar().evaluate().getAllowedValues().contains(((ItemNode) tree_node).item)) {
+                    if (((IEnumItem) i.get(Core.SCOPE)).getEnumVar().evaluate().getAllowedValues().contains(((ItemNode) tree_node).item)) {
                         tree_node.add(new AtomNode((Atom) i));
                     }
                 }

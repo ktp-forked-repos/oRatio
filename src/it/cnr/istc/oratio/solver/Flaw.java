@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
  *
@@ -53,6 +55,10 @@ public abstract class Flaw implements Propagator {
 
     public boolean isSolved() {
         return estimated_cost < Double.POSITIVE_INFINITY;
+    }
+
+    public BoolVar getInPlan() {
+        return in_plan;
     }
 
     public double getEstimatedCost() {
@@ -131,6 +137,10 @@ public abstract class Flaw implements Propagator {
             }
         }
         return true;
+    }
+
+    public JComponent getDetails() {
+        return new JPanel();
     }
 
     public abstract String toSimpleString();

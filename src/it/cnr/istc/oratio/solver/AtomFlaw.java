@@ -23,9 +23,17 @@ import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.AtomState;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
+import it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer;
+import it.cnr.istc.oratio.core.gui.EnvTreeModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import javax.swing.JComponent;
+import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.ExpandVetoException;
 
 /**
  *
@@ -103,6 +111,27 @@ class AtomFlaw extends Flaw {
             eg.fireNewResolver();
             rs.add(eg);
         }
+    }
+
+    @Override
+    public JComponent getDetails() {
+        JTree tree = new JTree();
+        EnvTreeModel model = new EnvTreeModel();
+        model.setEnv(atom);
+        tree.setModel(model);
+        tree.setCellRenderer(new EnvTreeCellRenderer());
+        tree.setRootVisible(false);
+        tree.addTreeWillExpandListener(new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+                model.createChilds((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+            }
+        });
+        return tree;
     }
 
     @Override
