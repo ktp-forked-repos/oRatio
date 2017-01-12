@@ -19,9 +19,7 @@ package it.cnr.istc.oratio.core;
 import it.cnr.istc.ac.BoolExpr;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Set;
 
 /**
  *
@@ -51,20 +49,13 @@ public class Item extends BaseEnv implements IItem {
             // We have two items of the same type
             // All the fields of the first item should be equal to all the fields of second item..
 
-            Set<Type> types = new HashSet<>();
+            Collection<BoolExpr> exprs = new ArrayList<>();
             LinkedList<Type> queue = new LinkedList<>();
             queue.add(type);
             while (!queue.isEmpty()) {
                 Type c_type = queue.pollFirst();
-                if (!types.contains(c_type)) {
-                    types.add(c_type);
-                    queue.addAll(c_type.superclasses);
-                }
-            }
-
-            Collection<BoolExpr> exprs = new ArrayList<>();
-            for (Type t : types) {
-                for (Field f : t.fields.values()) {
+                queue.addAll(c_type.superclasses);
+                for (Field f : c_type.fields.values()) {
                     if (!f.synthetic) {
                         exprs.add(items.get(f.name).eq(item.get(f.name)));
                     }
@@ -91,19 +82,12 @@ public class Item extends BaseEnv implements IItem {
             // We have two items of the same type
             // All the fields of the first item should equate to all the fields of second item..
 
-            Set<Type> types = new HashSet<>();
             LinkedList<Type> queue = new LinkedList<>();
             queue.add(type);
             while (!queue.isEmpty()) {
                 Type c_type = queue.pollFirst();
-                if (!types.contains(c_type)) {
-                    types.add(c_type);
-                    queue.addAll(c_type.superclasses);
-                }
-            }
-
-            for (Type t : types) {
-                for (Field f : t.fields.values()) {
+                queue.addAll(c_type.superclasses);
+                for (Field f : c_type.fields.values()) {
                     if (!f.synthetic) {
                         if (!items.get(f.name).equates(item.get(f.name))) {
                             return false;
