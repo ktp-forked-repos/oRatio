@@ -32,7 +32,7 @@ public class ScopeJPanel extends javax.swing.JPanel {
     /**
      * Creates new form ScopeJPanel
      */
-    public ScopeJPanel(IScope scope, IEnv env) {
+    public ScopeJPanel() {
         initComponents();
         this.scopeJTree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
@@ -44,6 +44,9 @@ public class ScopeJPanel extends javax.swing.JPanel {
             public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
             }
         });
+    }
+
+    public void setScope(IScope scope, IEnv env) {
         this.scopeTreeModel.setScope(scope, env);
     }
 
