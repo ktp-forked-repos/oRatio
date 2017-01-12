@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  *
@@ -54,6 +56,16 @@ public class oRatio {
         Solver s = new Solver();
 
         if (show_planning_graph) {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    try {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+                        Logger.getLogger(oRatio.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
             PlanningGraphJFrame frame = new PlanningGraphJFrame(s);
             frame.setVisible(true);
         }
