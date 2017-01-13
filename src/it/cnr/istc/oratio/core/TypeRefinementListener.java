@@ -170,10 +170,12 @@ class TypeRefinementListener extends oRatioBaseListener {
                 }
 
                 for (Field field : ((BaseScope) scope).fields.values()) {
-                    if (field.type.primitive) {
-                        ((BaseEnv) item).items.put(field.name, field.type.newInstance(item));
-                    } else {
-                        ((BaseEnv) item).items.put(field.name, field.type.newExistential());
+                    if (!((BaseEnv) item).items.containsKey(field.name)) {
+                        if (field.type.primitive) {
+                            ((BaseEnv) item).items.put(field.name, field.type.newInstance(item));
+                        } else {
+                            ((BaseEnv) item).items.put(field.name, field.type.newExistential());
+                        }
                     }
                 }
 
