@@ -36,6 +36,11 @@ public class BoolAssignment implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return left.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         LBool left_d = left.evaluate();
         if ((left_d == LBool.L_TRUE && right == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right == LBool.L_TRUE)) {

@@ -36,6 +36,11 @@ public class ArithEq implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return left.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         if (left.domain.eq(right)) {
             return LBool.L_TRUE;

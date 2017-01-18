@@ -73,6 +73,11 @@ public class ExctOne implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return vars.keySet().stream().allMatch(var -> var.isConst());
+    }
+
+    @Override
     public LBool evaluate() {
         LBool[] vals = vars.entrySet().stream().map(entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()).toArray(LBool[]::new);
         int n_trues = 0;

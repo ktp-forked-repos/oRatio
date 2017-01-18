@@ -25,6 +25,8 @@ public interface Expr<D extends Domain> {
 
     public String id();
 
+    public boolean isConst();
+
     public D evaluate();
 
     public Var<D> to_var(Network n);

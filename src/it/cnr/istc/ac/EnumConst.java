@@ -34,6 +34,11 @@ public class EnumConst<T> implements Expr<EnumDomain<T>> {
     }
 
     @Override
+    public boolean isConst() {
+        return true;
+    }
+
+    @Override
     public EnumDomain<T> evaluate() {
         return new EnumDomain<>(val);
     }

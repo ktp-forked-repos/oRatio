@@ -36,6 +36,11 @@ public class BoolEq implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return left.isConst() && right.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         LBool left_d = left.evaluate();
         LBool right_d = right.evaluate();

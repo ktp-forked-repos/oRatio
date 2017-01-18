@@ -34,6 +34,11 @@ public class Not implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return var.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         return var.domain.not();
     }

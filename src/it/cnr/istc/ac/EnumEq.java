@@ -36,6 +36,11 @@ public class EnumEq<T> implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return left.isConst() && right.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         EnumDomain<T> left_d = left.evaluate();
         EnumDomain<T> right_d = right.evaluate();

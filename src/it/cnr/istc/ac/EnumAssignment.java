@@ -36,6 +36,11 @@ public class EnumAssignment<T> implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return left.isConst();
+    }
+
+    @Override
     public LBool evaluate() {
         EnumDomain<T> left_d = left.evaluate();
         if (!left_d.contains(right)) {

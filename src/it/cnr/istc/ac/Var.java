@@ -39,6 +39,11 @@ public abstract class Var<D extends Domain> implements Expr<D> {
     }
 
     @Override
+    public boolean isConst() {
+        return network.rootLevel() && isSingleton();
+    }
+
+    @Override
     public D evaluate() {
         return domain;
     }

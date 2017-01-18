@@ -35,6 +35,11 @@ public class BoolConst implements BoolExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return true;
+    }
+
+    @Override
     public LBool evaluate() {
         return val;
     }

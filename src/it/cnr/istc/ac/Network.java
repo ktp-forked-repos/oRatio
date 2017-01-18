@@ -89,7 +89,7 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="sat constraints..">
     public BoolExpr not(BoolExpr expr) {
-        if (rootLevel() || expr instanceof BoolConst) {
+        if (expr.isConst()) {
             // we check if we can use consts rather than vars..
             switch (expr.evaluate()) {
                 case L_TRUE:
@@ -98,12 +98,11 @@ public class Network {
                     return new BoolConst(LBool.L_TRUE);
             }
         }
-        assert !(expr instanceof BoolConst);
         return new Not((BoolVar) expr.to_var(this));
     }
 
     public BoolExpr and(BoolExpr... exprs) {
-        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+        if (Stream.of(exprs).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
             if (Stream.of(vals).allMatch(val -> val == LBool.L_TRUE)) {
@@ -112,12 +111,11 @@ public class Network {
                 return new BoolConst(LBool.L_FALSE);
             }
         }
-        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new And(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
     public BoolExpr or(BoolExpr... exprs) {
-        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+        if (Stream.of(exprs).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
             if (Stream.of(vals).anyMatch(val -> val == LBool.L_TRUE)) {
@@ -126,12 +124,11 @@ public class Network {
                 return new BoolConst(LBool.L_FALSE);
             }
         }
-        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
     public BoolExpr exct_one(BoolExpr... exprs) {
-        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst)) {
+        if (Stream.of(exprs).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             LBool[] vals = Stream.of(exprs).map(expr -> expr.evaluate()).toArray(LBool[]::new);
             int n_trues = 0;
@@ -154,7 +151,6 @@ public class Network {
                 return new BoolConst(n_trues == 1 ? LBool.L_TRUE : LBool.L_FALSE);
             }
         }
-        assert !Stream.of(exprs).allMatch(expr -> expr instanceof BoolConst);
         return new ExctOne(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
     }
 
@@ -163,7 +159,7 @@ public class Network {
     }
 
     public BoolExpr eq(BoolExpr left, BoolExpr right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof BoolConst)) {
+        if (Stream.of(left, right).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             LBool[] vals = Stream.of(left, right).map(expr -> expr.evaluate()).toArray(LBool[]::new);
             if (Stream.of(vals).allMatch(val -> val == LBool.L_TRUE) || Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
@@ -172,14 +168,11 @@ public class Network {
                 return new BoolConst(LBool.L_FALSE);
             }
         }
-        if (left instanceof BoolConst) {
-            assert !(right instanceof BoolConst);
-            return new BoolAssignment((BoolVar) right.to_var(this), ((BoolConst) left).val);
-        } else if (right instanceof BoolConst) {
-            assert !(left instanceof BoolConst);
-            return new BoolAssignment((BoolVar) left.to_var(this), ((BoolConst) right).val);
+        if (left.isConst()) {
+            return new BoolAssignment((BoolVar) right.to_var(this), left.evaluate());
+        } else if (right.isConst()) {
+            return new BoolAssignment((BoolVar) left.to_var(this), right.evaluate());
         } else {
-            assert !Stream.of(left, right).allMatch(expr -> expr instanceof BoolConst);
             return new BoolEq((BoolVar) left.to_var(this), (BoolVar) right.to_var(this));
         }
     }
@@ -187,7 +180,7 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="arithmetic constraints..">
     public ArithExpr minus(ArithExpr expr) {
-        if (rootLevel() || expr instanceof ArithConst) {
+        if (expr.isConst()) {
             // we check if we can use consts rather than vars..
             Interval eval = expr.evaluate();
             if (eval.isSingleton()) {
@@ -195,9 +188,7 @@ public class Network {
             }
         }
         Lin lin = new Lin();
-        if (expr instanceof ArithConst) {
-            lin.subtract(((ArithConst) expr).val);
-        } else if (expr instanceof ArithVar) {
+        if (expr instanceof ArithVar) {
             if (tableau.containsKey(expr)) {
                 lin.subtract(tableau.get(expr));
             } else {
@@ -208,15 +199,12 @@ public class Network {
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
         }
-        if (lin.vars.isEmpty()) {
-            return new ArithConst(lin.known_term);
-        } else {
-            return lin;
-        }
+        assert !lin.vars.isEmpty();
+        return lin;
     }
 
     public ArithExpr sum(ArithExpr... exprs) {
-        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
+        if (Stream.of(exprs).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             Interval sum = new Interval(0);
             for (ArithExpr expr : exprs) {
@@ -228,8 +216,8 @@ public class Network {
         }
         Lin lin = new Lin();
         for (ArithExpr expr : exprs) {
-            if (expr instanceof ArithConst) {
-                lin.add(((ArithConst) expr).val);
+            if (expr.isConst()) {
+                lin.add(expr.evaluate().lb);
             } else if (expr instanceof ArithVar) {
                 if (tableau.containsKey(expr)) {
                     lin.add(tableau.get(expr));
@@ -258,7 +246,7 @@ public class Network {
     }
 
     public ArithExpr mult(ArithExpr... exprs) {
-        if (rootLevel() || Stream.of(exprs).allMatch(expr -> expr instanceof ArithConst)) {
+        if (Stream.of(exprs).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             Interval prod = new Interval(1);
             for (ArithExpr expr : exprs) {
@@ -271,8 +259,8 @@ public class Network {
         double k = 1;
         Lin lin = new Lin();
         for (ArithExpr expr : exprs) {
-            if (expr instanceof ArithConst) {
-                k *= ((ArithConst) expr).val;
+            if (expr.isConst()) {
+                k *= expr.evaluate().lb;
             } else if (expr instanceof ArithVar) {
                 if (!lin.vars.isEmpty()) {
                     throw new UnsupportedOperationException("non-linear expression..");
@@ -300,7 +288,7 @@ public class Network {
     }
 
     public ArithExpr div(ArithExpr left, ArithExpr right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof ArithConst)) {
+        if (Stream.of(left, right).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             Interval div = left.evaluate().divide(right.evaluate());
             if (div.isSingleton()) {
@@ -308,7 +296,6 @@ public class Network {
             }
         }
         if (right instanceof ArithConst) {
-            assert !(left instanceof ArithConst);
             return mult(newReal(1 / ((ArithConst) right).val), left);
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
@@ -317,7 +304,7 @@ public class Network {
 
     public BoolExpr leq(ArithExpr left, ArithExpr right) {
         ArithExpr c_expr = sum(left, minus(right));
-        if (rootLevel() || c_expr instanceof ArithConst) {
+        if (c_expr.isConst()) {
             Interval val = c_expr.evaluate();
             if (val.leq(0)) {
                 return new BoolConst(LBool.L_TRUE);
@@ -339,7 +326,7 @@ public class Network {
 
     public BoolExpr eq(ArithExpr left, ArithExpr right) {
         ArithExpr c_expr = sum(left, minus(right));
-        if (rootLevel() || c_expr instanceof ArithConst) {
+        if (c_expr.isConst()) {
             Interval val = c_expr.evaluate();
             if (val.eq(0)) {
                 return new BoolConst(LBool.L_TRUE);
@@ -361,7 +348,7 @@ public class Network {
 
     public BoolExpr geq(ArithExpr left, ArithExpr right) {
         ArithExpr c_expr = sum(left, minus(right));
-        if (rootLevel() || c_expr instanceof ArithConst) {
+        if (c_expr.isConst()) {
             Interval val = c_expr.evaluate();
             if (val.geq(0)) {
                 return new BoolConst(LBool.L_TRUE);
@@ -396,7 +383,7 @@ public class Network {
 
     //<editor-fold defaultstate="collapsed" desc="enum constraints..">
     public <T> BoolExpr eq(Expr<EnumDomain<T>> left, Expr<EnumDomain<T>> right) {
-        if (rootLevel() || Stream.of(left, right).allMatch(expr -> expr instanceof EnumConst)) {
+        if (Stream.of(left, right).allMatch(expr -> expr.isConst())) {
             // we check if we can use consts rather than vars..
             EnumDomain<T> left_d = left.evaluate();
             EnumDomain<T> right_d = right.evaluate();
@@ -406,21 +393,18 @@ public class Network {
                 return new BoolConst(LBool.L_TRUE);
             }
         }
-        if (left instanceof EnumConst) {
-            return new EnumAssignment<>((EnumVar<T>) right.to_var(this), ((EnumConst<T>) left).val);
-        } else if (right instanceof EnumConst) {
-            return new EnumAssignment<>((EnumVar<T>) left.to_var(this), ((EnumConst<T>) right).val);
+        if (left.isConst()) {
+            return new EnumAssignment<>((EnumVar<T>) right.to_var(this), left.evaluate().allowed_vals.iterator().next());
+        } else if (right.isConst()) {
+            return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right.evaluate().allowed_vals.iterator().next());
         } else {
             return new EnumEq<>((EnumVar<T>) left.to_var(this), (EnumVar<T>) right.to_var(this));
         }
     }
 
     public <T> BoolExpr eq(Expr<EnumDomain<T>> left, T right) {
-        if (rootLevel() || left instanceof EnumConst) {
-            EnumDomain<T> ed = left.evaluate();
-            if (ed.isSingleton()) {
-                return new BoolConst(ed.allowed_vals.contains(right) ? LBool.L_TRUE : LBool.L_FALSE);
-            }
+        if (left.isConst()) {
+            return new BoolConst(left.evaluate().allowed_vals.contains(right) ? LBool.L_TRUE : LBool.L_FALSE);
         }
         return new EnumAssignment<>((EnumVar<T>) left.to_var(this), right);
     }

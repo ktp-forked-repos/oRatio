@@ -34,6 +34,11 @@ public class ArithConst implements ArithExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return true;
+    }
+
+    @Override
     public Interval evaluate() {
         return new Interval(val);
     }

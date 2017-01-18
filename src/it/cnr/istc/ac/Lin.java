@@ -92,6 +92,11 @@ public class Lin implements ArithExpr {
     }
 
     @Override
+    public boolean isConst() {
+        return vars.keySet().stream().allMatch(var -> var.isConst());
+    }
+
+    @Override
     public Interval evaluate() {
         Interval res = new Interval(known_term);
         for (Map.Entry<ArithVar, Double> entry : vars.entrySet()) {
