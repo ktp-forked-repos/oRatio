@@ -444,10 +444,10 @@ public class Network {
                     throw new AssertionError(expr.evaluate().name());
             }
         }
-        return true;
+        return propagate();
     }
 
-    public boolean propagate() {
+    private boolean propagate() {
         unsat_core.clear();
 
         while (!prop_q.isEmpty()) {

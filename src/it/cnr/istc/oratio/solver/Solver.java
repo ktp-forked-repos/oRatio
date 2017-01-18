@@ -67,7 +67,7 @@ public class Solver extends Core {
     public Solver() {
         resolver = new FindSolution(this);
         ctr_var = resolver.in_plan;
-        boolean propagate = network.add(ctr_var) && network.propagate();
+        boolean propagate = network.add(ctr_var);
         assert propagate;
 
         try {
@@ -466,7 +466,7 @@ public class Solver extends Core {
         BoolExpr no_good = ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
 
         // we backtrack till we can enforce the no-good.. 
-        while (!(network.add(no_good) && network.propagate())) {
+        while (!network.add(no_good)) {
             if (rootLevel()) {
                 // the problem is inconsistent..
                 return false;

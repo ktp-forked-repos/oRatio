@@ -155,7 +155,7 @@ class ExpressionVisitor extends oRatioBaseVisitor<IItem> {
         IArithItem var = core.newReal();
         IArithItem min = (IArithItem) visit(ctx.min);
         IArithItem max = (IArithItem) visit(ctx.max);
-        if (!core.network.add(core.network.geq(var.getArithVar(), min.getArithVar()), core.network.leq(var.getArithVar(), max.getArithVar())) || !core.network.propagate()) {
+        if (!core.network.add(core.network.geq(var.getArithVar(), min.getArithVar()), core.network.leq(var.getArithVar(), max.getArithVar()))) {
             core.parser.notifyErrorListeners(ctx.getStart(), "invalid range expression..", null);
         }
         return var;

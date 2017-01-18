@@ -76,7 +76,7 @@ public class Core implements IScope, IEnv {
             return false;
         }
         parser = null;
-        return network.propagate();
+        return true;
     }
 
     public boolean read(File... files) throws IOException {
@@ -99,7 +99,7 @@ public class Core implements IScope, IEnv {
             }
             parser = null;
         }
-        return network.propagate();
+        return true;
     }
 
     public IBoolItem newBool() {
@@ -261,7 +261,7 @@ public class Core implements IScope, IEnv {
             // there is nothing to add..
             return true;
         } else {
-            return network.add(exprs) && network.propagate();
+            return network.add(exprs);
         }
     }
 

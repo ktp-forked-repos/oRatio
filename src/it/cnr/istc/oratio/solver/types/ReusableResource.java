@@ -99,7 +99,7 @@ public class ReusableResource extends SmartType {
     @Override
     protected boolean factCreated(Atom atom) {
         if (super.factCreated(atom)) {
-            return core.network.add(core.network.not(core.network.eq(atom.state, AtomState.Unified))) && core.network.propagate();
+            return core.network.add(core.network.not(core.network.eq(atom.state, AtomState.Unified)));
         } else {
             return false;
         }
@@ -316,7 +316,7 @@ public class ReusableResource extends SmartType {
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, expr)) && solver.network.propagate();
+            return solver.network.add(solver.network.imply(in_plan, expr));
         }
 
         @Override

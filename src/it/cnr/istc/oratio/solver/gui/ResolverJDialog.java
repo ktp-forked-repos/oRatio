@@ -127,7 +127,6 @@ public class ResolverJDialog extends javax.swing.JDialog {
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel costJLabel;
     private javax.swing.JTextField costJTextField;

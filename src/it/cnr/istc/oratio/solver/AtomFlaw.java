@@ -104,7 +104,7 @@ class AtomFlaw extends Flaw {
         } else {
             if (rs.isEmpty()) {
                 // we remove unification from atom state..
-                boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified))) && solver.network.propagate();
+                boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
                 assert not_unify;
             }
             ExpandGoal eg = new ExpandGoal(solver, solver.network.newReal(1), this, atom);
@@ -150,7 +150,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateFact(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && solver.network.propagate();
+            return solver.activateFact(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
         }
 
         @Override
@@ -170,7 +170,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateGoal(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom) && solver.network.propagate();
+            return solver.activateGoal(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
         }
 
         @Override
@@ -195,7 +195,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.network.add(solver.network.imply(in_plan, eq_expr)) && solver.network.propagate();
+            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.network.add(solver.network.imply(in_plan, eq_expr));
         }
 
         @Override
