@@ -23,9 +23,18 @@ import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.AtomState;
 import it.cnr.istc.oratio.core.IItem;
 import it.cnr.istc.oratio.core.Predicate;
+import it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer;
+import it.cnr.istc.oratio.core.gui.EnvTreeModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
+import javax.swing.JComponent;
+import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.ExpandVetoException;
 
 /**
  *
@@ -49,29 +58,24 @@ class AtomFlaw extends Flaw {
             if (atom != a && solver.reasons.get(a).estimated_cost < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
                 // this atom is a good candidate for unification
                 Collection<BoolExpr> and = new ArrayList<>();
-                Flaw f = solver.reasons.get(atom);
-                while (f != null) {
+                LinkedList<Flaw> queue = new LinkedList<>();
+                queue.add(this);
+                queue.add(solver.reasons.get(atom));
+                while (!queue.isEmpty()) {
+                    Flaw f = queue.pollFirst();
                     assert f.in_plan.evaluate() != LBool.L_FALSE;
-                    assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
+                    assert f.getCauses().stream().allMatch(cause -> cause.in_plan.evaluate() != LBool.L_FALSE);
                     if (!f.in_plan.isSingleton()) {
                         and.add(f.in_plan);
                     }
-                    if (!f.cause.in_plan.isSingleton()) {
-                        and.add(f.cause.in_plan);
+                    for (Resolver cause : f.getCauses()) {
+                        if (!cause.in_plan.isSingleton()) {
+                            and.add(cause.in_plan);
+                            if (cause.effect != null) {
+                                queue.add(cause.effect);
+                            }
+                        }
                     }
-                    f = f.cause.effect;
-                }
-                f = this;
-                while (f != null) {
-                    assert f.in_plan.evaluate() != LBool.L_FALSE;
-                    assert f.cause.in_plan.evaluate() != LBool.L_FALSE;
-                    if (!f.in_plan.isSingleton()) {
-                        and.add(f.in_plan);
-                    }
-                    if (!f.cause.in_plan.isSingleton()) {
-                        and.add(f.cause.in_plan);
-                    }
-                    f = f.cause.effect;
                 }
                 and.add(solver.network.eq(atom.state, AtomState.Unified));
                 and.add(solver.network.eq(a.state, AtomState.Active));
@@ -98,6 +102,27 @@ class AtomFlaw extends Flaw {
             }
             rs.add(new ExpandGoal(solver, solver.network.newReal(1), this, atom));
         }
+    }
+
+    @Override
+    public JComponent getDetails() {
+        JTree tree = new JTree();
+        EnvTreeModel model = new EnvTreeModel();
+        model.setEnv(atom);
+        tree.setModel(model);
+        tree.setCellRenderer(new EnvTreeCellRenderer());
+        tree.setRootVisible(false);
+        tree.addTreeWillExpandListener(new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+                model.createChilds((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+            }
+        });
+        return tree;
     }
 
     @Override

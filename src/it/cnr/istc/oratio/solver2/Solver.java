@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.oratio.solver2;
 
+import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.BoolVar;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.Disjunction;
@@ -24,10 +26,12 @@ import it.cnr.istc.oratio.core.IEnv;
 import it.cnr.istc.oratio.core.IItem;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  *
@@ -35,9 +39,13 @@ import java.util.Set;
  */
 public class Solver extends Core {
 
+    private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     Map<Flaw, Double> flaw_costs;
     Map<Resolver, Double> resolver_costs;
+    Set<Flaw> flaws = new HashSet<>();
+    Set<Flaw> inconsistencies = new HashSet<>();
+    private Resolver resolver;
     private final LinkedList<Layer> layers = new LinkedList<>();
     final LinkedList<Resolver> resolvers = new LinkedList<>();
     private final Collection<SolverListener> listeners = new ArrayList<>();
@@ -82,8 +90,107 @@ public class Solver extends Core {
         return super.newDisjunction(env, d); //To change body of generated methods, choose Tools | Templates.
     }
 
+    /**
+     * Checks if the given boolean expression can be made {@code true} in the
+     * current constraint network. This method saves the current state by
+     * calling {@link Network#push()}. If the expression can be made
+     * {@code true} the state of the network is restored, otherwise a no-good is
+     * added to the network and {@link #backjump()} is called.
+     *
+     * @param expr the boolean expression to be checked.
+     * @return {@code true} if the given boolean expression can be made true.
+     */
+    public boolean check(BoolExpr expr) {
+        switch (expr.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                push();
+                if (network.assign(expr)) {
+                    pop();
+                    return true;
+                } else {
+                    boolean backjump = backjump();
+                    assert backjump;
+                    return false;
+                }
+            default:
+                throw new AssertionError(expr.evaluate().name());
+        }
+    }
+
     public boolean rootLevel() {
         return layers.isEmpty();
+    }
+
+    private void push() {
+        // we create a new layer..
+        Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
+        flaw_costs = new IdentityHashMap<>();
+        resolver_costs = new IdentityHashMap<>();
+        flaws = new HashSet<>(flaws);
+        inconsistencies = new HashSet<>(inconsistencies);
+        layers.add(l);
+
+        // we also create a new layer in the constraint network..
+        network.push();
+    }
+
+    private void pop() {
+        // we restore the constraint network state..
+        network.pop();
+
+        // we also restore updated flaws and resolvers costs..
+        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+
+        Layer l_l = layers.getLast();
+        resolver = l_l.resolver;
+        flaw_costs = l_l.flaw_costs;
+        resolver_costs = l_l.resolver_costs;
+        flaws = l_l.flaws;
+        inconsistencies = l_l.inconsistencies;
+        layers.pollLast();
+    }
+
+    /**
+     * Generates a no-good and uses it to backjump until the no-good is
+     * admissible returning {@code true} if the no-good can be added to the
+     * constraint network or {@code false} if the problem is inconsistent.
+     *
+     * @return {@code true} if the no-good can be added to the constraint
+     * network and {@code false} if the problem is inconsistent.
+     */
+    private boolean backjump() {
+        LOG.info("backjumping..");
+        // we compute the unsat-core..
+        Collection<BoolVar> unsat_core = network.getUnsatCore();
+
+        // we build a no-good..
+        Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
+        for (BoolVar v : unsat_core) {
+            ng_vars.add((BoolVar) network.not(v).to_var(network));
+        }
+        BoolExpr no_good = ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
+
+        // we backtrack till we can enforce the no-good.. 
+        while (!network.add(no_good)) {
+            if (rootLevel()) {
+                // the problem is inconsistent..
+                return false;
+            }
+
+            // we restore flaws and resolvers state..
+            pop();
+        }
+
+        return true;
     }
 
     void fireNewFlaw(Flaw f) {

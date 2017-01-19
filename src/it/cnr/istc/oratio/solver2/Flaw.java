@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
  *
@@ -110,6 +112,10 @@ public abstract class Flaw implements Propagator {
      * by available resolvers.
      */
     protected abstract void computeResolvers(Collection<Resolver> rs);
+
+    public JComponent getDetails() {
+        return new JPanel();
+    }
 
     public abstract String toSimpleString();
 
