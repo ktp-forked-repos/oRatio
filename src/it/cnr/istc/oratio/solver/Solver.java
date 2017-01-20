@@ -60,7 +60,7 @@ public class Solver extends Core {
     Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
     Set<Flaw> inconsistencies = new HashSet<>();
-    private Resolver resolver;
+    Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
     final LinkedList<Resolver> resolvers = new LinkedList<>();
     private final LinkedList<Layer> layers = new LinkedList<>();
@@ -68,7 +68,6 @@ public class Solver extends Core {
 
     public Solver() {
         resolver = new FindSolution(this);
-        resolvers.add(resolver);
         ctr_var = resolver.in_plan;
         boolean propagate = network.add(ctr_var);
         assert propagate;
@@ -528,6 +527,7 @@ public class Solver extends Core {
 
     public void addSolverListener(SolverListener listener) {
         listeners.add(listener);
+        listener.newResolver(resolver);
         for (Resolver r : resolvers) {
             listener.newResolver(r);
         }

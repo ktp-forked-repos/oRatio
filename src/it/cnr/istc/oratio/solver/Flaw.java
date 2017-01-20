@@ -47,8 +47,10 @@ public abstract class Flaw implements Propagator {
 
     public Flaw(Solver s, boolean disjunctive) {
         this.solver = s;
-        this.in_plan = s.resolvers.size() == 1 ? s.resolvers.iterator().next().in_plan : (BoolVar) s.network.and(s.resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
-        this.causes = new ArrayList<>(s.resolvers);
+        this.causes = new ArrayList<>(s.resolvers.size() + 1);
+        this.causes.add(s.resolver);
+        this.causes.addAll(s.resolvers);
+        this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
         this.solver.fireNewFlaw(this);
         this.disjunctive = disjunctive;
     }
@@ -111,18 +113,27 @@ public abstract class Flaw implements Propagator {
                 }
                 estimated_cost = computed_cost;
                 solver.fireFlawUpdate(this);
+                boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY;
+                if (deferrable != c_deferrable) {
+                    deferrable = c_deferrable;
+                    solver.fireFlawUpdate(this);
+                    for (Resolver resolver : resolvers) {
+                        for (Flaw precondition : resolver.getPreconditions()) {
+                            precondition.updateDeferrable(new HashSet<>(Arrays.asList(this)));
+                        }
+                    }
+                }
                 for (Resolver cause : causes) {
                     cause.updateCosts(new HashSet<>(visited));
                 }
-                updateRequiresExpansion(new HashSet<>());
             }
         }
     }
 
-    void updateRequiresExpansion(Set<Flaw> visited) {
+    private void updateDeferrable(Set<Flaw> visited) {
         if (!visited.contains(this)) {
             visited.add(this);
-            boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY || causes.stream().anyMatch(cause -> cause.effect.deferrable);
+            boolean c_deferrable = causes.stream().anyMatch(cause -> cause.effect.deferrable);
             if (deferrable != c_deferrable) {
                 if (!solver.rootLevel() && !solver.deferrable_flaws.containsKey(this)) {
                     solver.deferrable_flaws.put(this, deferrable);
@@ -131,7 +142,7 @@ public abstract class Flaw implements Propagator {
                 solver.fireFlawUpdate(this);
                 for (Resolver resolver : resolvers) {
                     for (Flaw precondition : resolver.getPreconditions()) {
-                        precondition.updateRequiresExpansion(new HashSet<>(visited));
+                        precondition.updateDeferrable(new HashSet<>(visited));
                     }
                 }
             }

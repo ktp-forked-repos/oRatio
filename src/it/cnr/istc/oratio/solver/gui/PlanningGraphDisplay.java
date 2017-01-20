@@ -125,8 +125,8 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
 
         ColorAction nStroke = new ColorAction(NODES, VisualItem.STROKECOLOR);
         nStroke.setDefaultColor(ColorLib.gray(255));
-        nStroke.add(NODE_TYPE + " == \"deferrable-flaw\"", ColorLib.rgb(205, 253, 208));
-        nStroke.add(NODE_TYPE + " == \"undeferrable-flaw\"", ColorLib.rgb(255, 203, 208));
+        nStroke.add(NODE_TYPE + " == \"undeferrable-flaw\"", ColorLib.rgb(205, 253, 208));
+        nStroke.add(NODE_TYPE + " == \"deferrable-flaw\"", ColorLib.rgb(255, 203, 208));
         nStroke.add(NODE_TYPE + " == \"resolver\"", ColorLib.gray(255));
         nStroke.add(VisualItem.HOVER, ColorLib.gray(200));
 
