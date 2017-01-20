@@ -191,7 +191,7 @@ public class PropositionalState extends SmartType {
                                     if (or.isEmpty()) {
                                         throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
                                     }
-                                    fs.add(new PropositionalStateFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                                    fs.add(new PropositionalStateFlaw((Solver) core, or));
                                 }
                             }
                         }
@@ -235,17 +235,15 @@ public class PropositionalState extends SmartType {
 
         private final Collection<BoolExpr> or;
 
-        PropositionalStateFlaw(Solver s, Resolver c, Collection<BoolExpr> or) {
-            super(s, c);
+        PropositionalStateFlaw(Solver s, Collection<BoolExpr> or) {
+            super(s, false);
             this.or = or;
         }
 
         @Override
         protected void computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
-                PropositionalStateResolver psr = new PropositionalStateResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
-                psr.fireNewResolver();
-                rs.add(psr);
+                rs.add(new PropositionalStateResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr));
             }
         }
 
@@ -267,11 +265,6 @@ public class PropositionalState extends SmartType {
         PropositionalStateResolver(Solver s, ArithExpr c, Flaw e, BoolExpr expr) {
             super(s, c, e);
             this.expr = expr;
-        }
-
-        @Override
-        protected void fireNewResolver() {
-            super.fireNewResolver();
         }
 
         @Override

@@ -195,7 +195,7 @@ public class StateVariable extends SmartType {
                     if (or.isEmpty()) {
                         throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
                     }
-                    fs.add(new StateVariableFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                    fs.add(new StateVariableFlaw((Solver) core, or));
                 }
             }
         }
@@ -236,17 +236,15 @@ public class StateVariable extends SmartType {
 
         private final Collection<BoolExpr> or;
 
-        StateVariableFlaw(Solver s, Resolver c, Collection<BoolExpr> or) {
-            super(s, c);
+        StateVariableFlaw(Solver s, Collection<BoolExpr> or) {
+            super(s, false);
             this.or = or;
         }
 
         @Override
         protected void computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
-                StateVariableResolver svr = new StateVariableResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
-                svr.fireNewResolver();
-                rs.add(svr);
+                rs.add(new StateVariableResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr));
             }
         }
 
@@ -268,11 +266,6 @@ public class StateVariable extends SmartType {
         StateVariableResolver(Solver s, ArithExpr c, Flaw e, BoolExpr expr) {
             super(s, c, e);
             this.expr = expr;
-        }
-
-        @Override
-        protected void fireNewResolver() {
-            super.fireNewResolver();
         }
 
         @Override

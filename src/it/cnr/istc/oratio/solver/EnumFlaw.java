@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ class EnumFlaw extends Flaw {
 
     private final IEnumItem enum_item;
 
-    EnumFlaw(Solver s, Resolver c, IEnumItem ei) {
-        super(s, c);
+    EnumFlaw(Solver s, IEnumItem ei) {
+        super(s, true);
         this.enum_item = ei;
     }
 
@@ -40,10 +40,7 @@ class EnumFlaw extends Flaw {
     protected void computeResolvers(Collection<Resolver> rs) {
         Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
         for (IItem v : vals) {
-            enum_item.allows(v);
-            ChooseValue cv = new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v));
-            cv.fireNewResolver();
-            rs.add(cv);
+            rs.add(new ChooseValue(solver, solver.network.newReal(1.0 / vals.size()), this, enum_item.allows(v)));
         }
     }
 

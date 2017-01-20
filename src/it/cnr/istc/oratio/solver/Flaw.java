@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,40 +37,48 @@ import javax.swing.JPanel;
 public abstract class Flaw implements Propagator {
 
     protected final Solver solver;
-    protected final Resolver cause;
     protected final BoolVar in_plan;
+    private final boolean disjunctive;
     private final Collection<Resolver> resolvers = new ArrayList<>();
+    private final Collection<Resolver> causes;
     protected double estimated_cost = Double.POSITIVE_INFINITY;
     private boolean expanded = false;
+    private boolean deferrable = false;
 
-    public Flaw(Solver s, Resolver c) {
+    public Flaw(Solver s, boolean disjunctive) {
         this.solver = s;
-        this.cause = c;
-        this.in_plan = s.network.newBool();
-    }
-
-    public boolean isExpanded() {
-        return expanded;
-    }
-
-    public boolean isSolved() {
-        return estimated_cost < Double.POSITIVE_INFINITY;
+        this.in_plan = s.resolvers.size() == 1 ? s.resolvers.iterator().next().in_plan : (BoolVar) s.network.and(s.resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
+        this.causes = new ArrayList<>(s.resolvers);
+        this.solver.fireNewFlaw(this);
+        this.disjunctive = disjunctive;
     }
 
     public BoolVar getInPlan() {
         return in_plan;
     }
 
-    public double getEstimatedCost() {
-        return estimated_cost;
+    public boolean isDisjunctive() {
+        return disjunctive;
     }
 
     public Collection<Resolver> getResolvers() {
         return Collections.unmodifiableCollection(resolvers);
     }
 
-    public Resolver getCause() {
-        return cause;
+    public Collection<Resolver> getCauses() {
+        return Collections.unmodifiableCollection(causes);
+    }
+
+    public double getEstimatedCost() {
+        return estimated_cost;
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public boolean isDeferrable() {
+        return deferrable;
     }
 
     boolean expand() {
@@ -89,18 +97,9 @@ public abstract class Flaw implements Propagator {
                 return solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan));
             default:
                 // we need to take a decision for solving this flaw..
-                return solver.network.add(solver.network.imply(in_plan, solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
+                return solver.network.add(solver.network.imply(in_plan, disjunctive ? solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
         }
     }
-
-    /**
-     * Computes the resolvers for this flaw, by adding them to the {@code rs}
-     * collection.
-     *
-     * @param rs an initially empty {@code Collection} of resolvers to be filled
-     * by available resolvers.
-     */
-    protected abstract void computeResolvers(Collection<Resolver> rs);
 
     void updateCosts(Set<Flaw> visited) {
         if (!visited.contains(this)) {
@@ -111,16 +110,32 @@ public abstract class Flaw implements Propagator {
                     solver.flaw_costs.put(this, estimated_cost);
                 }
                 estimated_cost = computed_cost;
-                fireFlawUpdate();
-                if (cause != null) {
+                solver.fireFlawUpdate(this);
+                for (Resolver cause : causes) {
                     cause.updateCosts(new HashSet<>(visited));
                 }
+                updateRequiresExpansion(new HashSet<>());
             }
         }
     }
 
-    protected void fireFlawUpdate() {
-        solver.fireFlawUpdate(this);
+    void updateRequiresExpansion(Set<Flaw> visited) {
+        if (!visited.contains(this)) {
+            visited.add(this);
+            boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY;
+            if (deferrable != c_deferrable) {
+                if (!solver.rootLevel() && !solver.deferrable_flaws.containsKey(this)) {
+                    solver.deferrable_flaws.put(this, deferrable);
+                }
+                deferrable = c_deferrable;
+                solver.fireFlawUpdate(this);
+                for (Resolver resolver : resolvers) {
+                    for (Flaw precondition : resolver.getPreconditions()) {
+                        precondition.updateRequiresExpansion(new HashSet<>(visited));
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -131,13 +146,29 @@ public abstract class Flaw implements Propagator {
     @Override
     public boolean propagate(Var<?> v) {
         if (in_plan.evaluate() == LBool.L_FALSE) {
-            estimated_cost = Double.POSITIVE_INFINITY;
-            if (cause != null) {
-                cause.updateCosts(new HashSet<>(Arrays.asList(this)));
+            double computed_cost = Double.POSITIVE_INFINITY;
+            if (computed_cost != estimated_cost) {
+                if (!solver.rootLevel() && !solver.flaw_costs.containsKey(this)) {
+                    solver.flaw_costs.put(this, estimated_cost);
+                }
+                estimated_cost = computed_cost;
+                solver.fireFlawUpdate(this);
+                for (Resolver cause : causes) {
+                    cause.updateCosts(new HashSet<>(Arrays.asList(this)));
+                }
             }
         }
         return true;
     }
+
+    /**
+     * Computes the resolvers for this flaw, by adding them to the {@code rs}
+     * collection.
+     *
+     * @param rs an initially empty {@code Collection} of resolvers to be filled
+     * by available resolvers.
+     */
+    protected abstract void computeResolvers(Collection<Resolver> rs);
 
     public JComponent getDetails() {
         return new JPanel();

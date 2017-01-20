@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ class DisjunctionFlaw extends Flaw {
     private final IEnv env;
     private final Disjunction disjunction;
 
-    DisjunctionFlaw(Solver s, Resolver c, IEnv env, Disjunction d) {
-        super(s, c);
+    DisjunctionFlaw(Solver s, IEnv env, Disjunction d) {
+        super(s, true);
         this.env = env;
         this.disjunction = d;
     }
@@ -40,9 +40,7 @@ class DisjunctionFlaw extends Flaw {
     @Override
     protected void computeResolvers(Collection<Resolver> rs) {
         for (Conjunction conjunction : disjunction.getConjunctions()) {
-            ChooseConjunction cc = new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction);
-            cc.fireNewResolver();
-            rs.add(cc);
+            rs.add(new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction));
         }
     }
 

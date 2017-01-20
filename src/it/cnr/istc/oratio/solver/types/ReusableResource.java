@@ -234,7 +234,7 @@ public class ReusableResource extends SmartType {
                     if (or.isEmpty()) {
                         throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
                     }
-                    fs.add(new ReusableResourceFlaw((Solver) core, ((Solver) core).getResolver(), or));
+                    fs.add(new ReusableResourceFlaw((Solver) core, or));
                 }
             }
         }
@@ -275,17 +275,15 @@ public class ReusableResource extends SmartType {
 
         private final Collection<BoolExpr> or;
 
-        ReusableResourceFlaw(Solver s, Resolver c, Collection<BoolExpr> or) {
-            super(s, c);
+        ReusableResourceFlaw(Solver s, Collection<BoolExpr> or) {
+            super(s, false);
             this.or = or;
         }
 
         @Override
         protected void computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
-                ReusableResourceResolver rrr = new ReusableResourceResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr);
-                rrr.fireNewResolver();
-                rs.add(rrr);
+                rs.add(new ReusableResourceResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr));
             }
         }
 
@@ -307,11 +305,6 @@ public class ReusableResource extends SmartType {
         ReusableResourceResolver(Solver s, ArithExpr c, Flaw e, BoolExpr expr) {
             super(s, c, e);
             this.expr = expr;
-        }
-
-        @Override
-        protected void fireNewResolver() {
-            super.fireNewResolver();
         }
 
         @Override

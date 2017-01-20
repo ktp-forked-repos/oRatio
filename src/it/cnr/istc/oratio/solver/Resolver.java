@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,19 @@ public abstract class Resolver implements Propagator {
         this.cost = c;
         this.effect = e;
         this.in_plan = s.network.newBool();
+        this.solver.fireNewResolver(this);
+    }
+
+    public BoolVar getInPlan() {
+        return in_plan;
+    }
+
+    boolean addPrecondition(Flaw f) {
+        preconditions.add(f);
+        updateCosts(new HashSet<>());
+        solver.fireNewCausalLink(f, this);
+        // if this choice is in plan, its preconditions must be in plan as well..
+        return solver.network.add(solver.network.imply(in_plan, f.in_plan));
     }
 
     public Collection<Flaw> getPreconditions() {
@@ -57,45 +70,23 @@ public abstract class Resolver implements Propagator {
         return effect;
     }
 
-    public BoolVar getInPlan() {
-        return in_plan;
-    }
-
     public double getEstimatedCost() {
         return estimated_cost;
     }
 
-    protected boolean addPrecondition(Flaw f) {
-        preconditions.add(f);
-        updateCosts(new HashSet<>());
-        solver.fireNewCausalLink(f, this);
-        // if this choice is in plan, its preconditions must be in plan as well..
-        return solver.network.add(solver.network.imply(in_plan, f.in_plan));
-    }
-
-    protected void updateCosts(Set<Flaw> visited) {
+    void updateCosts(Set<Flaw> visited) {
         double computed_cost = preconditions.stream().mapToDouble(f -> f.estimated_cost).max().orElse(0) + solver.network.evaluate(cost);
         if (computed_cost != estimated_cost) {
             if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
                 solver.resolver_costs.put(this, estimated_cost);
             }
             estimated_cost = computed_cost;
-            fireResolverUpdate();
+            solver.fireResolverUpdate(this);
             if (effect != null) {
                 effect.updateCosts(visited);
             }
         }
     }
-
-    protected void fireNewResolver() {
-        solver.fireNewResolver(this);
-    }
-
-    protected void fireResolverUpdate() {
-        solver.fireResolverUpdate(this);
-    }
-
-    protected abstract boolean apply();
 
     @Override
     public Var<?>[] getArgs() {
@@ -105,13 +96,22 @@ public abstract class Resolver implements Propagator {
     @Override
     public boolean propagate(Var<?> v) {
         if (in_plan.evaluate() == LBool.L_FALSE) {
-            estimated_cost = Double.POSITIVE_INFINITY;
-            if (effect != null) {
-                effect.updateCosts(new HashSet<>());
+            double computed_cost = Double.POSITIVE_INFINITY;
+            if (computed_cost != estimated_cost) {
+                if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
+                    solver.resolver_costs.put(this, estimated_cost);
+                }
+                estimated_cost = computed_cost;
+                solver.fireResolverUpdate(this);
+                if (effect != null) {
+                    effect.updateCosts(new HashSet<>());
+                }
             }
         }
         return true;
     }
+
+    protected abstract boolean apply();
 
     public JComponent getDetails() {
         return new JPanel();

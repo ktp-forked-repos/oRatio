@@ -56,16 +56,19 @@ public class Solver extends Core {
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     Map<Flaw, Double> flaw_costs;
+    Map<Flaw, Boolean> deferrable_flaws;
     Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
     Set<Flaw> inconsistencies = new HashSet<>();
-    private final LinkedList<Layer> layers = new LinkedList<>();
     private Resolver resolver;
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
+    final LinkedList<Resolver> resolvers = new LinkedList<>();
+    private final LinkedList<Layer> layers = new LinkedList<>();
     private final Collection<SolverListener> listeners = new ArrayList<>();
 
     public Solver() {
         resolver = new FindSolution(this);
+        resolvers.add(resolver);
         ctr_var = resolver.in_plan;
         boolean propagate = network.add(ctr_var);
         assert propagate;
@@ -74,7 +77,7 @@ public class Solver extends Core {
             boolean read = read(new File(Solver.class.getResource("time.rddl").getPath()));
             assert read;
         } catch (IOException ex) {
-            Logger.getLogger(Solver.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.log(Level.SEVERE, null, ex);
         }
 
         types.put(StateVariable.NAME, new StateVariable(this));
@@ -89,13 +92,12 @@ public class Solver extends Core {
     @Override
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
-        EnumFlaw flaw = new EnumFlaw(this, resolver, c_enum);
-        fireNewFlaw(flaw);
+        EnumFlaw flaw = new EnumFlaw(this, c_enum);
         if (!resolver.addPrecondition(flaw)) {
             LOG.log(Level.INFO, "cannot create enum {0}: inconsistent problem..", flaw.toSimpleString());
             return null;
         }
-        if (flaw.cause.effect == null) {
+        if (flaw.getCauses().isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
         }
@@ -105,23 +107,21 @@ public class Solver extends Core {
 
     @Override
     protected boolean newFact(Atom atom) {
-        if (super.newFact(atom)) {
-            AtomFlaw flaw = new AtomFlaw(this, resolver, atom, true);
-            reasons.put(atom, flaw);
-            fireNewFlaw(flaw);
-            if (!resolver.addPrecondition(flaw)) {
-                LOG.log(Level.INFO, "cannot create fact {0}: inconsistent problem..", flaw.toSimpleString());
-                return false;
-            }
-            if (flaw.cause.effect == null) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-            flaw_q.add(flaw);
-            return true;
-        } else {
+        if (!super.newFact(atom)) {
             return false;
         }
+        AtomFlaw flaw = new AtomFlaw(this, atom, true);
+        reasons.put(atom, flaw);
+        if (!resolver.addPrecondition(flaw)) {
+            LOG.log(Level.INFO, "cannot create fact {0}: inconsistent problem..", flaw.toSimpleString());
+            return false;
+        }
+        if (flaw.getCauses().isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
+        }
+        flaw_q.add(flaw);
+        return true;
     }
 
     @Override
@@ -136,23 +136,21 @@ public class Solver extends Core {
 
     @Override
     protected boolean newGoal(Atom atom) {
-        if (super.newGoal(atom)) {
-            AtomFlaw flaw = new AtomFlaw(this, resolver, atom, false);
-            reasons.put(atom, flaw);
-            fireNewFlaw(flaw);
-            if (!resolver.addPrecondition(flaw)) {
-                LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
-                return false;
-            }
-            if (flaw.cause.effect == null) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-            flaw_q.add(flaw);
-            return true;
-        } else {
+        if (!super.newGoal(atom)) {
             return false;
         }
+        AtomFlaw flaw = new AtomFlaw(this, atom, false);
+        reasons.put(atom, flaw);
+        if (!resolver.addPrecondition(flaw)) {
+            LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
+            return false;
+        }
+        if (flaw.getCauses().isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
+        }
+        flaw_q.add(flaw);
+        return true;
     }
 
     @Override
@@ -167,50 +165,51 @@ public class Solver extends Core {
 
     @Override
     public boolean newDisjunction(IEnv env, Disjunction d) {
-        if (super.newDisjunction(env, d)) {
-            DisjunctionFlaw flaw = new DisjunctionFlaw(this, resolver, env, d);
-            fireNewFlaw(flaw);
-            if (!resolver.addPrecondition(flaw)) {
-                LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
-                return false;
-            }
-            if (flaw.cause.effect == null) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-            flaw_q.add(flaw);
-            return true;
-        } else {
+        if (!super.newDisjunction(env, d)) {
             return false;
         }
+        DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
+        if (!resolver.addPrecondition(flaw)) {
+            LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
+            return false;
+        }
+        if (flaw.getCauses().isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
+        }
+        flaw_q.add(flaw);
+        return true;
     }
 
-    void fireNewFlaw(Flaw f) {
-        listeners.parallelStream().forEach(l -> l.newFlaw(f));
-    }
-
-    void fireNewResolver(Resolver r) {
-        listeners.parallelStream().forEach(l -> l.newResolver(r));
-    }
-
-    void fireFlawUpdate(Flaw f) {
-        listeners.parallelStream().forEach(l -> l.updateFlaw(f));
-    }
-
-    void fireResolverUpdate(Resolver r) {
-        listeners.parallelStream().forEach(l -> l.updateResolver(r));
-    }
-
-    void fireNewCausalLink(Flaw f, Resolver r) {
-        listeners.parallelStream().forEach(l -> l.newCausalLink(f, r));
-    }
-
-    void fireCurrentFlaw(Flaw f) {
-        listeners.parallelStream().forEach(l -> l.currentFlaw(f));
-    }
-
-    void fireCurrentResolver(Resolver r) {
-        listeners.parallelStream().forEach(l -> l.currentResolver(r));
+    /**
+     * Checks if the given boolean expression can be made {@code true} in the
+     * current constraint network. This method saves the current state by
+     * calling {@link Network#push()}. If the expression can be made
+     * {@code true} the state of the network is restored, otherwise a no-good is
+     * added to the network and {@link #backjump()} is called.
+     *
+     * @param expr the boolean expression to be checked.
+     * @return {@code true} if the given boolean expression can be made true.
+     */
+    public boolean check(BoolExpr expr) {
+        switch (expr.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                push();
+                if (network.assign(expr)) {
+                    pop();
+                    return true;
+                } else {
+                    boolean backjump = backjump();
+                    assert backjump;
+                    return false;
+                }
+            default:
+                throw new AssertionError(expr.evaluate().name());
+        }
     }
 
     /**
@@ -266,7 +265,6 @@ public class Solver extends Core {
             inconsistencies.addAll(get_inconsistencies());
             if (!inconsistencies.isEmpty()) {
                 for (Flaw f : inconsistencies) {
-                    fireNewFlaw(f);
                     if (!resolver.addPrecondition(f)) {
                         // the problem is unsolvable..
                         LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
@@ -295,6 +293,7 @@ public class Solver extends Core {
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+                resolvers.add(resolver);
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
@@ -312,47 +311,6 @@ public class Solver extends Core {
                 // Hurray!! We have found a solution..
                 return true;
             }
-        }
-    }
-
-    /**
-     * Returns an instance of {@code Resolver} representing the current
-     * resolver.
-     *
-     * @return the current resolver.
-     */
-    public Resolver getResolver() {
-        return resolver;
-    }
-
-    /**
-     * Checks if the given boolean expression can be made {@code true} in the
-     * current constraint network. This method saves the current state by
-     * calling {@link Network#push()}. If the expression can be made
-     * {@code true} the state of the network is restored, otherwise a no-good is
-     * added to the network and {@link #backjump()} is called.
-     *
-     * @param expr the boolean expression to be checked.
-     * @return {@code true} if the given boolean expression can be made true.
-     */
-    public boolean check(BoolExpr expr) {
-        switch (expr.evaluate()) {
-            case L_TRUE:
-                return true;
-            case L_FALSE:
-                return false;
-            case L_UNKNOWN:
-                push();
-                if (network.assign(expr)) {
-                    pop();
-                    return true;
-                } else {
-                    boolean backjump = backjump();
-                    assert backjump;
-                    return false;
-                }
-            default:
-                throw new AssertionError(expr.evaluate().name());
         }
     }
 
@@ -375,40 +333,26 @@ public class Solver extends Core {
         Resolver tmp_r = resolver;
         while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
-            if (!flaw.isExpanded()) {
-                // not all flaws require to be expanded..
-                boolean requires_expansion = true;
-                Flaw c_f = flaw;
-                while (c_f.cause != tmp_r) {
-                    if (c_f.cause.effect.isSolved()) {
-                        requires_expansion = false;
-                        break;
-                    } else {
-                        c_f = c_f.cause.effect;
-                    }
+            if (flaw.isDeferrable()) {
+                if (!flaw.expand()) {
+                    return false;
                 }
-
-                if (requires_expansion) {
-                    if (!flaw.expand()) {
+                for (Resolver r : flaw.getResolvers()) {
+                    resolver = r;
+                    ctr_var = resolver.in_plan;
+                    if (!resolver.apply()) {
                         return false;
                     }
-                    for (Resolver r : flaw.getResolvers()) {
-                        resolver = r;
-                        ctr_var = resolver.in_plan;
-                        if (!resolver.apply()) {
-                            return false;
-                        }
-                        if (resolver.getPreconditions().isEmpty()) {
-                            // there are no requirements for this resolver..
-                            resolver.estimated_cost = 0;
-                            fireResolverUpdate(resolver);
-                            flaw.updateCosts(new HashSet<>());
-                        }
+                    if (resolver.getPreconditions().isEmpty()) {
+                        // there are no requirements for this resolver..
+                        resolver.estimated_cost = 0;
+                        fireResolverUpdate(resolver);
+                        flaw.updateCosts(new HashSet<>());
                     }
-                } else {
-                    // we postpone the expansion..
-                    flaw_q.add(flaw);
                 }
+            } else {
+                // we postpone the expansion..
+                flaw_q.add(flaw);
             }
         }
 
@@ -446,6 +390,68 @@ public class Solver extends Core {
     }
 
     /**
+     * Cleans up trivial flaws from the set of given flaws. Flaws are considered
+     * trivial if they have a single admissible resolver.
+     *
+     * @param c_flaws the set of flaws to be cleaned.
+     */
+    private void clear_flaws(Set<Flaw> c_flaws) {
+        Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+        while (trivial_flaw.isPresent()) {
+            assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+            Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+            assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+            assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+            c_flaws.remove(trivial_flaw.get());
+            c_flaws.addAll(unique_resolver.getPreconditions());
+            trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+        }
+    }
+
+    public boolean rootLevel() {
+        return layers.isEmpty();
+    }
+
+    private void push() {
+        // we create a new layer..
+        Layer l = new Layer(resolver, flaw_costs, deferrable_flaws, resolver_costs, flaws, inconsistencies);
+        flaw_costs = new IdentityHashMap<>();
+        deferrable_flaws = new IdentityHashMap<>();
+        resolver_costs = new IdentityHashMap<>();
+        flaws = new HashSet<>(flaws);
+        inconsistencies = new HashSet<>(inconsistencies);
+        layers.add(l);
+
+        // we also create a new layer in the constraint network..
+        network.push();
+    }
+
+    private void pop() {
+        // we restore the constraint network state..
+        network.pop();
+
+        // we also restore updated flaws and resolvers costs..
+        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
+            entry.getKey().estimated_cost = entry.getValue();
+        }
+
+        Layer l_l = layers.getLast();
+        resolver = l_l.resolver;
+        flaw_costs = l_l.flaw_costs;
+        deferrable_flaws = l_l.deferrable_flaws;
+        resolver_costs = l_l.resolver_costs;
+        flaws = l_l.flaws;
+        inconsistencies = l_l.inconsistencies;
+        if (resolvers.peekLast() == resolver) {
+            resolvers.pollLast();
+        }
+        layers.pollLast();
+    }
+
+    /**
      * Generates a no-good and uses it to backjump until the no-good is
      * admissible returning {@code true} if the no-good can be added to the
      * constraint network or {@code false} if the problem is inconsistent.
@@ -479,70 +485,62 @@ public class Solver extends Core {
         return true;
     }
 
-    private void push() {
-        // we create a new layer..
-        Layer l = new Layer(resolver, flaw_costs, resolver_costs, flaws, inconsistencies);
-        flaw_costs = new IdentityHashMap<>();
-        resolver_costs = new IdentityHashMap<>();
-        flaws = new HashSet<>(flaws);
-        inconsistencies = new HashSet<>(inconsistencies);
-        layers.add(l);
-
-        // we also create a new layer in the constraint network..
-        network.push();
+    void fireNewFlaw(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.newFlaw(f));
     }
 
-    private void pop() {
-        // we restore the constraint network state..
-        network.pop();
-
-        // we also restore updated flaws and resolvers costs..
-        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-            entry.getKey().estimated_cost = entry.getValue();
-        }
-        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
-            entry.getKey().estimated_cost = entry.getValue();
-        }
-
-        Layer l_l = layers.getLast();
-        resolver = l_l.resolver;
-        flaw_costs = l_l.flaw_costs;
-        resolver_costs = l_l.resolver_costs;
-        flaws = l_l.flaws;
-        inconsistencies = l_l.inconsistencies;
-        layers.pollLast();
+    void fireNewResolver(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.newResolver(r));
     }
 
-    /**
-     * Cleans up trivial flaws from the set of given flaws. Flaws are considered
-     * trivial if they have a single admissible resolver.
-     *
-     * @param c_flaws the set of flaws to be cleaned.
-     */
-    private void clear_flaws(Set<Flaw> c_flaws) {
-        Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-        while (trivial_flaw.isPresent()) {
-            assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-            Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-            assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-            assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-            c_flaws.remove(trivial_flaw.get());
-            c_flaws.addAll(unique_resolver.getPreconditions());
-            trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-        }
+    void fireFlawUpdate(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.updateFlaw(f));
     }
 
-    public boolean rootLevel() {
-        return layers.isEmpty();
+    void fireResolverUpdate(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.updateResolver(r));
+    }
+
+    void fireNewCausalLink(Flaw f, Resolver r) {
+        listeners.parallelStream().forEach(l -> l.newCausalLink(f, r));
+    }
+
+    void fireCurrentFlaw(Flaw f) {
+        listeners.parallelStream().forEach(l -> l.currentFlaw(f));
+    }
+
+    void fireCurrentResolver(Resolver r) {
+        listeners.parallelStream().forEach(l -> l.currentResolver(r));
     }
 
     public void addSolverListener(SolverListener listener) {
         listeners.add(listener);
-        listener.newResolver(resolver);
+        for (Resolver r : resolvers) {
+            listener.newResolver(r);
+        }
     }
 
     public void removeSolverListener(SolverListener listener) {
         listeners.remove(listener);
+    }
+
+    static class Layer {
+
+        private final Resolver resolver;
+        private final Map<Flaw, Double> flaw_costs;
+        private final Map<Flaw, Boolean> deferrable_flaws;
+        private final Map<Resolver, Double> resolver_costs;
+        private final Set<Flaw> flaws;
+        private final Set<Flaw> inconsistencies;
+
+        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Flaw, Boolean> deferrable_flaws, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
+            this.resolver = resolver;
+            this.flaw_costs = flaw_costs;
+            this.deferrable_flaws = deferrable_flaws;
+            this.resolver_costs = resolver_costs;
+            this.flaws = flaws;
+            this.inconsistencies = inconsistencies;
+        }
     }
 
     static class FindSolution extends Resolver {
@@ -559,23 +557,6 @@ public class Solver extends Core {
         @Override
         public String toSimpleString() {
             return "solution";
-        }
-    }
-
-    static class Layer {
-
-        private final Resolver resolver;
-        private final Map<Flaw, Double> flaw_costs;
-        private final Map<Resolver, Double> resolver_costs;
-        private final Set<Flaw> flaws;
-        private final Set<Flaw> inconsistencies;
-
-        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
-            this.resolver = resolver;
-            this.flaw_costs = flaw_costs;
-            this.resolver_costs = resolver_costs;
-            this.flaws = flaws;
-            this.inconsistencies = inconsistencies;
         }
     }
 }

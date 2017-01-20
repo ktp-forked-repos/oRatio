@@ -125,8 +125,8 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
 
         ColorAction nStroke = new ColorAction(NODES, VisualItem.STROKECOLOR);
         nStroke.setDefaultColor(ColorLib.gray(255));
-        nStroke.add(NODE_TYPE + " == \"solved-flaw\"", ColorLib.rgb(205, 253, 208));
-        nStroke.add(NODE_TYPE + " == \"unsolved-flaw\"", ColorLib.rgb(255, 203, 208));
+        nStroke.add(NODE_TYPE + " == \"deferrable-flaw\"", ColorLib.rgb(205, 253, 208));
+        nStroke.add(NODE_TYPE + " == \"undeferrable-flaw\"", ColorLib.rgb(255, 203, 208));
         nStroke.add(NODE_TYPE + " == \"resolver\"", ColorLib.gray(255));
         nStroke.add(VisualItem.HOVER, ColorLib.gray(200));
 
@@ -205,20 +205,22 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     @Override
     public void newFlaw(Flaw f) {
         assert !flaws.containsKey(f);
-        assert f.getCause() != null;
-        assert resolvers.containsKey(f.getCause());
+        assert !f.getCauses().isEmpty();
+        assert f.getCauses().stream().allMatch(cause -> resolvers.containsKey(cause));
         synchronized (m_vis) {
             Node flaw_node = g.addNode();
             flaw_node.set(VisualItem.LABEL, f.toSimpleString());
-            if (f.isSolved()) {
-                flaw_node.set(NODE_TYPE, "solved-flaw");
+            if (f.isDeferrable()) {
+                flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {
-                flaw_node.set(NODE_TYPE, "unsolved-flaw");
+                flaw_node.set(NODE_TYPE, "undeferrable-flaw");
             }
             flaw_node.set(NODE_COST, -f.getEstimatedCost());
             flaw_node.set(NODE_CONTENT, f);
             flaws.put(f, flaw_node);
-            g.addEdge(flaw_node, resolvers.get(f.getCause()));
+            for (Resolver cause : f.getCauses()) {
+                g.addEdge(flaw_node, resolvers.get(cause));
+            }
         }
     }
 
@@ -226,10 +228,10 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     public void updateFlaw(Flaw f) {
         synchronized (m_vis) {
             Node flaw_node = flaws.get(f);
-            if (f.isSolved()) {
-                flaw_node.set(NODE_TYPE, "solved-flaw");
+            if (f.isDeferrable()) {
+                flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {
-                flaw_node.set(NODE_TYPE, "unsolved-flaw");
+                flaw_node.set(NODE_TYPE, "undeferrable-flaw");
             }
             flaw_node.set(NODE_COST, -f.getEstimatedCost());
         }
