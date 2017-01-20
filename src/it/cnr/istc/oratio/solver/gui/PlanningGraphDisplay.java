@@ -209,7 +209,6 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         assert f.getCauses().stream().allMatch(cause -> resolvers.containsKey(cause));
         synchronized (m_vis) {
             Node flaw_node = g.addNode();
-            flaw_node.set(VisualItem.LABEL, f.toSimpleString());
             if (f.isDeferrable()) {
                 flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {
@@ -228,6 +227,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     public void updateFlaw(Flaw f) {
         synchronized (m_vis) {
             Node flaw_node = flaws.get(f);
+            flaw_node.set(VisualItem.LABEL, f.toSimpleString());
             if (f.isDeferrable()) {
                 flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {

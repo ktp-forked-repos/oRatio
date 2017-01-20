@@ -110,8 +110,15 @@ public class Network {
             } else if (Stream.of(vals).anyMatch(val -> val == LBool.L_FALSE)) {
                 return new BoolConst(LBool.L_FALSE);
             }
+        } else if (Stream.of(exprs).anyMatch(expr -> expr.isConst() && expr.evaluate() == LBool.L_FALSE)) {
+            return new BoolConst(LBool.L_FALSE);
         }
-        return new And(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
+        BoolVar[] vars = Stream.of(exprs).filter(expr -> !expr.isConst()).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new);
+        if (vars.length == 1) {
+            return vars[0];
+        } else {
+            return new And(vars);
+        }
     }
 
     public BoolExpr or(BoolExpr... exprs) {
@@ -123,8 +130,15 @@ public class Network {
             } else if (Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
                 return new BoolConst(LBool.L_FALSE);
             }
+        } else if (Stream.of(exprs).anyMatch(expr -> expr.isConst() && expr.evaluate() == LBool.L_TRUE)) {
+            return new BoolConst(LBool.L_TRUE);
         }
-        return new Or(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
+        BoolVar[] vars = Stream.of(exprs).filter(expr -> !expr.isConst()).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new);
+        if (vars.length == 1) {
+            return vars[0];
+        } else {
+            return new Or(vars);
+        }
     }
 
     public BoolExpr exct_one(BoolExpr... exprs) {
@@ -150,8 +164,19 @@ public class Network {
             if (n_unknown == 0) {
                 return new BoolConst(n_trues == 1 ? LBool.L_TRUE : LBool.L_FALSE);
             }
+        } else {
+            Optional<BoolExpr> true_expr = Stream.of(exprs).filter(expr -> expr.isConst() && expr.evaluate() == LBool.L_TRUE).findAny();
+            if (true_expr.isPresent()) {
+                return and(Stream.of(exprs).filter(expr -> expr != true_expr.get()).map(expr -> not(expr)).toArray(BoolExpr[]::new));
+            }
         }
-        return new ExctOne(Stream.of(exprs).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new));
+        assert Stream.of(exprs).noneMatch(expr -> expr.isConst() && expr.evaluate() == LBool.L_TRUE);
+        BoolVar[] vars = Stream.of(exprs).filter(expr -> !expr.isConst()).map(expr -> expr.to_var(this)).toArray(BoolVar[]::new);
+        if (vars.length == 1) {
+            return vars[0];
+        } else {
+            return new ExctOne(vars);
+        }
     }
 
     public BoolExpr imply(BoolExpr left, BoolExpr right) {

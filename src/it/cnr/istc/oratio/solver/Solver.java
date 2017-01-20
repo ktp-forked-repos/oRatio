@@ -93,10 +93,12 @@ public class Solver extends Core {
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
+        fireFlawUpdate(flaw);
         if (!resolver.addPrecondition(flaw)) {
             LOG.log(Level.INFO, "cannot create enum {0}: inconsistent problem..", flaw.toSimpleString());
             return null;
         }
+        fireResolverUpdate(resolver);
         if (flaw.getCauses().isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -111,11 +113,13 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
+        fireFlawUpdate(flaw);
         reasons.put(atom, flaw);
         if (!resolver.addPrecondition(flaw)) {
             LOG.log(Level.INFO, "cannot create fact {0}: inconsistent problem..", flaw.toSimpleString());
             return false;
         }
+        fireResolverUpdate(resolver);
         if (flaw.getCauses().isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -140,11 +144,13 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
+        fireFlawUpdate(flaw);
         reasons.put(atom, flaw);
         if (!resolver.addPrecondition(flaw)) {
             LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
             return false;
         }
+        fireResolverUpdate(resolver);
         if (flaw.getCauses().isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -169,10 +175,12 @@ public class Solver extends Core {
             return false;
         }
         DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
+        fireFlawUpdate(flaw);
         if (!resolver.addPrecondition(flaw)) {
             LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
             return false;
         }
+        fireResolverUpdate(resolver);
         if (flaw.getCauses().isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -265,11 +273,13 @@ public class Solver extends Core {
             inconsistencies.addAll(get_inconsistencies());
             if (!inconsistencies.isEmpty()) {
                 for (Flaw f : inconsistencies) {
+                    fireFlawUpdate(f);
                     if (!resolver.addPrecondition(f)) {
                         // the problem is unsolvable..
                         LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
                         return false;
                     }
+                    fireResolverUpdate(resolver);
                     flaw_q.add(f);
                 }
 
@@ -333,7 +343,7 @@ public class Solver extends Core {
         Resolver tmp_r = resolver;
         while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
-            if (flaw.isDeferrable()) {
+            if (!flaw.isDeferrable()) {
                 if (!flaw.expand()) {
                     return false;
                 }
