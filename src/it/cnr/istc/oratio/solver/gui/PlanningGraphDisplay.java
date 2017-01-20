@@ -241,7 +241,6 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         assert !resolvers.containsKey(r);
         synchronized (m_vis) {
             Node resolver_node = g.addNode();
-            resolver_node.set(VisualItem.LABEL, r.toSimpleString());
             resolver_node.set(NODE_TYPE, "resolver");
             resolver_node.set(NODE_COST, -r.getEstimatedCost());
             resolver_node.set(NODE_CONTENT, r);
@@ -256,6 +255,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     public void updateResolver(Resolver r) {
         synchronized (m_vis) {
             Node resolver_node = resolvers.get(r);
+            resolver_node.set(VisualItem.LABEL, r.toSimpleString());
             resolver_node.set(NODE_COST, -r.getEstimatedCost());
         }
     }
