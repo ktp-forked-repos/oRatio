@@ -343,6 +343,14 @@ public class Network {
             double c_right = -lin.known_term;
             lin.known_term = 0;
             ArithVar c_left = (ArithVar) lin.to_var(this);
+            if (rootLevel()) {
+                Interval val = c_left.evaluate();
+                if (val.leq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (val.gt(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
             return new ArithLEq(c_left, c_right);
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
@@ -365,6 +373,14 @@ public class Network {
             double c_right = -lin.known_term;
             lin.known_term = 0;
             ArithVar c_left = (ArithVar) lin.to_var(this);
+            if (rootLevel()) {
+                Interval val = c_left.evaluate();
+                if (val.eq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (val.neq(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
             return new ArithEq(c_left, c_right);
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
@@ -387,6 +403,14 @@ public class Network {
             double c_right = -lin.known_term;
             lin.known_term = 0;
             ArithVar c_left = (ArithVar) lin.to_var(this);
+            if (rootLevel()) {
+                Interval val = c_left.evaluate();
+                if (val.geq(c_right)) {
+                    return new BoolConst(LBool.L_TRUE);
+                } else if (val.lt(c_right)) {
+                    return new BoolConst(LBool.L_FALSE);
+                }
+            }
             return new ArithGEq(c_left, c_right);
         } else {
             throw new UnsupportedOperationException("non-linear expression..");
