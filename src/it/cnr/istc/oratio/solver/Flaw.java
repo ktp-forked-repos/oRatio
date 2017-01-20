@@ -43,7 +43,7 @@ public abstract class Flaw implements Propagator {
     private final Collection<Resolver> causes;
     protected double estimated_cost = Double.POSITIVE_INFINITY;
     private boolean expanded = false;
-    private boolean deferrable = false;
+    boolean deferrable = false;
 
     public Flaw(Solver s, boolean disjunctive) {
         this.solver = s;
@@ -122,7 +122,7 @@ public abstract class Flaw implements Propagator {
     void updateRequiresExpansion(Set<Flaw> visited) {
         if (!visited.contains(this)) {
             visited.add(this);
-            boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY;
+            boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY || causes.stream().anyMatch(cause -> cause.effect.deferrable);
             if (deferrable != c_deferrable) {
                 if (!solver.rootLevel() && !solver.deferrable_flaws.containsKey(this)) {
                     solver.deferrable_flaws.put(this, deferrable);

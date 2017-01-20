@@ -434,6 +434,9 @@ public class Solver extends Core {
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             entry.getKey().estimated_cost = entry.getValue();
         }
+        for (Map.Entry<Flaw, Boolean> entry : deferrable_flaws.entrySet()) {
+            entry.getKey().deferrable = entry.getValue();
+        }
         for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
             entry.getKey().estimated_cost = entry.getValue();
         }
