@@ -183,7 +183,6 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
 
             @Override
             public void itemClicked(VisualItem vi, MouseEvent me) {
-                Display d = (Display) me.getSource();
                 if (vi.getSourceTuple() instanceof Node) {
                     Node nodeData = (Node) vi.getSourceTuple();
                     Object content = nodeData.get(NODE_CONTENT);

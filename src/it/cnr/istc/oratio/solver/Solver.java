@@ -98,7 +98,7 @@ public class Solver extends Core {
             return null;
         }
         fireResolverUpdate(resolver);
-        if (flaw.getCauses().isEmpty()) {
+        if (resolver.effect == null) {
             // we have a top-level flaw..
             flaws.add(flaw);
         }
@@ -119,7 +119,7 @@ public class Solver extends Core {
             return false;
         }
         fireResolverUpdate(resolver);
-        if (flaw.getCauses().isEmpty()) {
+        if (resolver.effect == null) {
             // we have a top-level flaw..
             flaws.add(flaw);
         }
@@ -150,7 +150,7 @@ public class Solver extends Core {
             return false;
         }
         fireResolverUpdate(resolver);
-        if (flaw.getCauses().isEmpty()) {
+        if (resolver.effect == null) {
             // we have a top-level flaw..
             flaws.add(flaw);
         }
@@ -180,7 +180,7 @@ public class Solver extends Core {
             return false;
         }
         fireResolverUpdate(resolver);
-        if (flaw.getCauses().isEmpty()) {
+        if (resolver.effect == null) {
             // we have a top-level flaw..
             flaws.add(flaw);
         }
