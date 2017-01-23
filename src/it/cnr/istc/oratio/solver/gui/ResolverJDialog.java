@@ -36,7 +36,6 @@ public class ResolverJDialog extends javax.swing.JDialog {
         this.resolver = resolver;
         setTitle(resolver.toSimpleString());
         nameJTextField.setText(resolver.toSimpleString());
-        costJTextField.setText(Double.toString(resolver.getEstimatedCost()));
         switch (resolver.getInPlan().evaluate()) {
             case L_TRUE:
                 inPlanJTextField.setText("True");
@@ -64,8 +63,6 @@ public class ResolverJDialog extends javax.swing.JDialog {
 
         nameJLabel = new javax.swing.JLabel();
         nameJTextField = new javax.swing.JTextField();
-        costJLabel = new javax.swing.JLabel();
-        costJTextField = new javax.swing.JTextField();
         inPlanJLabel = new javax.swing.JLabel();
         inPlanJTextField = new javax.swing.JTextField();
         detailsJScrollPane = new javax.swing.JScrollPane();
@@ -75,10 +72,6 @@ public class ResolverJDialog extends javax.swing.JDialog {
         nameJLabel.setText("Name:");
 
         nameJTextField.setEditable(false);
-
-        costJLabel.setText("Estimated cost:");
-
-        costJTextField.setEditable(false);
 
         inPlanJLabel.setText("In plan:");
 
@@ -93,15 +86,13 @@ public class ResolverJDialog extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(detailsJScrollPane)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(nameJLabel)
-                            .addComponent(inPlanJLabel)
-                            .addComponent(costJLabel))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(inPlanJTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 302, Short.MAX_VALUE)
-                            .addComponent(costJTextField)
-                            .addComponent(nameJTextField))))
+                        .addComponent(nameJLabel)
+                        .addGap(47, 47, 47)
+                        .addComponent(nameJTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 302, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(inPlanJLabel)
+                        .addGap(41, 41, 41)
+                        .addComponent(inPlanJTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 302, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -113,14 +104,10 @@ public class ResolverJDialog extends javax.swing.JDialog {
                     .addComponent(nameJTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(costJLabel)
-                    .addComponent(costJTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(inPlanJLabel)
                     .addComponent(inPlanJTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(detailsJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+                .addComponent(detailsJScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 126, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -128,8 +115,6 @@ public class ResolverJDialog extends javax.swing.JDialog {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel costJLabel;
-    private javax.swing.JTextField costJTextField;
     private javax.swing.JScrollPane detailsJScrollPane;
     private javax.swing.JLabel inPlanJLabel;
     private javax.swing.JTextField inPlanJTextField;

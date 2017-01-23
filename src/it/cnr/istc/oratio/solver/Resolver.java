@@ -18,14 +18,9 @@ package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolVar;
-import it.cnr.istc.ac.LBool;
-import it.cnr.istc.ac.Propagator;
-import it.cnr.istc.ac.Var;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -33,14 +28,13 @@ import javax.swing.JPanel;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public abstract class Resolver implements Propagator {
+public abstract class Resolver {
 
     protected final Solver solver;
     protected final BoolVar in_plan;
     protected final ArithExpr cost;
     private final Collection<Flaw> preconditions = new ArrayList<>();
     protected final Flaw effect;
-    protected double estimated_cost = Double.POSITIVE_INFINITY;
 
     public Resolver(Solver s, ArithExpr c, Flaw e) {
         this.solver = s;
@@ -50,13 +44,20 @@ public abstract class Resolver implements Propagator {
         this.solver.fireNewResolver(this);
     }
 
+    public Solver getSolver() {
+        return solver;
+    }
+
     public BoolVar getInPlan() {
         return in_plan;
     }
 
+    public ArithExpr getCost() {
+        return cost;
+    }
+
     boolean addPrecondition(Flaw f) {
         preconditions.add(f);
-        updateCosts(new HashSet<>());
         solver.fireNewCausalLink(f, this);
         // if this choice is in plan, its preconditions must be in plan as well..
         return solver.network.add(solver.network.imply(in_plan, f.in_plan));
@@ -70,47 +71,6 @@ public abstract class Resolver implements Propagator {
         return effect;
     }
 
-    public double getEstimatedCost() {
-        return estimated_cost;
-    }
-
-    void updateCosts(Set<Flaw> visited) {
-        double computed_cost = preconditions.stream().mapToDouble(f -> f.estimated_cost).max().orElse(0) + solver.network.evaluate(cost);
-        if (computed_cost != estimated_cost) {
-            if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
-                solver.resolver_costs.put(this, estimated_cost);
-            }
-            estimated_cost = computed_cost;
-            solver.fireResolverUpdate(this);
-            if (effect != null) {
-                effect.updateCosts(visited);
-            }
-        }
-    }
-
-    @Override
-    public Var<?>[] getArgs() {
-        return new Var<?>[]{in_plan};
-    }
-
-    @Override
-    public boolean propagate(Var<?> v) {
-        if (in_plan.evaluate() == LBool.L_FALSE) {
-            double computed_cost = Double.POSITIVE_INFINITY;
-            if (computed_cost != estimated_cost) {
-                if (!solver.rootLevel() && !solver.resolver_costs.containsKey(this)) {
-                    solver.resolver_costs.put(this, estimated_cost);
-                }
-                estimated_cost = computed_cost;
-                solver.fireResolverUpdate(this);
-                if (effect != null) {
-                    effect.updateCosts(new HashSet<>());
-                }
-            }
-        }
-        return true;
-    }
-
     protected abstract boolean apply();
 
     public JComponent getDetails() {
@@ -121,6 +81,6 @@ public abstract class Resolver implements Propagator {
 
     @Override
     public String toString() {
-        return toSimpleString() + " " + in_plan.evaluate() + " " + estimated_cost;
+        return toSimpleString() + " " + in_plan.evaluate() + " " + preconditions.stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + " + " + solver.network.evaluate(cost);
     }
 }

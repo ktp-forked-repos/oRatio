@@ -57,7 +57,6 @@ public class Solver extends Core {
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     Map<Flaw, Double> flaw_costs;
     Map<Flaw, Boolean> deferrable_flaws;
-    Map<Resolver, Double> resolver_costs;
     Set<Flaw> flaws = new HashSet<>();
     Set<Flaw> inconsistencies = new HashSet<>();
     Resolver resolver;
@@ -251,7 +250,7 @@ public class Solver extends Core {
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r1.cost))).get();
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
@@ -301,7 +300,7 @@ public class Solver extends Core {
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.estimated_cost, r1.estimated_cost)).get();
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r1.cost))).get();
                 resolvers.add(resolver);
                 fireCurrentResolver(resolver);
 
@@ -340,7 +339,7 @@ public class Solver extends Core {
         }
 
         Resolver tmp_r = resolver;
-        while (tmp_r.estimated_cost == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+        while (tmp_r.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(tmp_r.cost) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
             if (!flaw.isDeferrable()) {
                 if (!flaw.expand()) {
@@ -352,10 +351,9 @@ public class Solver extends Core {
                     if (!resolver.apply()) {
                         return false;
                     }
+                    fireResolverUpdate(resolver);
                     if (resolver.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
-                        resolver.estimated_cost = 0;
-                        fireResolverUpdate(resolver);
                         flaw.updateCosts(new HashSet<>());
                     }
                 }
@@ -365,7 +363,7 @@ public class Solver extends Core {
             }
         }
 
-        assert tmp_r.estimated_cost < Double.POSITIVE_INFINITY;
+        assert tmp_r.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(tmp_r.cost) < Double.POSITIVE_INFINITY;
 
         resolver = tmp_r;
         ctr_var = resolver.in_plan;
@@ -423,10 +421,9 @@ public class Solver extends Core {
 
     private void push() {
         // we create a new layer..
-        Layer l = new Layer(resolver, flaw_costs, deferrable_flaws, resolver_costs, flaws, inconsistencies);
+        Layer l = new Layer(resolver, flaw_costs, deferrable_flaws, flaws, inconsistencies);
         flaw_costs = new IdentityHashMap<>();
         deferrable_flaws = new IdentityHashMap<>();
-        resolver_costs = new IdentityHashMap<>();
         flaws = new HashSet<>(flaws);
         inconsistencies = new HashSet<>(inconsistencies);
         layers.add(l);
@@ -446,15 +443,11 @@ public class Solver extends Core {
         for (Map.Entry<Flaw, Boolean> entry : deferrable_flaws.entrySet()) {
             entry.getKey().deferrable = entry.getValue();
         }
-        for (Map.Entry<Resolver, Double> entry : resolver_costs.entrySet()) {
-            entry.getKey().estimated_cost = entry.getValue();
-        }
 
         Layer l_l = layers.getLast();
         resolver = l_l.resolver;
         flaw_costs = l_l.flaw_costs;
         deferrable_flaws = l_l.deferrable_flaws;
-        resolver_costs = l_l.resolver_costs;
         flaws = l_l.flaws;
         inconsistencies = l_l.inconsistencies;
         if (resolvers.peekLast() == resolver) {
@@ -542,15 +535,13 @@ public class Solver extends Core {
         private final Resolver resolver;
         private final Map<Flaw, Double> flaw_costs;
         private final Map<Flaw, Boolean> deferrable_flaws;
-        private final Map<Resolver, Double> resolver_costs;
         private final Set<Flaw> flaws;
         private final Set<Flaw> inconsistencies;
 
-        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Flaw, Boolean> deferrable_flaws, Map<Resolver, Double> resolver_costs, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
+        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Flaw, Boolean> deferrable_flaws, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
             this.resolver = resolver;
             this.flaw_costs = flaw_costs;
             this.deferrable_flaws = deferrable_flaws;
-            this.resolver_costs = resolver_costs;
             this.flaws = flaws;
             this.inconsistencies = inconsistencies;
         }

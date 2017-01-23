@@ -55,6 +55,10 @@ public abstract class Flaw implements Propagator {
         this.disjunctive = disjunctive;
     }
 
+    public Solver getSolver() {
+        return solver;
+    }
+
     public BoolVar getInPlan() {
         return in_plan;
     }
@@ -104,28 +108,28 @@ public abstract class Flaw implements Propagator {
     }
 
     void updateCosts(Set<Flaw> visited) {
-        if (!visited.contains(this)) {
-            visited.add(this);
-            double computed_cost = resolvers.stream().mapToDouble(r -> r.estimated_cost).min().orElse(Double.POSITIVE_INFINITY);
-            if (computed_cost != estimated_cost) {
-                if (!solver.rootLevel() && !solver.flaw_costs.containsKey(this)) {
-                    solver.flaw_costs.put(this, estimated_cost);
-                }
-                estimated_cost = computed_cost;
-                solver.fireFlawUpdate(this);
-                boolean c_deferrable = estimated_cost < Double.POSITIVE_INFINITY;
-                if (deferrable != c_deferrable) {
-                    deferrable = c_deferrable;
-                    solver.fireFlawUpdate(this);
-                    for (Resolver resolver : resolvers) {
-                        for (Flaw precondition : resolver.getPreconditions()) {
-                            precondition.updateDeferrable(new HashSet<>(Arrays.asList(this)));
+        visited.add(this);
+        solver.fireFlawUpdate(this);
+        for (Resolver cause : causes) {
+            if (cause.effect != null && !visited.contains(cause.effect)) {
+                visited.add(cause.effect);
+                double effect_cost = cause.effect.resolvers.stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + solver.network.evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
+                if (effect_cost != cause.effect.estimated_cost) {
+                    if (!solver.rootLevel() && !solver.flaw_costs.containsKey(cause.effect)) {
+                        solver.flaw_costs.put(cause.effect, cause.effect.estimated_cost);
+                    }
+                    cause.effect.estimated_cost = effect_cost;
+                    boolean effect_deferrable = cause.effect.estimated_cost < Double.POSITIVE_INFINITY;
+                    if (cause.effect.deferrable != effect_deferrable) {
+                        cause.effect.deferrable = effect_deferrable;
+                        for (Resolver resolver : cause.effect.resolvers) {
+                            for (Flaw precondition : resolver.getPreconditions()) {
+                                precondition.updateDeferrable(new HashSet<>(Arrays.asList(cause.effect)));
+                            }
                         }
                     }
                 }
-                for (Resolver cause : causes) {
-                    cause.updateCosts(new HashSet<>(visited));
-                }
+                solver.fireFlawUpdate(cause.effect);
             }
         }
     }
@@ -164,9 +168,7 @@ public abstract class Flaw implements Propagator {
                 }
                 estimated_cost = computed_cost;
                 solver.fireFlawUpdate(this);
-                for (Resolver cause : causes) {
-                    cause.updateCosts(new HashSet<>(Arrays.asList(this)));
-                }
+                updateCosts(new HashSet<>());
             }
         }
         return true;

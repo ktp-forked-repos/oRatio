@@ -23,22 +23,19 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" alignment="0" attributes="0">
+          <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="detailsJScrollPane" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="nameJLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="inPlanJLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="costJLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="inPlanJTextField" alignment="0" pref="302" max="32767" attributes="0"/>
-                          <Component id="costJTextField" alignment="0" max="32767" attributes="0"/>
-                          <Component id="nameJTextField" alignment="0" max="32767" attributes="0"/>
-                      </Group>
+                      <Component id="nameJLabel" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="47" max="-2" attributes="0"/>
+                      <Component id="nameJTextField" pref="302" max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="inPlanJLabel" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="41" max="-2" attributes="0"/>
+                      <Component id="inPlanJTextField" pref="302" max="32767" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -55,16 +52,11 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="costJLabel" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="costJTextField" alignment="3" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="inPlanJLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="inPlanJTextField" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="detailsJScrollPane" pref="100" max="32767" attributes="0"/>
+              <Component id="detailsJScrollPane" pref="126" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -77,16 +69,6 @@
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="nameJTextField">
-      <Properties>
-        <Property name="editable" type="boolean" value="false"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JLabel" name="costJLabel">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Estimated cost:"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JTextField" name="costJTextField">
       <Properties>
         <Property name="editable" type="boolean" value="false"/>
       </Properties>

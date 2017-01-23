@@ -188,10 +188,9 @@ public class PropositionalState extends SmartType {
                                             }
                                         }
                                     }
-                                    if (or.isEmpty()) {
-                                        throw new UnsupportedOperationException("not supported yet: the flaw is unsolvable..");
+                                    if (!or.isEmpty()) {
+                                        fs.add(new PropositionalStateFlaw((Solver) core, or));
                                     }
-                                    fs.add(new PropositionalStateFlaw((Solver) core, or));
                                 }
                             }
                         }

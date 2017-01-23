@@ -86,6 +86,7 @@ class AtomFlaw extends Flaw {
                     UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
                     solver.fireResolverUpdate(unify);
                     rs.add(unify);
+                    estimated_cost = 0;
                     updateCosts(new HashSet<>());
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
@@ -93,14 +94,14 @@ class AtomFlaw extends Flaw {
             }
         }
 
+        if (rs.isEmpty()) {
+            // we remove unification from atom state..
+            boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
+            assert not_unify;
+        }
         if (fact) {
             rs.add(new AddFact(solver, solver.network.newReal(0), this, atom));
         } else {
-            if (rs.isEmpty()) {
-                // we remove unification from atom state..
-                boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
-                assert not_unify;
-            }
             rs.add(new ExpandGoal(solver, solver.network.newReal(1), this, atom));
         }
     }
@@ -182,7 +183,6 @@ class AtomFlaw extends Flaw {
             this.unifying = unifying;
             this.with = with;
             this.eq_expr = eq_expr;
-            estimated_cost = 0;
         }
 
         @Override

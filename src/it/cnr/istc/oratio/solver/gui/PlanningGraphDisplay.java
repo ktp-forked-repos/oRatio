@@ -242,7 +242,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node resolver_node = g.addNode();
             resolver_node.set(NODE_TYPE, "resolver");
-            resolver_node.set(NODE_COST, -r.getEstimatedCost());
+            resolver_node.set(NODE_COST, Double.NEGATIVE_INFINITY);
             resolver_node.set(NODE_CONTENT, r);
             resolvers.put(r, resolver_node);
             if (r.getEffect() != null) {
@@ -256,7 +256,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node resolver_node = resolvers.get(r);
             resolver_node.set(VisualItem.LABEL, r.toSimpleString());
-            resolver_node.set(NODE_COST, -r.getEstimatedCost());
+            resolver_node.set(NODE_COST, -r.getPreconditions().stream().mapToDouble(pre -> pre.getEstimatedCost()).max().orElse(0) + r.getSolver().network.evaluate(r.getCost()));
         }
     }
 
