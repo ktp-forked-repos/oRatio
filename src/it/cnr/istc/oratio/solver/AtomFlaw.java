@@ -83,11 +83,10 @@ class AtomFlaw extends Flaw {
                 if (solver.check(eq)) {
                     // unification is actually possible!
                     UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
-                    solver.fireResolverUpdate(unify);
                     rs.add(unify);
-                    solver.setCost(this, 0);
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
+                    solver.setCost(this, 0);
                 }
             }
         }

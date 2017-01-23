@@ -57,9 +57,9 @@ public class Solver extends Core {
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     Map<Flaw, Double> costs = new IdentityHashMap<>();
-    Map<Flaw, Boolean> deferrables = new IdentityHashMap<>();
+    Set<Flaw> deferrables = new HashSet<>();
     Map<Flaw, Double> flaw_costs;
-    Map<Flaw, Boolean> deferrable_flaws;
+    Set<Flaw> deferrable_flaws;
     Set<Flaw> flaws = new HashSet<>();
     Set<Flaw> inconsistencies = new HashSet<>();
     Resolver resolver;
@@ -344,7 +344,8 @@ public class Solver extends Core {
         Resolver tmp_r = resolver;
         while (tmp_r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(tmp_r.cost) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
-            if (!deferrables.containsKey(flaw)) {
+            LOG.log(Level.INFO, "solving flaw {0}", flaw.toSimpleString());
+            if (!deferrables.contains(flaw)) {
                 if (!flaw.expand()) {
                     return false;
                 }
@@ -380,6 +381,7 @@ public class Solver extends Core {
             }
             costs.put(flaw, cost);
             fireFlawUpdate(flaw);
+
             Set<Flaw> visited = new HashSet<>();
             visited.add(flaw);
             LinkedList<Flaw> queue = new LinkedList<>();
@@ -396,6 +398,43 @@ public class Solver extends Core {
                         costs.put(c_flaw, c_cost);
                         fireFlawUpdate(flaw);
                         queue.addAll(c_flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
+                        if (c_cost < Double.POSITIVE_INFINITY) {
+                            setDeferrable(c_flaw);
+                        }
+                    }
+                }
+            }
+
+            if (cost < Double.POSITIVE_INFINITY) {
+                setDeferrable(flaw);
+            }
+        }
+    }
+
+    private void setDeferrable(Flaw flaw) {
+        if (!deferrables.contains(flaw)) {
+            if (!rootLevel() && !deferrables.contains(flaw)) {
+                deferrable_flaws.add(flaw);
+            }
+            deferrables.add(flaw);
+            fireFlawUpdate(flaw);
+
+            Set<Flaw> visited = new HashSet<>();
+            visited.add(flaw);
+            LinkedList<Flaw> queue = new LinkedList<>();
+            queue.addAll(flaw.getResolvers().stream().flatMap(res -> res.getPreconditions().stream()).collect(Collectors.toList()));
+            while (!queue.isEmpty()) {
+                Flaw c_flaw = queue.pollFirst();
+                if (!visited.contains(c_flaw)) {
+                    visited.add(c_flaw);
+                    boolean c_deferrable = costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY || c_flaw.getCauses().stream().anyMatch(cause -> deferrables.contains(cause));
+                    if (c_deferrable && !deferrables.contains(c_flaw)) {
+                        if (!rootLevel() && !deferrables.contains(c_flaw)) {
+                            deferrable_flaws.add(c_flaw);
+                        }
+                        deferrables.add(c_flaw);
+                        fireFlawUpdate(c_flaw);
+                        queue.addAll(c_flaw.getResolvers().stream().flatMap(res -> res.getPreconditions().stream()).collect(Collectors.toList()));
                     }
                 }
             }
@@ -407,7 +446,7 @@ public class Solver extends Core {
     }
 
     public boolean isDeferrable(Flaw flaw) {
-        return deferrables.getOrDefault(flaw, Boolean.FALSE);
+        return deferrables.contains(flaw);
     }
 
     /**
@@ -463,7 +502,7 @@ public class Solver extends Core {
         // we create a new layer..
         Layer l = new Layer(resolver, flaw_costs, deferrable_flaws, flaws, inconsistencies);
         flaw_costs = new IdentityHashMap<>();
-        deferrable_flaws = new IdentityHashMap<>();
+        deferrable_flaws = new HashSet<>();
         flaws = new HashSet<>(flaws);
         inconsistencies = new HashSet<>(inconsistencies);
         layers.add(l);
@@ -480,8 +519,8 @@ public class Solver extends Core {
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             costs.put(entry.getKey(), entry.getValue());
         }
-        for (Map.Entry<Flaw, Boolean> entry : deferrable_flaws.entrySet()) {
-            deferrables.put(entry.getKey(), entry.getValue());
+        for (Flaw def : deferrable_flaws) {
+            deferrables.remove(def);
         }
 
         Layer l_l = layers.getLast();
@@ -538,11 +577,11 @@ public class Solver extends Core {
         listeners.parallelStream().forEach(l -> l.newResolver(r));
     }
 
-    void fireFlawUpdate(Flaw f) {
+    private void fireFlawUpdate(Flaw f) {
         listeners.parallelStream().forEach(l -> l.updateFlaw(f));
     }
 
-    void fireResolverUpdate(Resolver r) {
+    private void fireResolverUpdate(Resolver r) {
         listeners.parallelStream().forEach(l -> l.updateResolver(r));
     }
 
@@ -550,11 +589,11 @@ public class Solver extends Core {
         listeners.parallelStream().forEach(l -> l.newCausalLink(f, r));
     }
 
-    void fireCurrentFlaw(Flaw f) {
+    private void fireCurrentFlaw(Flaw f) {
         listeners.parallelStream().forEach(l -> l.currentFlaw(f));
     }
 
-    void fireCurrentResolver(Resolver r) {
+    private void fireCurrentResolver(Resolver r) {
         listeners.parallelStream().forEach(l -> l.currentResolver(r));
     }
 
@@ -574,11 +613,11 @@ public class Solver extends Core {
 
         private final Resolver resolver;
         private final Map<Flaw, Double> flaw_costs;
-        private final Map<Flaw, Boolean> deferrable_flaws;
+        private final Set<Flaw> deferrable_flaws;
         private final Set<Flaw> flaws;
         private final Set<Flaw> inconsistencies;
 
-        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Map<Flaw, Boolean> deferrable_flaws, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
+        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Set<Flaw> deferrable_flaws, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
             this.resolver = resolver;
             this.flaw_costs = flaw_costs;
             this.deferrable_flaws = deferrable_flaws;
