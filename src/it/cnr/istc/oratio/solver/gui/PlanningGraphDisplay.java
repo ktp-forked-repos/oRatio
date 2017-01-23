@@ -208,12 +208,12 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         assert f.getCauses().stream().allMatch(cause -> resolvers.containsKey(cause));
         synchronized (m_vis) {
             Node flaw_node = g.addNode();
-            if (f.isDeferrable()) {
+            if (f.getSolver().isDeferrable(f)) {
                 flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {
                 flaw_node.set(NODE_TYPE, "undeferrable-flaw");
             }
-            flaw_node.set(NODE_COST, -f.getEstimatedCost());
+            flaw_node.set(NODE_COST, -f.getSolver().getCost(f));
             flaw_node.set(NODE_CONTENT, f);
             flaws.put(f, flaw_node);
             for (Resolver cause : f.getCauses()) {
@@ -227,12 +227,12 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node flaw_node = flaws.get(f);
             flaw_node.set(VisualItem.LABEL, f.toSimpleString());
-            if (f.isDeferrable()) {
+            if (f.getSolver().isDeferrable(f)) {
                 flaw_node.set(NODE_TYPE, "deferrable-flaw");
             } else {
                 flaw_node.set(NODE_TYPE, "undeferrable-flaw");
             }
-            flaw_node.set(NODE_COST, -f.getEstimatedCost());
+            flaw_node.set(NODE_COST, -f.getSolver().getCost(f));
         }
     }
 
@@ -256,7 +256,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node resolver_node = resolvers.get(r);
             resolver_node.set(VisualItem.LABEL, r.toSimpleString());
-            resolver_node.set(NODE_COST, -r.getPreconditions().stream().mapToDouble(pre -> pre.getEstimatedCost()).max().orElse(0) + r.getSolver().network.evaluate(r.getCost()));
+            resolver_node.set(NODE_COST, -r.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + r.getSolver().network.evaluate(r.getCost()));
         }
     }
 

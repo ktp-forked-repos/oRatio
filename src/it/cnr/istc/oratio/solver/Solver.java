@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -55,6 +56,8 @@ public class Solver extends Core {
 
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
+    Map<Flaw, Double> costs = new IdentityHashMap<>();
+    Map<Flaw, Boolean> deferrables = new IdentityHashMap<>();
     Map<Flaw, Double> flaw_costs;
     Map<Flaw, Boolean> deferrable_flaws;
     Set<Flaw> flaws = new HashSet<>();
@@ -245,12 +248,12 @@ public class Solver extends Core {
                 push();
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
-                Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
+                Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
                 fireCurrentFlaw(most_expensive_flaw);
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r1.cost))).get();
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
@@ -295,12 +298,12 @@ public class Solver extends Core {
                 push();
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
-                Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(f0.estimated_cost, f1.estimated_cost)).get();
+                Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
                 fireCurrentFlaw(most_expensive_flaw);
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(r1.cost))).get();
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
                 resolvers.add(resolver);
                 fireCurrentResolver(resolver);
 
@@ -339,9 +342,9 @@ public class Solver extends Core {
         }
 
         Resolver tmp_r = resolver;
-        while (tmp_r.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(tmp_r.cost) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+        while (tmp_r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(tmp_r.cost) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
-            if (!flaw.isDeferrable()) {
+            if (!deferrables.containsKey(flaw)) {
                 if (!flaw.expand()) {
                     return false;
                 }
@@ -354,7 +357,7 @@ public class Solver extends Core {
                     fireResolverUpdate(resolver);
                     if (resolver.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
-                        flaw.updateCosts(new HashSet<>());
+                        setCost(flaw, 0);
                     }
                 }
             } else {
@@ -363,11 +366,48 @@ public class Solver extends Core {
             }
         }
 
-        assert tmp_r.getPreconditions().stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + network.evaluate(tmp_r.cost) < Double.POSITIVE_INFINITY;
+        assert tmp_r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(tmp_r.cost) < Double.POSITIVE_INFINITY;
 
         resolver = tmp_r;
         ctr_var = resolver.in_plan;
         return true;
+    }
+
+    void setCost(Flaw flaw, double cost) {
+        if (costs.getOrDefault(flaw, Double.POSITIVE_INFINITY) != cost) {
+            if (!rootLevel() && !flaw_costs.containsKey(flaw) && costs.containsKey(flaw)) {
+                flaw_costs.put(flaw, costs.get(flaw));
+            }
+            costs.put(flaw, cost);
+            fireFlawUpdate(flaw);
+            Set<Flaw> visited = new HashSet<>();
+            visited.add(flaw);
+            LinkedList<Flaw> queue = new LinkedList<>();
+            queue.addAll(flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
+            while (!queue.isEmpty()) {
+                Flaw c_flaw = queue.pollFirst();
+                if (!visited.contains(c_flaw)) {
+                    visited.add(c_flaw);
+                    double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
+                    if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) != c_cost) {
+                        if (!rootLevel() && !flaw_costs.containsKey(c_flaw) && costs.containsKey(c_flaw)) {
+                            flaw_costs.put(c_flaw, costs.get(c_flaw));
+                        }
+                        costs.put(c_flaw, c_cost);
+                        fireFlawUpdate(flaw);
+                        queue.addAll(c_flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
+                    }
+                }
+            }
+        }
+    }
+
+    public double getCost(Flaw flaw) {
+        return costs.getOrDefault(flaw, Double.POSITIVE_INFINITY);
+    }
+
+    public boolean isDeferrable(Flaw flaw) {
+        return deferrables.getOrDefault(flaw, Boolean.FALSE);
     }
 
     /**
@@ -438,10 +478,10 @@ public class Solver extends Core {
 
         // we also restore updated flaws and resolvers costs..
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-            entry.getKey().estimated_cost = entry.getValue();
+            costs.put(entry.getKey(), entry.getValue());
         }
         for (Map.Entry<Flaw, Boolean> entry : deferrable_flaws.entrySet()) {
-            entry.getKey().deferrable = entry.getValue();
+            deferrables.put(entry.getKey(), entry.getValue());
         }
 
         Layer l_l = layers.getLast();

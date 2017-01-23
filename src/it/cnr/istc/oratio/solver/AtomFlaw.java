@@ -27,7 +27,6 @@ import it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer;
 import it.cnr.istc.oratio.core.gui.EnvTreeModel;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import javax.swing.JComponent;
 import javax.swing.JTree;
@@ -55,7 +54,7 @@ class AtomFlaw extends Flaw {
     protected void computeResolvers(Collection<Resolver> rs) {
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
-            if (atom != a && solver.reasons.get(a).estimated_cost < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
+            if (atom != a && solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
                 // this atom is a good candidate for unification
                 Collection<BoolExpr> and = new ArrayList<>();
                 LinkedList<Flaw> queue = new LinkedList<>();
@@ -86,8 +85,7 @@ class AtomFlaw extends Flaw {
                     UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
                     solver.fireResolverUpdate(unify);
                     rs.add(unify);
-                    estimated_cost = 0;
-                    updateCosts(new HashSet<>());
+                    solver.setCost(this, 0);
                     boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                     assert add_pre;
                 }

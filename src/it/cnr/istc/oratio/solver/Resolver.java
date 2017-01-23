@@ -81,6 +81,6 @@ public abstract class Resolver {
 
     @Override
     public String toString() {
-        return toSimpleString() + " " + in_plan.evaluate() + " " + preconditions.stream().mapToDouble(pre -> pre.estimated_cost).max().orElse(0) + " + " + solver.network.evaluate(cost);
+        return toSimpleString() + " " + in_plan.evaluate() + " " + preconditions.stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + " + " + solver.network.evaluate(cost);
     }
 }

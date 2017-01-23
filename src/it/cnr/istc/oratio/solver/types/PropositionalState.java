@@ -253,7 +253,7 @@ public class PropositionalState extends SmartType {
 
         @Override
         public String toString() {
-            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | ")) + " " + in_plan.evaluate() + " " + estimated_cost;
+            return or.stream().map(v -> v.toString()).collect(Collectors.joining(" | ")) + " " + in_plan.evaluate() + " " + solver.getCost(this);
         }
     }
 

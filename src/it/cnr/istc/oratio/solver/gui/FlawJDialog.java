@@ -36,7 +36,7 @@ public class FlawJDialog extends javax.swing.JDialog {
         this.flaw = flaw;
         setTitle(flaw.toSimpleString());
         nameJTextField.setText(flaw.toSimpleString());
-        costJTextField.setText(Double.toString(flaw.getEstimatedCost()));
+        costJTextField.setText(Double.toString(flaw.getSolver().getCost(flaw)));
         switch (flaw.getInPlan().evaluate()) {
             case L_TRUE:
                 inPlanJTextField.setText("True");
