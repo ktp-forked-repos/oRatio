@@ -188,9 +188,10 @@ public class PropositionalState extends SmartType {
                                             }
                                         }
                                     }
-                                    if (!or.isEmpty()) {
-                                        fs.add(new PropositionalStateFlaw((Solver) core, or));
+                                    if (or.isEmpty()) {
+                                        System.out.println("prc..");
                                     }
+                                    fs.add(new PropositionalStateFlaw((Solver) core, or));
                                 }
                             }
                         }

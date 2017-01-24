@@ -236,6 +236,19 @@ public class Solver extends Core {
         }
 
         while (true) {
+            while (flaws.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
+                if (rootLevel()) {
+                    return false;
+                }
+                pop();
+            }
+            while (inconsistencies.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
+                if (rootLevel()) {
+                    return false;
+                }
+                pop();
+            }
+
             // we clean up trivial flaws..
             clear_flaws(flaws);
             clear_flaws(inconsistencies);
@@ -270,16 +283,23 @@ public class Solver extends Core {
 
             // we collect the inconsistencies..
             inconsistencies.addAll(get_inconsistencies());
+            if (inconsistencies.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
+                if (rootLevel()) {
+                    return false;
+                }
+                pop();
+                continue;
+            }
             if (!inconsistencies.isEmpty()) {
-                for (Flaw f : inconsistencies) {
-                    fireFlawUpdate(f);
-                    if (!resolver.addPrecondition(f)) {
+                for (Flaw flaw : inconsistencies) {
+                    fireFlawUpdate(flaw);
+                    if (!resolver.addPrecondition(flaw)) {
                         // the problem is unsolvable..
-                        LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
+                        LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", flaw.toSimpleString());
                         return false;
                     }
                     fireResolverUpdate(resolver);
-                    flaw_q.add(f);
+                    flaw_q.add(flaw);
                 }
 
                 // we update the planning graph..
@@ -488,7 +508,7 @@ public class Solver extends Core {
         network.push();
     }
 
-    private void pop() {
+    void pop() {
         // we restore the constraint network state..
         network.pop();
 

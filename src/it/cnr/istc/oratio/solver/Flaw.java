@@ -82,17 +82,31 @@ public abstract class Flaw implements Propagator {
         computeResolvers(resolvers);
         expanded = true;
 
+        BoolExpr expr;
         switch (resolvers.size()) {
             case 0:
                 // there is no way for solving this flaw..
-                return solver.network.add(solver.network.not(in_plan));
+                expr = solver.network.not(in_plan);
+                break;
             case 1:
                 // there is a unique way for solving this flaw: this is a trivial flaw..
-                return solver.network.add(solver.network.imply(in_plan, resolvers.iterator().next().in_plan));
+                expr = solver.network.imply(in_plan, resolvers.iterator().next().in_plan);
+                break;
             default:
                 // we need to take a decision for solving this flaw..
-                return solver.network.add(solver.network.imply(in_plan, disjunctive ? solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new))));
+                expr = solver.network.imply(in_plan, disjunctive ? solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)));
         }
+
+        while (!solver.network.add(expr)) {
+            if (solver.rootLevel()) {
+                // the problem is inconsistent..
+                return false;
+            }
+
+            // we restore flaws and resolvers state..
+            solver.pop();
+        }
+        return true;
     }
 
     @Override

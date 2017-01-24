@@ -192,9 +192,11 @@ public class StateVariable extends SmartType {
                             }
                         }
                     }
-                    if (!or.isEmpty()) {
-                        fs.add(new StateVariableFlaw((Solver) core, or));
+                    if (or.isEmpty()) {
+                        System.out.println("prc..");
                     }
+
+                    fs.add(new StateVariableFlaw((Solver) core, or));
                 }
             }
         }
