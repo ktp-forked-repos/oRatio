@@ -278,7 +278,13 @@ public class Solver extends Core {
                     if (!resolver.addPrecondition(f)) {
                         // the problem is unsolvable..
                         LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", f.toSimpleString());
-                        return false;
+
+                        // we need to back-jump..
+                        if (!backjump()) {
+                            // the problem is unsolvable..
+                            return false;
+                        }
+//                        return false;
                     }
                     fireResolverUpdate(resolver);
                     flaw_q.add(f);
@@ -418,7 +424,7 @@ public class Solver extends Core {
     }
 
     private void setDeferrable(Flaw flaw) {
-        if (!deferrables.contains(flaw)) {
+        if (!deferrables.contains(flaw) && flaw_q.contains(flaw)) {
             if (!rootLevel() && !deferrables.contains(flaw)) {
                 deferrable_flaws.add(flaw);
             }
