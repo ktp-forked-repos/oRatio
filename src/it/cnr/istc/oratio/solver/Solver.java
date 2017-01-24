@@ -381,6 +381,9 @@ public class Solver extends Core {
             }
             costs.put(flaw, cost);
             fireFlawUpdate(flaw);
+            for (Resolver cause : flaw.getCauses()) {
+                fireResolverUpdate(cause);
+            }
 
             Set<Flaw> visited = new HashSet<>();
             visited.add(flaw);
@@ -396,7 +399,10 @@ public class Solver extends Core {
                             flaw_costs.put(c_flaw, costs.get(c_flaw));
                         }
                         costs.put(c_flaw, c_cost);
-                        fireFlawUpdate(flaw);
+                        fireFlawUpdate(c_flaw);
+                        for (Resolver cause : c_flaw.getCauses()) {
+                            fireResolverUpdate(cause);
+                        }
                         queue.addAll(c_flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
                         if (c_cost < Double.POSITIVE_INFINITY) {
                             setDeferrable(c_flaw);
@@ -412,7 +418,7 @@ public class Solver extends Core {
     }
 
     private void setDeferrable(Flaw flaw) {
-        if (!deferrables.contains(flaw) && flaw_q.contains(flaw)) {
+        if (!deferrables.contains(flaw)) {
             if (!rootLevel() && !deferrables.contains(flaw)) {
                 deferrable_flaws.add(flaw);
             }
@@ -427,7 +433,7 @@ public class Solver extends Core {
                 Flaw c_flaw = queue.pollFirst();
                 if (!visited.contains(c_flaw)) {
                     visited.add(c_flaw);
-                    boolean c_deferrable = costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY || c_flaw.getCauses().stream().anyMatch(cause -> deferrables.contains(cause));
+                    boolean c_deferrable = costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY || c_flaw.getCauses().stream().anyMatch(cause -> deferrables.contains(cause.effect));
                     if (c_deferrable && !deferrables.contains(c_flaw)) {
                         if (!rootLevel() && !deferrables.contains(c_flaw)) {
                             deferrable_flaws.add(c_flaw);
