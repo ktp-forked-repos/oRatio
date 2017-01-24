@@ -582,7 +582,7 @@ public class Network {
 
     public void store(Propagator prop) {
         for (Var<?> arg : prop.getArgs()) {
-            if (!arg.isSingleton()) {
+            if (!arg.isConst()) {
                 if (!watches.containsKey(arg)) {
                     watches.put(arg, new LinkedList<>());
                 }
