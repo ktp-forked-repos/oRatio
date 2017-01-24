@@ -31,7 +31,7 @@ import javax.swing.JPanel;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public abstract class Flaw implements Propagator {
+public abstract class Flaw {
 
     protected final Solver solver;
     protected final BoolVar in_plan;
@@ -48,7 +48,20 @@ public abstract class Flaw implements Propagator {
         this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
         this.solver.fireNewFlaw(this);
         this.disjunctive = disjunctive;
-        this.solver.network.store(this);
+        this.solver.network.store(new Propagator() {
+            @Override
+            public Var<?>[] getArgs() {
+                return new Var<?>[]{in_plan};
+            }
+
+            @Override
+            public boolean propagate(Var<?> v) {
+                if (in_plan.evaluate() == LBool.L_FALSE) {
+                    solver.setCost(Flaw.this, Double.POSITIVE_INFINITY);
+                }
+                return true;
+            }
+        });
     }
 
     public Solver getSolver() {
@@ -105,19 +118,6 @@ public abstract class Flaw implements Propagator {
 
             // we restore flaws and resolvers state..
             solver.pop();
-        }
-        return true;
-    }
-
-    @Override
-    public Var<?>[] getArgs() {
-        return new Var<?>[]{in_plan};
-    }
-
-    @Override
-    public boolean propagate(Var<?> v) {
-        if (in_plan.evaluate() == LBool.L_FALSE) {
-            solver.setCost(this, Double.POSITIVE_INFINITY);
         }
         return true;
     }
