@@ -260,11 +260,13 @@ public class Solver extends Core {
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
+                assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
                 fireCurrentFlaw(most_expensive_flaw);
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
@@ -317,11 +319,13 @@ public class Solver extends Core {
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
+                assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
                 fireCurrentFlaw(most_expensive_flaw);
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
                 resolvers.add(resolver);
                 fireCurrentResolver(resolver);
 
