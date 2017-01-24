@@ -48,9 +48,10 @@ public abstract class Flaw implements Propagator {
         this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
         this.solver.fireNewFlaw(this);
         this.disjunctive = disjunctive;
-        if (causes.stream().filter(cause -> cause.effect != null).anyMatch(cause -> s.costs.getOrDefault(cause.effect, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY || s.deferrables.contains(cause.effect))) {
+        if (causes.stream().filter(cause -> cause.effect != null && cause.effect.disjunctive).anyMatch(cause -> s.costs.getOrDefault(cause.effect, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY || s.deferrables.contains(cause.effect))) {
             s.deferrables.add(this);
         }
+        s.network.store(this);
     }
 
     public Solver getSolver() {
