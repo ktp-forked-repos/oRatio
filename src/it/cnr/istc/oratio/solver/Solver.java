@@ -412,7 +412,7 @@ public class Solver extends Core {
     }
 
     private void setDeferrable(Flaw flaw) {
-        if (!deferrables.contains(flaw)) {
+        if (!deferrables.contains(flaw) && flaw_q.contains(flaw)) {
             if (!rootLevel() && !deferrables.contains(flaw)) {
                 deferrable_flaws.add(flaw);
             }
