@@ -242,19 +242,6 @@ public class Solver extends Core {
         }
 
         while (true) {
-            while (flaws.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
-                if (rootLevel()) {
-                    return false;
-                }
-                pop();
-            }
-            while (inconsistencies.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
-                if (rootLevel()) {
-                    return false;
-                }
-                pop();
-            }
-
             // we clean up trivial flaws..
             assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
             assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
@@ -275,14 +262,14 @@ public class Solver extends Core {
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
-                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                fireCurrentResolver(resolver);
+                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
+                fireCurrentResolver(least_expensive_resolver);
 
                 // we try to enforce the resolver..
-                if (network.assign(resolver.in_plan)) {
+                if (network.assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
-                    inconsistencies.addAll(resolver.getPreconditions());
+                    inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to backjump..
                     if (!backjump()) {
