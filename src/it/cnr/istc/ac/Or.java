@@ -43,8 +43,8 @@ public class Or implements BoolExpr {
         }
     }
 
-    public Or(And and) {
-        this.vars = new IdentityHashMap<>(and.vars);
+    public Or(Or or) {
+        this.vars = new IdentityHashMap<>(or.vars);
     }
 
     public void add(BoolVar var, Boolean polarity) {
