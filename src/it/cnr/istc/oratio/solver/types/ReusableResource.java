@@ -231,9 +231,6 @@ public class ReusableResource extends SmartType {
                             }
                         }
                     }
-                    if (or.isEmpty()) {
-                        System.out.println("prc..");
-                    }
 
                     fs.add(new ReusableResourceFlaw((Solver) core, or));
                 }

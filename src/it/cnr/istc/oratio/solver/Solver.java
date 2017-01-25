@@ -519,6 +519,7 @@ public class Solver extends Core {
         // we also restore updated flaws and resolvers costs..
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             costs.put(entry.getKey(), entry.getValue());
+            fireFlawUpdate(entry.getKey());
         }
 
         Layer l_l = layers.getLast();
