@@ -284,6 +284,7 @@ public class Solver extends Core {
             }
 
             // we collect the inconsistencies..
+            LOG.info("extracting inconsistencies from smart types..");
             inconsistencies.addAll(get_inconsistencies());
             if (inconsistencies.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
                 if (rootLevel()) {
@@ -327,6 +328,7 @@ public class Solver extends Core {
                 resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
                 assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
                 resolvers.add(resolver);
+
                 fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
@@ -368,7 +370,7 @@ public class Solver extends Core {
             Flaw flaw = flaw_q.pollFirst();
             fireFlawUpdate(flaw);
             if (!isDeferrable(flaw)) {
-                LOG.log(Level.INFO, "expanding {0}", flaw.toSimpleString());
+                LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
                 if (!flaw.expand()) {
                     return false;
                 }
@@ -386,7 +388,7 @@ public class Solver extends Core {
                 }
             } else {
                 // we postpone the expansion..
-                LOG.log(Level.INFO, "deferring {0}", flaw.toSimpleString());
+                LOG.log(Level.FINE, "deferring {0}", flaw.toSimpleString());
                 flaw_q.add(flaw);
             }
         }
@@ -521,15 +523,16 @@ public class Solver extends Core {
             costs.put(entry.getKey(), entry.getValue());
             fireFlawUpdate(entry.getKey());
         }
+        if (resolvers.peekLast() == resolver) {
+            resolvers.pollLast();
+        }
 
         Layer l_l = layers.getLast();
         resolver = l_l.resolver;
         flaw_costs = l_l.flaw_costs;
         flaws = l_l.flaws;
         inconsistencies = l_l.inconsistencies;
-        if (resolvers.peekLast() == resolver) {
-            resolvers.pollLast();
-        }
+
         layers.pollLast();
     }
 
@@ -542,7 +545,7 @@ public class Solver extends Core {
      * network and {@code false} if the problem is inconsistent.
      */
     private boolean backjump() {
-        LOG.info("backjumping..");
+        LOG.fine("backjumping..");
         // we compute the unsat-core..
         Collection<BoolVar> unsat_core = network.getUnsatCore();
 
