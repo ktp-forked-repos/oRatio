@@ -44,7 +44,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -87,11 +86,6 @@ public class Solver extends Core {
         types.put(PropositionalAgent.NAME, new PropositionalAgent(this));
         types.put(PropositionalImpulsiveAgent.NAME, new PropositionalImpulsiveAgent(this));
         types.put(PropositionalState.NAME, new PropositionalState(this));
-
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setLevel(Level.FINE);
-        LOG.addHandler(handler);
-        LOG.setLevel(Level.FINE);
     }
 
     @Override
