@@ -237,12 +237,8 @@ public class Solver extends Core {
 
         while (true) {
             // we clean up trivial flaws..
-            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-            assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
             clear_flaws(flaws);
             clear_flaws(inconsistencies);
-            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-            assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
 
             // we remove the inconsistencies..
             if (!inconsistencies.isEmpty()) {
@@ -251,7 +247,9 @@ public class Solver extends Core {
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = inconsistencies.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
+                assert most_expensive_flaw.isExpanded();
                 assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
                 fireCurrentFlaw(most_expensive_flaw);
                 inconsistencies.remove(most_expensive_flaw);
 
@@ -479,7 +477,9 @@ public class Solver extends Core {
     private void clear_flaws(Set<Flaw> c_flaws) {
         Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
         while (trivial_flaw.isPresent()) {
+            assert trivial_flaw.get().isExpanded();
             assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+            assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
             Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
             assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
             assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
@@ -487,6 +487,9 @@ public class Solver extends Core {
             c_flaws.addAll(unique_resolver.getPreconditions());
             trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
         }
+        assert c_flaws.stream().allMatch(f -> f.isExpanded());
+        assert c_flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+        assert c_flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
     }
 
     public boolean rootLevel() {
