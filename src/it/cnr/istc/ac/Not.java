@@ -63,6 +63,7 @@ public class Not implements BoolExpr {
                 not.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, not);
+            n.bool_vars.put("!" + not.name, var);
             n.store(new Propagator() {
                 @Override
                 public Var<?>[] getArgs() {
