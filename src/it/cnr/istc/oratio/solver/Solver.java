@@ -44,6 +44,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -86,6 +87,11 @@ public class Solver extends Core {
         types.put(PropositionalAgent.NAME, new PropositionalAgent(this));
         types.put(PropositionalImpulsiveAgent.NAME, new PropositionalImpulsiveAgent(this));
         types.put(PropositionalState.NAME, new PropositionalState(this));
+
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINE);
+        LOG.addHandler(handler);
+        LOG.setLevel(Level.FINE);
     }
 
     @Override
@@ -250,8 +256,12 @@ public class Solver extends Core {
             }
 
             // we clean up trivial flaws..
+            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+            assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
             clear_flaws(flaws);
             clear_flaws(inconsistencies);
+            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+            assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
 
             // we remove the inconsistencies..
             if (!inconsistencies.isEmpty()) {
