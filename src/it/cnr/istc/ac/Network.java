@@ -578,6 +578,8 @@ public class Network {
         for (Var<?> var : domains.keySet()) {
             var.reevaluate();
         }
+        assert propagate() : "reevaluating variables should not produce inconsistencies..";
+        prop_q.clear();
         Layer layer = layers.getLast();
         domains = layer.domains;
         layers.pollLast();
