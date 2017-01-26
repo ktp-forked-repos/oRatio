@@ -49,9 +49,6 @@ public class Not implements BoolExpr {
         if (n.bool_vars.containsKey(id)) {
             // we can recycle an existing var..
             return n.bool_vars.get(id);
-        } else if (n.bool_vars.containsKey(var.name.substring(1))) {
-            // we have a double negation..
-            return n.bool_vars.get(var.name.substring(1));
         } else {
             // we need to create a new variable..
             BoolVar not;
