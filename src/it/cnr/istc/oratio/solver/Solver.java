@@ -334,7 +334,9 @@ public class Solver extends Core {
 
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
                 Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
+                assert most_expensive_flaw.isExpanded();
                 assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
                 fireCurrentFlaw(most_expensive_flaw);
                 flaws.remove(most_expensive_flaw);
 
