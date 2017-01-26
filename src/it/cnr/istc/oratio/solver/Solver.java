@@ -275,13 +275,7 @@ public class Solver extends Core {
             // we collect the inconsistencies..
             LOG.info("extracting inconsistencies from smart types..");
             inconsistencies.addAll(get_inconsistencies());
-            if (inconsistencies.stream().anyMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_FALSE)) {
-                if (rootLevel()) {
-                    return false;
-                }
-                pop();
-                continue;
-            }
+            assert inconsistencies.stream().allMatch(flaw -> flaw.in_plan.evaluate() != LBool.L_FALSE);
             if (!inconsistencies.isEmpty()) {
                 for (Flaw flaw : inconsistencies) {
                     fireFlawUpdate(flaw);
@@ -480,9 +474,11 @@ public class Solver extends Core {
             assert trivial_flaw.get().isExpanded();
             assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
             assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+            fireCurrentFlaw(trivial_flaw.get());
             Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
             assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
             assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+            fireCurrentResolver(unique_resolver);
             c_flaws.remove(trivial_flaw.get());
             c_flaws.addAll(unique_resolver.getPreconditions());
             trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();

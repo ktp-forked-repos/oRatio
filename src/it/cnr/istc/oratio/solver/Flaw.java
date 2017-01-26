@@ -46,6 +46,7 @@ public abstract class Flaw {
         this.causes.add(s.resolver);
         this.causes.addAll(s.resolvers);
         this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
+        assert in_plan.evaluate() != LBool.L_FALSE;
         this.solver.fireNewFlaw(this);
         this.disjunctive = disjunctive;
         this.solver.network.store(new Propagator() {
