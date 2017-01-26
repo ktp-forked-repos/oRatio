@@ -118,7 +118,12 @@ public class Lin implements ArithExpr {
                 assert !evaluate().isSingleton();
                 sum = new ArithVar(n, "s" + n.n_slack_vars++, evaluate());
             } else {
-                sum = new ArithVar(n, "s" + n.n_slack_vars++);
+                sum = new ArithVar(n, "s" + n.n_slack_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(Lin.this.evaluate(), null);
+                    }
+                };
                 sum.intersect(evaluate(), null);
             }
             sum.val = n.evaluate(this);

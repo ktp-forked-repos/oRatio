@@ -103,7 +103,12 @@ public class Or implements BoolExpr {
                 assert !evaluate().isSingleton();
                 or = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                or = new BoolVar(n, "b" + n.n_bool_vars++);
+                or = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(Or.this.evaluate(), null);
+                    }
+                };
                 or.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, or);

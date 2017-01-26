@@ -64,7 +64,12 @@ public class ArithGEq implements BoolExpr {
                 assert !evaluate().isSingleton();
                 geq = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                geq = new BoolVar(n, "b" + n.n_bool_vars++);
+                geq = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(ArithGEq.this.evaluate(), null);
+                    }
+                };
                 geq.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, geq);

@@ -116,7 +116,12 @@ public class ExctOne implements BoolExpr {
                 assert !evaluate().isSingleton();
                 xct_o = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                xct_o = new BoolVar(n, "b" + n.n_bool_vars++);
+                xct_o = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(ExctOne.this.evaluate(), null);
+                    }
+                };
                 xct_o.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, xct_o);

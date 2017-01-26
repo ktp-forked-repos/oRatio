@@ -56,7 +56,12 @@ public class Not implements BoolExpr {
                 assert !evaluate().isSingleton();
                 not = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                not = new BoolVar(n, "b" + n.n_bool_vars++);
+                not = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(Not.this.evaluate(), null);
+                    }
+                };
                 not.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, not);

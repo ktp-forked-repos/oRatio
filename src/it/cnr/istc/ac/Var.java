@@ -62,6 +62,9 @@ public abstract class Var<D extends Domain> implements Expr<D> {
         this.domain = (D) network.domains.get(this);
     }
 
+    protected void reevaluate() {
+    }
+
     @Override
     public String toString() {
         return name + " = " + domain.toString();

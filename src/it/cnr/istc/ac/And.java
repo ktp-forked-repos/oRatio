@@ -103,7 +103,12 @@ public class And implements BoolExpr {
                 assert !evaluate().isSingleton();
                 and = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                and = new BoolVar(n, "b" + n.n_bool_vars++);
+                and = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    public void reevaluate() {
+                        intersect(And.this.evaluate(), null);
+                    }
+                };
                 and.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, and);

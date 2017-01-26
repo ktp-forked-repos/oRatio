@@ -66,7 +66,12 @@ public class EnumEq<T> implements BoolExpr {
                 assert !evaluate().isSingleton();
                 eq = new BoolVar(n, "b" + n.n_bool_vars++, evaluate());
             } else {
-                eq = new BoolVar(n, "b" + n.n_bool_vars++);
+                eq = new BoolVar(n, "b" + n.n_bool_vars++) {
+                    @Override
+                    protected void reevaluate() {
+                        intersect(EnumEq.this.evaluate(), null);
+                    }
+                };
                 eq.intersect(evaluate(), null);
             }
             n.bool_vars.put(id, eq);

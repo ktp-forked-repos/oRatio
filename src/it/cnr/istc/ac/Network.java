@@ -575,6 +575,9 @@ public class Network {
         for (Var<?> var : domains.keySet()) {
             var.restore();
         }
+        for (Var<?> var : domains.keySet()) {
+            var.reevaluate();
+        }
         Layer layer = layers.getLast();
         domains = layer.domains;
         layers.pollLast();
