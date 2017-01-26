@@ -18,9 +18,14 @@ package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolVar;
+import it.cnr.istc.ac.LBool;
+import it.cnr.istc.ac.Propagator;
+import it.cnr.istc.ac.Var;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -33,7 +38,7 @@ public abstract class Resolver {
     protected final Solver solver;
     protected final BoolVar in_plan;
     protected final ArithExpr cost;
-    private final Collection<Flaw> preconditions = new ArrayList<>();
+    protected final Collection<Flaw> preconditions = new ArrayList<>();
     protected final Flaw effect;
 
     public Resolver(Solver s, ArithExpr c, Flaw e) {
@@ -42,6 +47,25 @@ public abstract class Resolver {
         this.effect = e;
         this.in_plan = s.network.newBool();
         this.solver.fireNewResolver(this);
+        this.solver.network.store(new Propagator() {
+            @Override
+            public Var<?>[] getArgs() {
+                return new Var<?>[]{in_plan};
+            }
+
+            @Override
+            public boolean propagate(Var<?> v) {
+                if (in_plan.evaluate() == LBool.L_FALSE) {
+                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + solver.network.evaluate(r.cost)));
+                    if (costs.isEmpty()) {
+                        solver.setCost(e, Double.POSITIVE_INFINITY);
+                    } else {
+                        solver.setCost(e, costs.get(costs.keySet().stream().min((Resolver r0, Resolver r1) -> Double.compare(costs.get(r0), costs.get(r1))).get()));
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     public Solver getSolver() {

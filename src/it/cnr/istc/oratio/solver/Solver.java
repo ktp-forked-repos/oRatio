@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *
@@ -66,9 +65,10 @@ public class Solver extends Core {
     final LinkedList<Resolver> resolvers = new LinkedList<>();
     private final LinkedList<Layer> layers = new LinkedList<>();
     private final Collection<SolverListener> listeners = new ArrayList<>();
+    private final Resolver solution = new FindSolution(this);
 
     public Solver() {
-        resolver = new FindSolution(this);
+        resolver = solution;
         ctr_var = resolver.in_plan;
         boolean propagate = network.add(ctr_var);
         assert propagate;
@@ -93,15 +93,16 @@ public class Solver extends Core {
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
+        assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.log(Level.INFO, "cannot create enum {0}: inconsistent problem..", flaw.toSimpleString());
-            return null;
-        }
         fireResolverUpdate(resolver);
-        if (resolver.effect == null) {
-            // we have a top-level flaw..
-            flaws.add(flaw);
+        if (rootLevel()) {
+            if (resolver == solution) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+        } else {
+            throw new UnsupportedOperationException("not supported yet..");
         }
         flaw_q.add(flaw);
         return c_enum;
@@ -113,16 +114,17 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
+        assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
         reasons.put(atom, flaw);
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.log(Level.INFO, "cannot create fact {0}: inconsistent problem..", flaw.toSimpleString());
-            return false;
-        }
         fireResolverUpdate(resolver);
-        if (resolver.effect == null) {
-            // we have a top-level flaw..
-            flaws.add(flaw);
+        if (rootLevel()) {
+            if (resolver == solution) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+        } else {
+            throw new UnsupportedOperationException("not supported yet..");
         }
         flaw_q.add(flaw);
         return true;
@@ -144,16 +146,17 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
-        fireFlawUpdate(flaw);
+        assert resolver.preconditions.contains(flaw);
         reasons.put(atom, flaw);
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
-            return false;
-        }
+        fireFlawUpdate(flaw);
         fireResolverUpdate(resolver);
-        if (resolver.effect == null) {
-            // we have a top-level flaw..
-            flaws.add(flaw);
+        if (rootLevel()) {
+            if (resolver == solution) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+        } else {
+            throw new UnsupportedOperationException("not supported yet..");
         }
         flaw_q.add(flaw);
         return true;
@@ -175,15 +178,16 @@ public class Solver extends Core {
             return false;
         }
         DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
+        assert resolver.getPreconditions().contains(flaw);
         fireFlawUpdate(flaw);
-        if (!resolver.addPrecondition(flaw)) {
-            LOG.log(Level.INFO, "cannot create goal {0}: inconsistent problem..", flaw.toSimpleString());
-            return false;
-        }
         fireResolverUpdate(resolver);
-        if (resolver.effect == null) {
-            // we have a top-level flaw..
-            flaws.add(flaw);
+        if (rootLevel()) {
+            if (resolver == solution) {
+                // we have a top-level flaw..
+                flaws.add(flaw);
+            }
+        } else {
+            throw new UnsupportedOperationException("not supported yet..");
         }
         flaw_q.add(flaw);
         return true;
@@ -229,54 +233,47 @@ public class Solver extends Core {
      */
     public boolean solve() {
         LOG.info("solving the problem..");
-
         while (true) {
-            if (flaw_q.stream().anyMatch(flaw -> !isDeferrable(flaw))) {
-                // we update the planning graph..
-                if (!update_planning_graph()) {
-                    // the problem is unsolvable..
-                    return false;
+            // we update the planning graph..
+            if (!update_planning_graph()) {
+                // the problem is unsolvable..
+                return false;
+            }
+
+            if (inconsistencies.isEmpty()) {
+                // we collect the inconsistencies..
+                LOG.info("extracting inconsistencies from smart types..");
+                inconsistencies.addAll(get_inconsistencies());
+                assert inconsistencies.stream().allMatch(flaw -> flaw.in_plan.evaluate() != LBool.L_FALSE);
+                if (!inconsistencies.isEmpty()) {
+                    for (Flaw flaw : inconsistencies) {
+                        fireFlawUpdate(flaw);
+                        fireResolverUpdate(resolver);
+                        flaw_q.add(flaw);
+                    }
+                    continue;
                 }
-            }
+            } else {
+                // we clean up trivial inconsistencies..
+                Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                while (trivial_inconsistency.isPresent()) {
+                    assert trivial_inconsistency.get().isExpanded();
+                    assert trivial_inconsistency.get().in_plan.evaluate() == LBool.L_TRUE;
+                    assert costs.getOrDefault(trivial_inconsistency.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                    fireCurrentFlaw(trivial_inconsistency.get());
+                    Resolver unique_resolver = trivial_inconsistency.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                    assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                    assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                    fireCurrentResolver(unique_resolver);
+                    inconsistencies.remove(trivial_inconsistency.get());
+                    inconsistencies.addAll(unique_resolver.getPreconditions());
+                    trivial_inconsistency = inconsistencies.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                }
 
-            // we clean up trivial flaws..
-            Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            while (trivial_flaw.isPresent()) {
-                assert trivial_flaw.get().isExpanded();
-                assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-                assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                fireCurrentFlaw(trivial_flaw.get());
-                Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-                fireCurrentResolver(unique_resolver);
-                flaws.remove(trivial_flaw.get());
-                flaws.addAll(unique_resolver.getPreconditions());
-                trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            }
+                assert inconsistencies.stream().allMatch(f -> f.isExpanded());
+                assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+                assert inconsistencies.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
 
-            // we clean up trivial inconsistencies..
-            Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            while (trivial_inconsistency.isPresent()) {
-                assert trivial_inconsistency.get().isExpanded();
-                assert trivial_inconsistency.get().in_plan.evaluate() == LBool.L_TRUE;
-                assert costs.getOrDefault(trivial_inconsistency.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                fireCurrentFlaw(trivial_inconsistency.get());
-                Resolver unique_resolver = trivial_inconsistency.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-                fireCurrentResolver(unique_resolver);
-                inconsistencies.remove(trivial_inconsistency.get());
-                inconsistencies.addAll(unique_resolver.getPreconditions());
-                trivial_inconsistency = inconsistencies.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            }
-
-            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> f.isExpanded());
-            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
-
-            // we remove the inconsistencies..
-            if (!inconsistencies.isEmpty()) {
                 // we create a new layer..
                 push();
 
@@ -307,26 +304,31 @@ public class Solver extends Core {
                 continue;
             }
 
-            // we collect the inconsistencies..
-            LOG.info("extracting inconsistencies from smart types..");
-            inconsistencies.addAll(get_inconsistencies());
-            assert inconsistencies.stream().allMatch(flaw -> flaw.in_plan.evaluate() != LBool.L_FALSE);
-            if (!inconsistencies.isEmpty()) {
-                for (Flaw flaw : inconsistencies) {
-                    fireFlawUpdate(flaw);
-                    if (!resolver.addPrecondition(flaw)) {
-                        // the problem is unsolvable..
-                        LOG.log(Level.INFO, "cannot create flaw {0}: inconsistent problem..", flaw.toSimpleString());
-                        return false;
-                    }
-                    fireResolverUpdate(resolver);
-                    flaw_q.add(flaw);
-                }
-                continue;
-            }
-
             assert inconsistencies.isEmpty();
-            if (!flaws.isEmpty()) {
+            if (flaws.isEmpty()) {
+                // Hurray!! We have found a solution..
+                return true;
+            } else {
+                // we clean up trivial flaws..
+                Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                while (trivial_flaw.isPresent()) {
+                    assert trivial_flaw.get().isExpanded();
+                    assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+                    assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                    fireCurrentFlaw(trivial_flaw.get());
+                    Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                    assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                    assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                    fireCurrentResolver(unique_resolver);
+                    flaws.remove(trivial_flaw.get());
+                    flaws.addAll(unique_resolver.getPreconditions());
+                    trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                }
+
+                assert flaws.stream().allMatch(f -> f.isExpanded());
+                assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+                assert flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
+
                 // we create a new layer..
                 push();
 
@@ -337,16 +339,16 @@ public class Solver extends Core {
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
-                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                resolvers.add(resolver);
+                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
+                resolvers.add(least_expensive_resolver);
 
-                fireCurrentResolver(resolver);
+                fireCurrentResolver(least_expensive_resolver);
 
                 // we try to enforce the resolver..
-                if (network.assign(resolver.in_plan)) {
+                if (network.assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
-                    flaws.addAll(resolver.getPreconditions());
+                    flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
                     if (!backjump()) {
@@ -354,11 +356,7 @@ public class Solver extends Core {
                         return false;
                     }
                 }
-                continue;
             }
-
-            // Hurray!! We have found a solution..
-            return true;
         }
     }
 
@@ -371,22 +369,19 @@ public class Solver extends Core {
      * the problem is detected as unsolvable.
      */
     private boolean update_planning_graph() {
-        LOG.info("building the planning graph..");
-
         if (flaw_q.isEmpty()) {
             // there is nothing to reason on..
             return true;
         }
 
-        Resolver tmp_r = resolver;
-        while (tmp_r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(tmp_r.cost) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+        while (getCost(solution) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
-            fireFlawUpdate(flaw);
             if (!isDeferrable(flaw)) {
                 LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
                 if (!flaw.expand()) {
                     return false;
                 }
+                fireFlawUpdate(flaw);
                 for (Resolver r : flaw.getResolvers()) {
                     resolver = r;
                     ctr_var = resolver.in_plan;
@@ -396,7 +391,7 @@ public class Solver extends Core {
                     fireResolverUpdate(resolver);
                     if (resolver.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
-                        setCost(flaw, 0);
+                        setCost(flaw, network.evaluate(resolver.cost));
                     }
                 }
             } else {
@@ -406,9 +401,9 @@ public class Solver extends Core {
             }
         }
 
-        assert tmp_r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(tmp_r.cost) < Double.POSITIVE_INFINITY;
+        assert getCost(solution) < Double.POSITIVE_INFINITY;
 
-        resolver = tmp_r;
+        resolver = solution;
         ctr_var = resolver.in_plan;
         return true;
     }
@@ -451,6 +446,10 @@ public class Solver extends Core {
 
     public double getCost(Flaw flaw) {
         return costs.getOrDefault(flaw, Double.POSITIVE_INFINITY);
+    }
+
+    public double getCost(Resolver resolver) {
+        return resolver.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + network.evaluate(resolver.getCost());
     }
 
     public boolean isDeferrable(Flaw flaw) {
@@ -515,7 +514,12 @@ public class Solver extends Core {
         // we also restore updated flaws and resolvers costs..
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             costs.put(entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             fireFlawUpdate(entry.getKey());
+            for (Resolver cause : entry.getKey().getCauses()) {
+                fireResolverUpdate(cause);
+            }
         }
         if (resolvers.peekLast() == resolver) {
             resolvers.pollLast();

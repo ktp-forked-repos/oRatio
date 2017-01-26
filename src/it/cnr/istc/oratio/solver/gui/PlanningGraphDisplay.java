@@ -260,7 +260,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         synchronized (m_vis) {
             Node resolver_node = resolvers.get(r);
             resolver_node.set(VisualItem.LABEL, r.toSimpleString());
-            resolver_node.set(NODE_COST, -(r.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + r.getSolver().network.evaluate(r.getCost())));
+            resolver_node.set(NODE_COST, -r.getSolver().getCost(r));
         }
     }
 

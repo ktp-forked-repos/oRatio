@@ -45,6 +45,9 @@ public abstract class Flaw {
         this.causes = new ArrayList<>(s.resolvers.size() + 1);
         this.causes.add(s.resolver);
         this.causes.addAll(s.resolvers);
+        for (Resolver cause : causes) {
+            cause.preconditions.add(this);
+        }
         this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
         assert in_plan.evaluate() != LBool.L_FALSE;
         this.solver.fireNewFlaw(this);
