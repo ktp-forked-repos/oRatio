@@ -52,6 +52,16 @@ public class NetworkTest {
         assertEquals(LBool.L_FALSE, false_bv.val);
     }
 
+    @Test
+    public void testDoubleNegation() {
+        Network n = new Network();
+        BoolVar b0 = n.newBool();
+        BoolExpr not_b0 = n.not(b0);
+        BoolExpr not_not_b0 = n.not(not_b0);
+        Var<LBool> not_not_b0_var = not_not_b0.to_var(n);
+        assertEquals(b0, not_not_b0_var);
+    }
+
     /**
      * Test of newReal method, of class Network.
      */
@@ -115,7 +125,6 @@ public class NetworkTest {
 
     @Test
     public void testSimplex2() {
-        boolean propagate;
         Network n = new Network();
         ArithVar x0 = n.newReal();
         ArithVar x1 = n.newReal();
