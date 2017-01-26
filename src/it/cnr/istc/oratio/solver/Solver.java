@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -229,16 +230,50 @@ public class Solver extends Core {
     public boolean solve() {
         LOG.info("solving the problem..");
 
-        // we build the planning graph..
-        if (!build_planning_graph()) {
-            // the problem is unsolvable..
-            return false;
-        }
-
         while (true) {
+            if (flaw_q.stream().anyMatch(flaw -> !isDeferrable(flaw))) {
+                // we update the planning graph..
+                if (!update_planning_graph()) {
+                    // the problem is unsolvable..
+                    return false;
+                }
+            }
+
             // we clean up trivial flaws..
-            clear_flaws(flaws);
-            clear_flaws(inconsistencies);
+            Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            while (trivial_flaw.isPresent()) {
+                assert trivial_flaw.get().isExpanded();
+                assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                fireCurrentFlaw(trivial_flaw.get());
+                Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                fireCurrentResolver(unique_resolver);
+                flaws.remove(trivial_flaw.get());
+                flaws.addAll(unique_resolver.getPreconditions());
+                trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            }
+
+            // we clean up trivial inconsistencies..
+            Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            while (trivial_inconsistency.isPresent()) {
+                assert trivial_inconsistency.get().isExpanded();
+                assert trivial_inconsistency.get().in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(trivial_inconsistency.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                fireCurrentFlaw(trivial_inconsistency.get());
+                Resolver unique_resolver = trivial_inconsistency.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                fireCurrentResolver(unique_resolver);
+                inconsistencies.remove(trivial_inconsistency.get());
+                inconsistencies.addAll(unique_resolver.getPreconditions());
+                trivial_inconsistency = inconsistencies.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            }
+
+            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> f.isExpanded());
+            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+            assert Stream.concat(flaws.stream(), inconsistencies.stream()).allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
 
             // we remove the inconsistencies..
             if (!inconsistencies.isEmpty()) {
@@ -287,12 +322,6 @@ public class Solver extends Core {
                     fireResolverUpdate(resolver);
                     flaw_q.add(flaw);
                 }
-
-                // we update the planning graph..
-                if (!build_planning_graph()) {
-                    // the problem is unsolvable..
-                    return false;
-                }
                 continue;
             }
 
@@ -325,10 +354,11 @@ public class Solver extends Core {
                         return false;
                     }
                 }
-            } else {
-                // Hurray!! We have found a solution..
-                return true;
+                continue;
             }
+
+            // Hurray!! We have found a solution..
+            return true;
         }
     }
 
@@ -340,7 +370,7 @@ public class Solver extends Core {
      * @return {@code true} if the building process succedes or {@code false} if
      * the problem is detected as unsolvable.
      */
-    private boolean build_planning_graph() {
+    private boolean update_planning_graph() {
         LOG.info("building the planning graph..");
 
         if (flaw_q.isEmpty()) {
@@ -460,32 +490,6 @@ public class Solver extends Core {
             }
         }
         return c_flaws;
-    }
-
-    /**
-     * Cleans up trivial flaws from the set of given flaws. Flaws are considered
-     * trivial if they have a single admissible resolver.
-     *
-     * @param c_flaws the set of flaws to be cleaned.
-     */
-    private void clear_flaws(Set<Flaw> c_flaws) {
-        Optional<Flaw> trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-        while (trivial_flaw.isPresent()) {
-            assert trivial_flaw.get().isExpanded();
-            assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-            assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-            fireCurrentFlaw(trivial_flaw.get());
-            Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-            assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-            assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-            fireCurrentResolver(unique_resolver);
-            c_flaws.remove(trivial_flaw.get());
-            c_flaws.addAll(unique_resolver.getPreconditions());
-            trivial_flaw = c_flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-        }
-        assert c_flaws.stream().allMatch(f -> f.isExpanded());
-        assert c_flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-        assert c_flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
     }
 
     public boolean rootLevel() {

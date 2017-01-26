@@ -280,7 +280,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
                 m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(true);
             }
             try {
-                Thread.sleep(2000);
+                Thread.sleep(2_000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -297,7 +297,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
                 m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(true);
             }
             try {
-                Thread.sleep(2000);
+                Thread.sleep(2_000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
             }
