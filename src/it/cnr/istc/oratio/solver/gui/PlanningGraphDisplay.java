@@ -25,6 +25,8 @@ import java.beans.Beans;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import prefuse.Constants;
@@ -70,6 +72,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     private static final String EDGE_DECORATORS = "edgeDeco";
     private static final String NODE_DECORATORS = "nodeDeco";
     private static final Schema DECORATOR_SCHEMA = PrefuseLib.getVisualItemSchema();
+    private static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
     static {
         DECORATOR_SCHEMA.setDefault(VisualItem.INTERACTIVE, false);
@@ -122,6 +125,7 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
         // first set up all the color actions
         ColorAction nFill = new DataColorAction(NODES, NODE_COST, Constants.ORDINAL, VisualItem.FILLCOLOR, ColorLib.getHotPalette());
         nFill.add(VisualItem.HOVER, ColorLib.gray(200));
+        nFill.add(VisualItem.HIGHLIGHT, ColorLib.rgb(255, 230, 230));
 
         ColorAction nStroke = new ColorAction(NODES, VisualItem.STROKECOLOR);
         nStroke.setDefaultColor(ColorLib.gray(255));
@@ -271,10 +275,36 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
 
     @Override
     public void currentFlaw(Flaw f) {
+        EXECUTOR.execute(() -> {
+            synchronized (m_vis) {
+                m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(true);
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            synchronized (m_vis) {
+                m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(false);
+            }
+        });
     }
 
     @Override
     public void currentResolver(Resolver r) {
+        EXECUTOR.execute(() -> {
+            synchronized (m_vis) {
+                m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(true);
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            synchronized (m_vis) {
+                m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(false);
+            }
+        });
     }
 
     /**
