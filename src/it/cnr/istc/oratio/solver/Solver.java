@@ -240,6 +240,26 @@ public class Solver extends Core {
                 return false;
             }
 
+            // we clean up trivial inconsistencies..
+            Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            while (trivial_inconsistency.isPresent()) {
+                assert trivial_inconsistency.get().isExpanded();
+                assert trivial_inconsistency.get().in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(trivial_inconsistency.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                fireCurrentFlaw(trivial_inconsistency.get());
+                Resolver unique_resolver = trivial_inconsistency.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                fireCurrentResolver(unique_resolver);
+                inconsistencies.remove(trivial_inconsistency.get());
+                inconsistencies.addAll(unique_resolver.getPreconditions());
+                trivial_inconsistency = inconsistencies.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            }
+
+            assert inconsistencies.stream().allMatch(f -> f.isExpanded());
+            assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+            assert inconsistencies.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
+
             if (inconsistencies.isEmpty()) {
                 // we collect the inconsistencies..
                 LOG.info("extracting inconsistencies from smart types..");
@@ -254,26 +274,6 @@ public class Solver extends Core {
                     continue;
                 }
             } else {
-                // we clean up trivial inconsistencies..
-                Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-                while (trivial_inconsistency.isPresent()) {
-                    assert trivial_inconsistency.get().isExpanded();
-                    assert trivial_inconsistency.get().in_plan.evaluate() == LBool.L_TRUE;
-                    assert costs.getOrDefault(trivial_inconsistency.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                    fireCurrentFlaw(trivial_inconsistency.get());
-                    Resolver unique_resolver = trivial_inconsistency.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-                    assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-                    assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-                    fireCurrentResolver(unique_resolver);
-                    inconsistencies.remove(trivial_inconsistency.get());
-                    inconsistencies.addAll(unique_resolver.getPreconditions());
-                    trivial_inconsistency = inconsistencies.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-                }
-
-                assert inconsistencies.stream().allMatch(f -> f.isExpanded());
-                assert inconsistencies.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-                assert inconsistencies.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
-
                 // we create a new layer..
                 push();
 
@@ -303,32 +303,32 @@ public class Solver extends Core {
                 }
                 continue;
             }
-
             assert inconsistencies.isEmpty();
+
+            // we clean up trivial flaws..
+            Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            while (trivial_flaw.isPresent()) {
+                assert trivial_flaw.get().isExpanded();
+                assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+                assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                fireCurrentFlaw(trivial_flaw.get());
+                Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                fireCurrentResolver(unique_resolver);
+                flaws.remove(trivial_flaw.get());
+                flaws.addAll(unique_resolver.getPreconditions());
+                trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+            }
+
+            assert flaws.stream().allMatch(f -> f.isExpanded());
+            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+            assert flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
+
             if (flaws.isEmpty()) {
                 // Hurray!! We have found a solution..
                 return true;
             } else {
-                // we clean up trivial flaws..
-                Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-                while (trivial_flaw.isPresent()) {
-                    assert trivial_flaw.get().isExpanded();
-                    assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-                    assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                    fireCurrentFlaw(trivial_flaw.get());
-                    Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-                    assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-                    assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-                    fireCurrentResolver(unique_resolver);
-                    flaws.remove(trivial_flaw.get());
-                    flaws.addAll(unique_resolver.getPreconditions());
-                    trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-                }
-
-                assert flaws.stream().allMatch(f -> f.isExpanded());
-                assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-                assert flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
-
                 // we create a new layer..
                 push();
 
@@ -363,9 +363,8 @@ public class Solver extends Core {
     }
 
     /**
-     * Builds (or updates) the planning graph returning {@code true} if the
-     * building process succedes and {@code false} if the problem is detected as
-     * unsolvable.
+     * Updates the planning graph returning {@code true} if the building process
+     * succedes and {@code false} if the problem is detected as unsolvable.
      *
      * @return {@code true} if the building process succedes or {@code false} if
      * the problem is detected as unsolvable.
