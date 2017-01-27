@@ -299,14 +299,14 @@ public class Solver extends Core {
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
-                assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                fireCurrentResolver(least_expensive_resolver);
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
+                fireCurrentResolver(resolver);
 
                 // we try to enforce the resolver..
-                if (network.assign(least_expensive_resolver.in_plan)) {
+                if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
-                    inconsistencies.addAll(least_expensive_resolver.getPreconditions());
+                    inconsistencies.addAll(resolver.getPreconditions());
                 } else {
                     // we need to backjump..
                     if (!backjump()) {
@@ -354,15 +354,15 @@ public class Solver extends Core {
                 flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
-                assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                fireCurrentResolver(least_expensive_resolver);
-                resolvers.add(least_expensive_resolver);
+                resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                assert resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
+                fireCurrentResolver(resolver);
+                resolvers.add(resolver);
 
                 // we try to enforce the resolver..
-                if (network.assign(least_expensive_resolver.in_plan)) {
+                if (network.assign(resolver.in_plan)) {
                     // we add sub-goals..
-                    flaws.addAll(least_expensive_resolver.getPreconditions());
+                    flaws.addAll(resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
                     if (!backjump()) {
@@ -387,6 +387,7 @@ public class Solver extends Core {
             return true;
         }
 
+        resolver = solution;
         while (getCost(solution) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
             if (!isDeferrable(flaw)) {
