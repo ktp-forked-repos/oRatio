@@ -95,7 +95,9 @@ public class Solver extends Core {
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
         assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
-        fireResolverUpdate(resolver);
+        for (Resolver cause : flaw.getCauses()) {
+            fireResolverUpdate(cause);
+        }
         if (rootLevel()) {
             if (resolver == solution) {
                 // we have a top-level flaw..
@@ -116,8 +118,10 @@ public class Solver extends Core {
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
         assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
+        for (Resolver cause : flaw.getCauses()) {
+            fireResolverUpdate(cause);
+        }
         reasons.put(atom, flaw);
-        fireResolverUpdate(resolver);
         if (rootLevel()) {
             if (resolver == solution) {
                 // we have a top-level flaw..
@@ -149,7 +153,9 @@ public class Solver extends Core {
         assert resolver.preconditions.contains(flaw);
         reasons.put(atom, flaw);
         fireFlawUpdate(flaw);
-        fireResolverUpdate(resolver);
+        for (Resolver cause : flaw.getCauses()) {
+            fireResolverUpdate(cause);
+        }
         if (rootLevel()) {
             if (resolver == solution) {
                 // we have a top-level flaw..
@@ -180,7 +186,9 @@ public class Solver extends Core {
         DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
         assert resolver.getPreconditions().contains(flaw);
         fireFlawUpdate(flaw);
-        fireResolverUpdate(resolver);
+        for (Resolver cause : flaw.getCauses()) {
+            fireResolverUpdate(cause);
+        }
         if (rootLevel()) {
             if (resolver == solution) {
                 // we have a top-level flaw..
@@ -271,7 +279,9 @@ public class Solver extends Core {
                 if (!inconsistencies.isEmpty()) {
                     for (Flaw flaw : inconsistencies) {
                         fireFlawUpdate(flaw);
-                        fireResolverUpdate(resolver);
+                        for (Resolver cause : flaw.getCauses()) {
+                            fireResolverUpdate(cause);
+                        }
                         flaw_q.add(flaw);
                     }
                     continue;
@@ -346,9 +356,8 @@ public class Solver extends Core {
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
                 assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                resolvers.add(least_expensive_resolver);
-
                 fireCurrentResolver(least_expensive_resolver);
+                resolvers.add(least_expensive_resolver);
 
                 // we try to enforce the resolver..
                 if (network.assign(least_expensive_resolver.in_plan)) {
