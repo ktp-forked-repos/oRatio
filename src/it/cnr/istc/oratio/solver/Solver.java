@@ -240,6 +240,9 @@ public class Solver extends Core {
                 return false;
             }
 
+            assert layers.stream().map(l -> l.resolver).allMatch(res -> res.in_plan.evaluate() == LBool.L_TRUE);
+            assert resolvers.stream().allMatch(res -> res.in_plan.evaluate() == LBool.L_TRUE);
+
             // we clean up trivial inconsistencies..
             Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
             while (trivial_inconsistency.isPresent()) {
