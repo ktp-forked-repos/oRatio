@@ -575,10 +575,7 @@ public class Network {
         for (Var<?> var : domains.keySet()) {
             var.restore();
         }
-        for (Var<?> var : domains.keySet()) {
-            var.reevaluate();
-        }
-        assert propagate() : "reevaluating variables should not produce inconsistencies..";
+        domains.keySet().stream().sorted((Var<?> v0, Var<?> v1) -> v0.name.compareTo(v1.name)).forEach(v -> v.reevaluate());
         prop_q.clear();
         Layer layer = layers.getLast();
         domains = layer.domains;
