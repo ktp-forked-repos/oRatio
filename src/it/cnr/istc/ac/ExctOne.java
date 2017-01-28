@@ -18,9 +18,9 @@ package it.cnr.istc.ac;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -28,45 +28,21 @@ import java.util.stream.Collectors;
  */
 public class ExctOne implements BoolExpr {
 
-    final Map<BoolVar, Boolean> vars;
-
-    public ExctOne() {
-        this.vars = new IdentityHashMap<>();
-    }
+    final BoolVar[] vars;
 
     public ExctOne(BoolVar... vars) {
-        this.vars = new IdentityHashMap<>(vars.length);
-        for (BoolVar var : vars) {
-            assert !this.vars.containsKey(var) || this.vars.get(var);
-            this.vars.put(var, true);
-        }
-    }
-
-    public ExctOne(And and) {
-        this.vars = new IdentityHashMap<>(and.vars);
-    }
-
-    public void add(BoolVar var, Boolean polarity) {
-        vars.put(var, polarity);
+        this.vars = vars;
+        Arrays.sort(vars, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
     }
 
     @Override
     public String id() {
         String xct_o = new String();
-        BoolVar[] c_vs = vars.keySet().toArray(new BoolVar[vars.size()]);
-        Arrays.sort(c_vs, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
-        for (int i = 0; i < c_vs.length; i++) {
-            BoolVar v = c_vs[i];
-            if (vars.get(v)) {
-                if (i == 0) {
-                    xct_o += v.name;
-                } else {
-                    xct_o += " ^ " + v.name;
-                }
-            } else if (i == 0) {
-                xct_o += "!" + v.name;
+        for (int i = 0; i < vars.length; i++) {
+            if (i == 0) {
+                xct_o += vars[i].name;
             } else {
-                xct_o += " ^ !" + v.name;
+                xct_o += " ^ " + vars[i].name;
             }
         }
         return xct_o;
@@ -74,12 +50,12 @@ public class ExctOne implements BoolExpr {
 
     @Override
     public boolean isConst() {
-        return vars.keySet().stream().allMatch(var -> var.isConst());
+        return Stream.of(vars).allMatch(var -> var.isConst());
     }
 
     @Override
     public LBool evaluate() {
-        LBool[] vals = vars.entrySet().stream().map(entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()).toArray(LBool[]::new);
+        LBool[] vals = Stream.of(vars).map(var -> var.evaluate()).toArray(LBool[]::new);
         int n_trues = 0;
         int n_unknown = 0;
         for (LBool val : vals) {
@@ -128,8 +104,8 @@ public class ExctOne implements BoolExpr {
             n.store(new Propagator() {
                 @Override
                 public Var<?>[] getArgs() {
-                    ArrayList<Var<?>> args = new ArrayList<>(vars.size() + 1);
-                    args.addAll(vars.keySet());
+                    ArrayList<Var<?>> args = new ArrayList<>(vars.length + 1);
+                    args.addAll(Arrays.asList(vars));
                     args.add(xct_o);
                     return args.toArray(new Var<?>[args.size()]);
                 }
@@ -139,7 +115,7 @@ public class ExctOne implements BoolExpr {
                     switch (xct_o.domain) {
                         case L_TRUE: {
                             // The constraint must be satisfied..
-                            Map<BoolVar, LBool> vals = vars.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()));
+                            Map<BoolVar, LBool> vals = Stream.of(vars).collect(Collectors.toMap(var -> var, var -> var.domain));
                             int n_trues = 0;
                             int n_unknown = 0;
                             BoolVar the_true = null;
@@ -161,17 +137,9 @@ public class ExctOne implements BoolExpr {
                                 }
                             }
                             if (n_trues == 1 && n_unknown == vals.size() - 1) {
-                                for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
-                                    if (entry.getKey() != the_true) {
-                                        if (entry.getValue()) {
-                                            if (!entry.getKey().intersect(LBool.L_FALSE, this)) {
-                                                return false;
-                                            }
-                                        } else {
-                                            if (!entry.getKey().intersect(LBool.L_TRUE, this)) {
-                                                return false;
-                                            }
-                                        }
+                                for (BoolVar var : vars) {
+                                    if (var != the_true && !var.intersect(LBool.L_FALSE, this)) {
+                                        return false;
                                     }
                                 }
                                 return true;
@@ -195,7 +163,7 @@ public class ExctOne implements BoolExpr {
                         }
                         case L_FALSE: {
                             // The constraint must be not satisfied..
-                            Map<BoolVar, LBool> vals = vars.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()));
+                            Map<BoolVar, LBool> vals = Stream.of(vars).collect(Collectors.toMap(var -> var, var -> var.domain));
                             int n_trues = 0;
                             int n_unknown = 0;
                             BoolVar unknown = null;

@@ -19,8 +19,7 @@ package it.cnr.istc.ac;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -29,45 +28,21 @@ import java.util.stream.Stream;
  */
 public class And implements BoolExpr {
 
-    final Map<BoolVar, Boolean> vars;
-
-    public And() {
-        this.vars = new IdentityHashMap<>();
-    }
+    final BoolVar[] vars;
 
     public And(BoolVar... vars) {
-        this.vars = new IdentityHashMap<>(vars.length);
-        for (BoolVar var : vars) {
-            assert !this.vars.containsKey(var) || this.vars.get(var);
-            this.vars.put(var, true);
-        }
-    }
-
-    public And(And and) {
-        this.vars = new IdentityHashMap<>(and.vars);
-    }
-
-    public void add(BoolVar var, Boolean polarity) {
-        vars.put(var, polarity);
+        this.vars = vars;
+        Arrays.sort(vars, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
     }
 
     @Override
     public String id() {
         String and = new String();
-        BoolVar[] c_vs = vars.keySet().toArray(new BoolVar[vars.size()]);
-        Arrays.sort(c_vs, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
-        for (int i = 0; i < c_vs.length; i++) {
-            BoolVar v = c_vs[i];
-            if (vars.get(v)) {
-                if (i == 0) {
-                    and += v.name;
-                } else {
-                    and += " & " + v.name;
-                }
-            } else if (i == 0) {
-                and += "!" + v.name;
+        for (int i = 0; i < vars.length; i++) {
+            if (i == 0) {
+                and += vars[i].name;
             } else {
-                and += " & !" + v.name;
+                and += " & " + vars[i].name;
             }
         }
         return and;
@@ -75,12 +50,12 @@ public class And implements BoolExpr {
 
     @Override
     public boolean isConst() {
-        return vars.keySet().stream().allMatch(var -> var.isConst());
+        return Stream.of(vars).allMatch(var -> var.isConst());
     }
 
     @Override
     public LBool evaluate() {
-        LBool[] vals = vars.entrySet().stream().map(entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()).toArray(LBool[]::new);
+        LBool[] vals = Stream.of(vars).map(var -> var.domain).toArray(LBool[]::new);
         if (Stream.of(vals).allMatch(val -> val == LBool.L_TRUE)) {
             return LBool.L_TRUE;
         } else if (Stream.of(vals).anyMatch(val -> val == LBool.L_FALSE)) {
@@ -115,8 +90,8 @@ public class And implements BoolExpr {
             n.store(new Propagator() {
                 @Override
                 public Var<?>[] getArgs() {
-                    ArrayList<Var<?>> args = new ArrayList<>(vars.size() + 1);
-                    args.addAll(vars.keySet());
+                    ArrayList<Var<?>> args = new ArrayList<>(vars.length + 1);
+                    args.addAll(Arrays.asList(vars));
                     args.add(and);
                     return args.toArray(new Var<?>[args.size()]);
                 }
@@ -126,32 +101,15 @@ public class And implements BoolExpr {
                     switch (and.domain) {
                         case L_TRUE:
                             // The constraint must be satisfied..
-                            for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
-                                if (entry.getValue()) {
-                                    if (!entry.getKey().intersect(LBool.L_TRUE, this)) {
-                                        return false;
-                                    }
-                                } else {
-                                    if (!entry.getKey().intersect(LBool.L_FALSE, this)) {
-                                        return false;
-                                    }
+                            for (BoolVar var : vars) {
+                                if (!var.intersect(LBool.L_TRUE, this)) {
+                                    return false;
                                 }
                             }
                             return true;
                         case L_FALSE:
                             // The constraint must be not satisfied..
-                            Collection<BoolVar> false_or_free_vars = new ArrayList<>(vars.size());
-                            for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
-                                if (entry.getValue()) {
-                                    if (entry.getKey().domain != LBool.L_TRUE) {
-                                        false_or_free_vars.add(entry.getKey());
-                                    }
-                                } else {
-                                    if (entry.getKey().domain != LBool.L_FALSE) {
-                                        false_or_free_vars.add(entry.getKey());
-                                    }
-                                }
-                            }
+                            Collection<BoolVar> false_or_free_vars = Stream.of(vars).filter(var -> var.domain != LBool.L_TRUE).collect(Collectors.toList());
                             if (false_or_free_vars.isEmpty()) {
                                 return false;
                             } else if (false_or_free_vars.size() == 1 && !false_or_free_vars.iterator().next().intersect(LBool.L_FALSE, this)) {

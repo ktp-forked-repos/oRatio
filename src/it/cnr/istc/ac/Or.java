@@ -19,8 +19,7 @@ package it.cnr.istc.ac;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -29,45 +28,21 @@ import java.util.stream.Stream;
  */
 public class Or implements BoolExpr {
 
-    final Map<BoolVar, Boolean> vars;
-
-    public Or() {
-        this.vars = new IdentityHashMap<>();
-    }
+    final BoolVar[] vars;
 
     public Or(BoolVar... vars) {
-        this.vars = new IdentityHashMap<>(vars.length);
-        for (BoolVar var : vars) {
-            assert !this.vars.containsKey(var) || this.vars.get(var);
-            this.vars.put(var, true);
-        }
-    }
-
-    public Or(Or or) {
-        this.vars = new IdentityHashMap<>(or.vars);
-    }
-
-    public void add(BoolVar var, Boolean polarity) {
-        vars.put(var, polarity);
+        this.vars = vars;
+        Arrays.sort(vars, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
     }
 
     @Override
     public String id() {
         String or = new String();
-        BoolVar[] c_vs = vars.keySet().toArray(new BoolVar[vars.size()]);
-        Arrays.sort(c_vs, (BoolVar v0, BoolVar v1) -> v0.name.compareTo(v1.name));
-        for (int i = 0; i < c_vs.length; i++) {
-            BoolVar v = c_vs[i];
-            if (vars.get(v)) {
-                if (i == 0) {
-                    or += v.name;
-                } else {
-                    or += " | " + v.name;
-                }
-            } else if (i == 0) {
-                or += "!" + v.name;
+        for (int i = 0; i < vars.length; i++) {
+            if (i == 0) {
+                or += vars[i].name;
             } else {
-                or += " | !" + v.name;
+                or += " | " + vars[i].name;
             }
         }
         return or;
@@ -75,12 +50,12 @@ public class Or implements BoolExpr {
 
     @Override
     public boolean isConst() {
-        return vars.keySet().stream().allMatch(var -> var.isConst());
+        return Stream.of(vars).allMatch(var -> var.isConst());
     }
 
     @Override
     public LBool evaluate() {
-        LBool[] vals = vars.entrySet().stream().map(entry -> entry.getValue() ? entry.getKey().domain : entry.getKey().domain.not()).toArray(LBool[]::new);
+        LBool[] vals = Stream.of(vars).map(var -> var.domain).toArray(LBool[]::new);
         if (Stream.of(vals).anyMatch(val -> val == LBool.L_TRUE)) {
             return LBool.L_TRUE;
         } else if (Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
@@ -115,8 +90,8 @@ public class Or implements BoolExpr {
             n.store(new Propagator() {
                 @Override
                 public Var<?>[] getArgs() {
-                    ArrayList<Var<?>> args = new ArrayList<>(vars.size() + 1);
-                    args.addAll(vars.keySet());
+                    ArrayList<Var<?>> args = new ArrayList<>(vars.length + 1);
+                    args.addAll(Arrays.asList(vars));
                     args.add(or);
                     return args.toArray(new Var<?>[args.size()]);
                 }
@@ -126,18 +101,7 @@ public class Or implements BoolExpr {
                     switch (or.domain) {
                         case L_TRUE:
                             // The constraint must be satisfied..
-                            Collection<BoolVar> true_or_free_vars = new ArrayList<>(vars.size());
-                            for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
-                                if (entry.getValue()) {
-                                    if (entry.getKey().domain != LBool.L_FALSE) {
-                                        true_or_free_vars.add(entry.getKey());
-                                    }
-                                } else {
-                                    if (entry.getKey().domain != LBool.L_TRUE) {
-                                        true_or_free_vars.add(entry.getKey());
-                                    }
-                                }
-                            }
+                            Collection<BoolVar> true_or_free_vars = Stream.of(vars).filter(var -> var.domain != LBool.L_FALSE).collect(Collectors.toList());
                             if (true_or_free_vars.isEmpty()) {
                                 return false;
                             } else if (true_or_free_vars.size() == 1 && !true_or_free_vars.iterator().next().intersect(LBool.L_TRUE, this)) {
@@ -146,15 +110,9 @@ public class Or implements BoolExpr {
                             return true;
                         case L_FALSE:
                             // The constraint must be not satisfied..
-                            for (Map.Entry<BoolVar, Boolean> entry : vars.entrySet()) {
-                                if (entry.getValue()) {
-                                    if (!entry.getKey().intersect(LBool.L_FALSE, this)) {
-                                        return false;
-                                    }
-                                } else {
-                                    if (!entry.getKey().intersect(LBool.L_TRUE, this)) {
-                                        return false;
-                                    }
+                            for (BoolVar var : vars) {
+                                if (!var.intersect(LBool.L_FALSE, this)) {
+                                    return false;
                                 }
                             }
                             return true;
