@@ -56,7 +56,7 @@ public abstract class Resolver {
             @Override
             public boolean propagate(Var<?> v) {
                 if (in_plan.evaluate() == LBool.L_FALSE) {
-                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + solver.network.evaluate(r.cost)));
+                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + solver.network.evaluate(r.cost)));
                     if (costs.isEmpty()) {
                         solver.setCost(e, Double.POSITIVE_INFINITY);
                     } else {

@@ -56,23 +56,17 @@ public class Solver extends Core {
 
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
-    Map<Flaw, Double> costs = new IdentityHashMap<>();
-    Map<Flaw, Double> flaw_costs;
-    Set<Flaw> flaws = new HashSet<>();
-    Set<Flaw> inconsistencies = new HashSet<>();
-    Resolver resolver;
+    private Map<Flaw, Double> costs = new IdentityHashMap<>();
+    private Map<Flaw, Double> flaw_costs;
+    private Set<Flaw> flaws = new HashSet<>();
+    private Set<Flaw> inconsistencies = new HashSet<>();
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
     final LinkedList<Resolver> resolvers = new LinkedList<>();
+    private Resolver resolver;
     private final LinkedList<Layer> layers = new LinkedList<>();
     private final Collection<SolverListener> listeners = new ArrayList<>();
-    private final Resolver solution = new FindSolution(this);
 
     public Solver() {
-        resolver = solution;
-        ctr_var = resolver.in_plan;
-        boolean propagate = network.add(ctr_var);
-        assert propagate;
-
         try {
             boolean read = read(new File(Solver.class.getResource("time.rddl").getPath()));
             assert read;
@@ -93,18 +87,13 @@ public class Solver extends Core {
     public IEnumItem newEnum(Type type, IItem... values) {
         IEnumItem c_enum = super.newEnum(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
-        assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
         for (Resolver cause : flaw.getCauses()) {
             fireResolverUpdate(cause);
         }
-        if (rootLevel()) {
-            if (resolver == solution) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-        } else {
-            throw new UnsupportedOperationException("not supported yet..");
+        if (resolvers.isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
         }
         flaw_q.add(flaw);
         return c_enum;
@@ -116,19 +105,14 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
-        assert resolver.preconditions.contains(flaw);
         fireFlawUpdate(flaw);
         for (Resolver cause : flaw.getCauses()) {
             fireResolverUpdate(cause);
         }
         reasons.put(atom, flaw);
-        if (rootLevel()) {
-            if (resolver == solution) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-        } else {
-            throw new UnsupportedOperationException("not supported yet..");
+        if (resolvers.isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
         }
         flaw_q.add(flaw);
         return true;
@@ -150,19 +134,14 @@ public class Solver extends Core {
             return false;
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
-        assert resolver.preconditions.contains(flaw);
         reasons.put(atom, flaw);
         fireFlawUpdate(flaw);
         for (Resolver cause : flaw.getCauses()) {
             fireResolverUpdate(cause);
         }
-        if (rootLevel()) {
-            if (resolver == solution) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-        } else {
-            throw new UnsupportedOperationException("not supported yet..");
+        if (resolvers.isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
         }
         flaw_q.add(flaw);
         return true;
@@ -184,18 +163,13 @@ public class Solver extends Core {
             return false;
         }
         DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
-        assert resolver.getPreconditions().contains(flaw);
         fireFlawUpdate(flaw);
         for (Resolver cause : flaw.getCauses()) {
             fireResolverUpdate(cause);
         }
-        if (rootLevel()) {
-            if (resolver == solution) {
-                // we have a top-level flaw..
-                flaws.add(flaw);
-            }
-        } else {
-            throw new UnsupportedOperationException("not supported yet..");
+        if (resolvers.isEmpty()) {
+            // we have a top-level flaw..
+            flaws.add(flaw);
         }
         flaw_q.add(flaw);
         return true;
@@ -387,8 +361,8 @@ public class Solver extends Core {
             return true;
         }
 
-        resolver = solution;
-        while (getCost(solution) == Double.POSITIVE_INFINITY && !flaw_q.isEmpty()) {
+        BoolExpr tmp_expr = ctr_var;
+        while (flaws.stream().anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY) && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
             if (!isDeferrable(flaw)) {
                 LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
@@ -397,15 +371,18 @@ public class Solver extends Core {
                 }
                 fireFlawUpdate(flaw);
                 for (Resolver r : flaw.getResolvers()) {
-                    resolver = r;
-                    ctr_var = resolver.in_plan;
-                    if (!resolver.apply()) {
+                    if (!resolvers.isEmpty()) {
+                        resolvers.removeFirst();
+                    }
+                    resolvers.addFirst(r);
+                    ctr_var = r.in_plan;
+                    if (!r.apply()) {
                         return false;
                     }
-                    fireResolverUpdate(resolver);
-                    if (resolver.getPreconditions().isEmpty()) {
+                    fireResolverUpdate(r);
+                    if (r.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
-                        setCost(flaw, network.evaluate(resolver.cost));
+                        setCost(flaw, network.evaluate(r.cost));
                     }
                 }
             } else {
@@ -415,10 +392,11 @@ public class Solver extends Core {
             }
         }
 
-        assert getCost(solution) < Double.POSITIVE_INFINITY;
+        if (flaw_q.isEmpty() && flaws.stream().anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY)) {
+            throw new UnsupportedOperationException("not supported yet..");
+        }
 
-        resolver = solution;
-        ctr_var = resolver.in_plan;
+        ctr_var = tmp_expr;
         return true;
     }
 
@@ -536,7 +514,7 @@ public class Solver extends Core {
             }
         }
         if (resolvers.peekLast() == resolver) {
-            resolvers.pollLast();
+            resolvers.removeLast();
         }
 
         Layer l_l = layers.getLast();
@@ -612,7 +590,6 @@ public class Solver extends Core {
 
     public void addSolverListener(SolverListener listener) {
         listeners.add(listener);
-        listener.newResolver(resolver);
         for (Resolver r : resolvers) {
             listener.newResolver(r);
         }
@@ -634,23 +611,6 @@ public class Solver extends Core {
             this.flaw_costs = flaw_costs;
             this.flaws = flaws;
             this.inconsistencies = inconsistencies;
-        }
-    }
-
-    static class FindSolution extends Resolver {
-
-        FindSolution(Solver s) {
-            super(s, s.network.newReal(0), null);
-        }
-
-        @Override
-        protected boolean apply() {
-            return true;
-        }
-
-        @Override
-        public String toSimpleString() {
-            return "solution";
         }
     }
 }
