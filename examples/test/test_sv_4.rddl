@@ -1,0 +1,26 @@
+class TestSV : StateVariable {
+
+    predicate P(real x) {
+        duration >= 10;
+    }
+}
+
+TestSV test = new TestSV();
+
+{
+    fact f0 = new test.P(start:origin, x:0);
+    f0.duration >= 10;
+} or {
+    fact f1 = new test.P(start:origin, x:1);
+    f1.duration >= 10;
+}
+
+{
+    fact f2 = new test.P(end:horizon, x:2);
+    f2.duration >= 10;
+    f2.end <= 15;
+} or {
+    fact f3 = new test.P(end:horizon, x:3);
+    f3.duration >= 10;
+}
+
