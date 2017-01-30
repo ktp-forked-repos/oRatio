@@ -42,16 +42,27 @@ public abstract class Flaw {
 
     public Flaw(Solver s, boolean disjunctive) {
         this.solver = s;
-        this.causes = new ArrayList<>(s.resolvers.size() + 1);
-        this.causes.add(s.resolver);
-        this.causes.addAll(s.resolvers);
+
+        this.causes = new ArrayList<>(s.resolvers);
         for (Resolver cause : causes) {
             cause.preconditions.add(this);
         }
-        this.in_plan = causes.size() == 1 ? causes.iterator().next().in_plan : (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
+
+        switch (causes.size()) {
+            case 0:
+                this.in_plan = (BoolVar) s.network.newBool(true).to_var(s.network);
+                break;
+            case 1:
+                this.in_plan = causes.iterator().next().in_plan;
+                break;
+            default:
+                this.in_plan = (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
+                break;
+        }
         assert in_plan.evaluate() != LBool.L_FALSE;
-        this.solver.fireNewFlaw(this);
+
         this.disjunctive = disjunctive;
+
         this.solver.network.store(new Propagator() {
             @Override
             public Var<?>[] getArgs() {
@@ -66,6 +77,7 @@ public abstract class Flaw {
                 return true;
             }
         });
+        this.solver.fireNewFlaw(this);
     }
 
     public Solver getSolver() {
