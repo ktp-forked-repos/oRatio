@@ -29,7 +29,7 @@ public class ArithVar extends Var<Interval> implements ArithExpr {
     }
 
     public ArithVar(Network network, String name, Interval domain) {
-        super(network, name, domain);
+        super(network, name, new Interval(domain), new Interval(domain));
         if (domain.isSingleton()) {
             val = domain.lb;
         }

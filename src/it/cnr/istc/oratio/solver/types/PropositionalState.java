@@ -158,11 +158,11 @@ public class PropositionalState extends SmartType {
 
                                     // either we order..
                                     BoolExpr a0_before_a1 = core.network.leq(a0_end, a1_start);
-                                    if (a0_before_a1.evaluate() != LBool.L_FALSE) {
+                                    if (a0_before_a1.root() != LBool.L_FALSE) {
                                         or.add(a0_before_a1);
                                     }
                                     BoolExpr a1_before_a0 = core.network.leq(a1_end, a0_start);
-                                    if (a1_before_a0.evaluate() != LBool.L_FALSE) {
+                                    if (a1_before_a0.root() != LBool.L_FALSE) {
                                         or.add(a1_before_a0);
                                     }
 
@@ -170,7 +170,7 @@ public class PropositionalState extends SmartType {
                                     for (Field f : c_fields) {
                                         IItem a0_arg = a0.get(f.name);
                                         if (a0_arg instanceof IEnumItem) {
-                                            Set<IItem> a0_arg_vals = ((IEnumItem) a0_arg).getEnumVar().evaluate().getAllowedValues();
+                                            Set<IItem> a0_arg_vals = ((IEnumItem) a0_arg).getEnumVar().root().getAllowedValues();
                                             if (a0_arg_vals.size() > 1) {
                                                 for (IItem a0_arg_val : a0_arg_vals) {
                                                     or.add(core.network.not(((IEnumItem) a0_arg).allows(a0_arg_val)));
@@ -180,7 +180,7 @@ public class PropositionalState extends SmartType {
 
                                         IItem a1_arg = a1.get(f.name);
                                         if (a1_arg instanceof IEnumItem) {
-                                            Set<IItem> a1_arg_vals = ((IEnumItem) a1_arg).getEnumVar().evaluate().getAllowedValues();
+                                            Set<IItem> a1_arg_vals = ((IEnumItem) a1_arg).getEnumVar().root().getAllowedValues();
                                             if (a1_arg_vals.size() > 1) {
                                                 for (IItem a1_arg_val : a1_arg_vals) {
                                                     or.add(core.network.not(((IEnumItem) a1_arg).allows(a1_arg_val)));

@@ -37,7 +37,7 @@ class ArithEnum extends Item implements IArithItem, IEnumItem {
         super(c, c, t);
         this.arith_var = av;
         this.enum_var = ev;
-        for (IItem v : ev.evaluate().getAllowedValues()) {
+        for (IItem v : ev.root().getAllowedValues()) {
             eqs.put(v, core.network.eq(arith_var, ((IArithItem) v).getArithVar()));
         }
     }

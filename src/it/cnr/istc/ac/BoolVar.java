@@ -27,7 +27,7 @@ public class BoolVar extends Var<LBool> implements BoolExpr {
     }
 
     public BoolVar(Network network, String name, LBool domain) {
-        super(network, name, domain);
+        super(network, name, domain, domain);
     }
 
     boolean intersect(LBool val, Propagator propagator) {

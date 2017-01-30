@@ -28,10 +28,10 @@ public abstract class Var<D extends Domain> implements Expr<D> {
     D root;
     D domain;
 
-    public Var(Network network, String name, D domain) {
+    public Var(Network network, String name, D root, D domain) {
         this.network = network;
         this.name = name;
-        this.root = domain;
+        this.root = root;
         this.domain = domain;
     }
 

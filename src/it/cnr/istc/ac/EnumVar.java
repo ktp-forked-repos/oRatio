@@ -27,7 +27,7 @@ import java.util.Set;
 public class EnumVar<T> extends Var<EnumDomain<T>> {
 
     public EnumVar(Network network, String name, EnumDomain<T> domain) {
-        super(network, name, domain);
+        super(network, name, new EnumDomain<T>(new HashSet<T>(domain.allowed_vals)), new EnumDomain<T>(new HashSet<T>(domain.allowed_vals)));
     }
 
     boolean complement(T val, Propagator propagator) {

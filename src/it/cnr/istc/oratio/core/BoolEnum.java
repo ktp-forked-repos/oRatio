@@ -36,7 +36,7 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem {
         super(c, c, t);
         this.bool_var = bv;
         this.enum_var = ev;
-        for (IItem v : ev.evaluate().getAllowedValues()) {
+        for (IItem v : ev.root().getAllowedValues()) {
             eqs.put(v, core.network.eq(bool_var, ((IBoolItem) v).getBoolVar()));
         }
     }

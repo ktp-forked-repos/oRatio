@@ -36,7 +36,7 @@ class EnumItem extends Item implements IEnumItem {
     EnumItem(Core c, Type t, Expr<EnumDomain<IItem>> xp) {
         super(c, c, t);
         this.expr = xp;
-        for (IItem v : xp.evaluate().getAllowedValues()) {
+        for (IItem v : xp.root().getAllowedValues()) {
             eqs.put(v, core.network.eq(expr, v));
         }
     }
@@ -57,7 +57,7 @@ class EnumItem extends Item implements IEnumItem {
         if (!type.fields.containsKey(name)) {
             return env.get(name);
         } else if (!items.containsKey(name)) {
-            EnumDomain<IItem> e_dom = expr.evaluate();
+            EnumDomain<IItem> e_dom = expr.root();
             if (e_dom.isSingleton()) {
                 return (T) e_dom.getAllowedValues().iterator().next().get(name);
             } else {
