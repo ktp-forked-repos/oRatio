@@ -64,11 +64,11 @@ class AtomFlaw extends Flaw {
                     Flaw f = queue.pollFirst();
                     assert f.in_plan.evaluate() != LBool.L_FALSE;
                     assert f.getCauses().stream().allMatch(cause -> cause.in_plan.evaluate() != LBool.L_FALSE);
-                    if (!f.in_plan.isSingleton()) {
+                    if (!f.in_plan.isConst()) {
                         and.add(f.in_plan);
                     }
                     for (Resolver cause : f.getCauses()) {
-                        if (!cause.in_plan.isSingleton()) {
+                        if (!cause.in_plan.isConst()) {
                             and.add(cause.in_plan);
                             if (cause.effect != null) {
                                 queue.add(cause.effect);
