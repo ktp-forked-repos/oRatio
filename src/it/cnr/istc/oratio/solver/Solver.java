@@ -197,7 +197,7 @@ public class Solver extends Core {
                     pop();
                     return true;
                 } else {
-                    boolean backjump = backjump();
+                    boolean backjump = add(extract_no_good());
                     assert backjump;
                     return false;
                 }
@@ -283,7 +283,7 @@ public class Solver extends Core {
                     inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to backjump..
-                    if (!backjump()) {
+                    if (!add(extract_no_good())) {
                         // the problem is unsolvable..
                         return false;
                     }
@@ -339,7 +339,7 @@ public class Solver extends Core {
                     flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    if (!backjump()) {
+                    if (!add(extract_no_good())) {
                         // the problem is unsolvable..
                         return false;
                     }
@@ -480,6 +480,21 @@ public class Solver extends Core {
         return layers.isEmpty();
     }
 
+    public boolean add(BoolExpr... exprs) {
+        // we backtrack till we can enforce the no-good.. 
+        while (!network.add(exprs)) {
+            if (rootLevel()) {
+                // the problem is inconsistent..
+                return false;
+            }
+
+            // we restore flaws and resolvers state..
+            pop();
+        }
+
+        return true;
+    }
+
     private void push(Resolver r) {
         // we create a new layer..
         Layer l = new Layer(r, flaw_costs, flaws, inconsistencies);
@@ -492,7 +507,7 @@ public class Solver extends Core {
         network.push();
     }
 
-    void pop() {
+    private void pop() {
         // we restore the constraint network state..
         network.pop();
 
@@ -519,15 +534,12 @@ public class Solver extends Core {
     }
 
     /**
-     * Generates a no-good and uses it to backjump until the no-good is
-     * admissible returning {@code true} if the no-good can be added to the
-     * constraint network or {@code false} if the problem is inconsistent.
+     * Extracts a no-good from the unsat core of the constraint network.
      *
-     * @return {@code true} if the no-good can be added to the constraint
-     * network and {@code false} if the problem is inconsistent.
+     * @return a {@link BoolExpr} representing the no-good extracted from the
+     * unsat core.
      */
-    private boolean backjump() {
-        LOG.fine("backjumping..");
+    private BoolExpr extract_no_good() {
         // we compute the unsat-core..
         Collection<BoolVar> unsat_core = network.getUnsatCore();
 
@@ -536,20 +548,8 @@ public class Solver extends Core {
         for (BoolVar v : unsat_core) {
             ng_vars.add((BoolVar) network.not(v).to_var(network));
         }
-        BoolExpr no_good = ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
 
-        // we backtrack till we can enforce the no-good.. 
-        while (!network.add(no_good)) {
-            if (rootLevel()) {
-                // the problem is inconsistent..
-                return false;
-            }
-
-            // we restore flaws and resolvers state..
-            pop();
-        }
-
-        return true;
+        return ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
     }
 
     void fireNewFlaw(Flaw f) {

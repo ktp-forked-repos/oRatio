@@ -84,7 +84,7 @@ public abstract class Resolver {
         preconditions.add(f);
         solver.fireNewCausalLink(f, this);
         // if this choice is in plan, its preconditions must be in plan as well..
-        return solver.network.add(solver.network.imply(in_plan, f.in_plan));
+        return solver.add(solver.network.imply(in_plan, f.in_plan));
     }
 
     public Collection<Flaw> getPreconditions() {

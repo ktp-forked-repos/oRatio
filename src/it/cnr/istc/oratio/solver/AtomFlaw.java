@@ -97,7 +97,7 @@ class AtomFlaw extends Flaw {
 
         if (rs.isEmpty()) {
             // we remove unification from atom state..
-            boolean not_unify = solver.network.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
+            boolean not_unify = solver.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
             assert not_unify;
         }
         if (fact) {
@@ -144,7 +144,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateFact(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
+            return solver.activateFact(atom) && solver.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
         }
 
         @Override
@@ -164,7 +164,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateGoal(atom) && solver.network.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
+            return solver.activateGoal(atom) && solver.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
         }
 
         @Override
@@ -188,7 +188,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.network.add(solver.network.imply(in_plan, eq_expr));
+            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.add(solver.network.imply(in_plan, eq_expr));
         }
 
         @Override

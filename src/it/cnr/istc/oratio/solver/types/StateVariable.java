@@ -193,7 +193,7 @@ public class StateVariable extends SmartType {
                         }
                     }
 
-                    fs.add(new StateVariableFlaw((Solver) core, or));
+                    fs.add(new StateVariableFlaw(solver, or));
                 }
             }
         }
@@ -268,7 +268,7 @@ public class StateVariable extends SmartType {
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, expr));
+            return solver.add(solver.network.imply(in_plan, expr));
         }
 
         @Override

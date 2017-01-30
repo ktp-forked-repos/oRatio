@@ -60,7 +60,7 @@ class EnumFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.network.add(solver.network.imply(in_plan, eq_v));
+            return solver.add(solver.network.imply(in_plan, eq_v));
         }
 
         @Override

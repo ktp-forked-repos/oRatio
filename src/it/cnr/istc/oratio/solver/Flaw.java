@@ -126,16 +126,7 @@ public abstract class Flaw {
                 expr = solver.network.imply(in_plan, disjunctive ? solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)));
         }
 
-        while (!solver.network.add(expr)) {
-            if (solver.rootLevel()) {
-                // the problem is inconsistent..
-                return false;
-            }
-
-            // we restore flaws and resolvers state..
-            solver.pop();
-        }
-        return true;
+        return solver.add(expr);
     }
 
     /**

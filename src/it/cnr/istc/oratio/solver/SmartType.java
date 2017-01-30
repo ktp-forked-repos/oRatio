@@ -26,8 +26,11 @@ import java.util.Collection;
  */
 public abstract class SmartType extends Type {
 
+    public final Solver solver;
+
     public SmartType(Solver c, IScope s, String n) {
         super(c, s, n);
+        this.solver = c;
     }
 
     public abstract Collection<Flaw> getInconsistencies();
