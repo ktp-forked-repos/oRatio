@@ -176,6 +176,35 @@ public class Solver extends Core {
     }
 
     /**
+     * Adds the given boolean expressions to the current constraint network. If
+     * the boolean expressions make the constraint network inconsistent, a
+     * no-good is generated and backtrack is performed until the no-good can be
+     * enforced.
+     *
+     * @param exprs an array of boolean expressions.
+     * @return {@code true} if the constraint network is consistent after the
+     * introduction of the boolean expressions.
+     */
+    public boolean add(BoolExpr... exprs) {
+        if (!network.add(exprs)) {
+            BoolExpr no_good = extract_no_good();
+
+            // we backtrack till we can enforce the no-good.. 
+            while (!network.add(no_good)) {
+                if (rootLevel()) {
+                    // the problem is inconsistent..
+                    return false;
+                }
+
+                // we restore flaws and resolvers state..
+                pop();
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Checks if the given boolean expression can be made {@code true} in the
      * current constraint network. This method saves the current state by
      * calling {@link Network#push()}. If the expression can be made
@@ -197,8 +226,10 @@ public class Solver extends Core {
                     pop();
                     return true;
                 } else {
-                    boolean backjump = add(extract_no_good());
-                    assert backjump;
+                    BoolExpr no_good = extract_no_good();
+                    pop();
+                    boolean add = network.add(no_good);
+                    assert add;
                     return false;
                 }
             default:
@@ -267,7 +298,6 @@ public class Solver extends Core {
                 assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
                 assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
                 fireCurrentFlaw(most_expensive_flaw);
-                inconsistencies.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
@@ -276,16 +306,26 @@ public class Solver extends Core {
 
                 // we create a new layer..
                 push(least_expensive_resolver);
+                // and remove the flaw..
+                inconsistencies.remove(most_expensive_flaw);
 
                 // we try to enforce the resolver..
                 if (network.assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
                     inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
-                    // we need to backjump..
-                    if (!add(extract_no_good())) {
-                        // the problem is unsolvable..
-                        return false;
+                    // we need to back-jump..
+                    BoolExpr no_good = extract_no_good();
+
+                    // we backtrack till we can enforce the no-good.. 
+                    while (!network.add(no_good)) {
+                        if (rootLevel()) {
+                            // the problem is inconsistent..
+                            return false;
+                        }
+
+                        // we restore flaws and resolvers state..
+                        pop();
                     }
                 }
                 continue;
@@ -322,7 +362,6 @@ public class Solver extends Core {
                 assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
                 assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
                 fireCurrentFlaw(most_expensive_flaw);
-                flaws.remove(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
                 Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
@@ -332,6 +371,8 @@ public class Solver extends Core {
 
                 // we create a new layer..
                 push(least_expensive_resolver);
+                // and remove the flaw..
+                flaws.remove(most_expensive_flaw);
 
                 // we try to enforce the resolver..
                 if (network.assign(least_expensive_resolver.in_plan)) {
@@ -339,9 +380,17 @@ public class Solver extends Core {
                     flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    if (!add(extract_no_good())) {
-                        // the problem is unsolvable..
-                        return false;
+                    BoolExpr no_good = extract_no_good();
+
+                    // we backtrack till we can enforce the no-good.. 
+                    while (!network.add(no_good)) {
+                        if (rootLevel()) {
+                            // the problem is inconsistent..
+                            return false;
+                        }
+
+                        // we restore flaws and resolvers state..
+                        pop();
                     }
                 }
             }
@@ -478,21 +527,6 @@ public class Solver extends Core {
 
     public boolean rootLevel() {
         return layers.isEmpty();
-    }
-
-    public boolean add(BoolExpr... exprs) {
-        // we backtrack till we can enforce the no-good.. 
-        while (!network.add(exprs)) {
-            if (rootLevel()) {
-                // the problem is inconsistent..
-                return false;
-            }
-
-            // we restore flaws and resolvers state..
-            pop();
-        }
-
-        return true;
     }
 
     private void push(Resolver r) {
