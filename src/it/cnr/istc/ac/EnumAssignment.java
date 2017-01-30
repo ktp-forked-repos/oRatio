@@ -41,8 +41,20 @@ public class EnumAssignment<T> implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        EnumDomain<T> left_d = left.root;
+        if (!left_d.contains(right)) {
+            return LBool.L_FALSE;
+        } else if (left_d.isSingleton() && left_d.contains(right)) {
+            return LBool.L_TRUE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
-        EnumDomain<T> left_d = left.evaluate();
+        EnumDomain<T> left_d = left.domain;
         if (!left_d.contains(right)) {
             return LBool.L_FALSE;
         } else if (left_d.isSingleton() && left_d.contains(right)) {

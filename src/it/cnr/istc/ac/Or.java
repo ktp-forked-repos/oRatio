@@ -54,6 +54,18 @@ public class Or implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        LBool[] vals = Stream.of(vars).map(var -> var.root).toArray(LBool[]::new);
+        if (Stream.of(vals).anyMatch(val -> val == LBool.L_TRUE)) {
+            return LBool.L_TRUE;
+        } else if (Stream.of(vals).allMatch(val -> val == LBool.L_FALSE)) {
+            return LBool.L_FALSE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
         LBool[] vals = Stream.of(vars).map(var -> var.domain).toArray(LBool[]::new);
         if (Stream.of(vals).anyMatch(val -> val == LBool.L_TRUE)) {

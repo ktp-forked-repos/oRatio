@@ -41,8 +41,20 @@ public class BoolAssignment implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        LBool left_d = left.root;
+        if ((left_d == LBool.L_TRUE && right == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right == LBool.L_TRUE)) {
+            return LBool.L_FALSE;
+        } else if (left_d.isSingleton() && right.isSingleton()) {
+            return LBool.L_TRUE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
-        LBool left_d = left.evaluate();
+        LBool left_d = left.domain;
         if ((left_d == LBool.L_TRUE && right == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right == LBool.L_TRUE)) {
             return LBool.L_FALSE;
         } else if (left_d.isSingleton() && right.isSingleton()) {

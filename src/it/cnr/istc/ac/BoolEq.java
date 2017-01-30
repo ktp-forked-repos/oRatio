@@ -41,9 +41,22 @@ public class BoolEq implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        LBool left_d = left.root;
+        LBool right_d = right.root;
+        if ((left_d == LBool.L_TRUE && right_d == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right_d == LBool.L_TRUE)) {
+            return LBool.L_FALSE;
+        } else if (left_d.isSingleton() && right_d.isSingleton()) {
+            return LBool.L_TRUE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
-        LBool left_d = left.evaluate();
-        LBool right_d = right.evaluate();
+        LBool left_d = left.domain;
+        LBool right_d = right.domain;
         if ((left_d == LBool.L_TRUE && right_d == LBool.L_FALSE) || (left_d == LBool.L_FALSE && right_d == LBool.L_TRUE)) {
             return LBool.L_FALSE;
         } else if (left_d.isSingleton() && right_d.isSingleton()) {

@@ -54,8 +54,34 @@ public class ExctOne implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        LBool[] vals = Stream.of(vars).map(var -> var.root).toArray(LBool[]::new);
+        int n_trues = 0;
+        int n_unknown = 0;
+        for (LBool val : vals) {
+            switch (val) {
+                case L_TRUE:
+                    n_trues++;
+                    break;
+                case L_FALSE:
+                    break;
+                case L_UNKNOWN:
+                    n_unknown++;
+                    break;
+                default:
+                    throw new AssertionError(val.name());
+            }
+        }
+        if (n_unknown == 0) {
+            return n_trues == 1 ? LBool.L_TRUE : LBool.L_FALSE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
-        LBool[] vals = Stream.of(vars).map(var -> var.evaluate()).toArray(LBool[]::new);
+        LBool[] vals = Stream.of(vars).map(var -> var.domain).toArray(LBool[]::new);
         int n_trues = 0;
         int n_unknown = 0;
         for (LBool val : vals) {

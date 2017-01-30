@@ -97,6 +97,15 @@ public class Lin implements ArithExpr {
     }
 
     @Override
+    public Interval root() {
+        Interval res = new Interval(known_term);
+        for (Map.Entry<ArithVar, Double> entry : vars.entrySet()) {
+            res.add(new Interval(entry.getKey().root).multiply(entry.getValue()));
+        }
+        return res;
+    }
+
+    @Override
     public Interval evaluate() {
         Interval res = new Interval(known_term);
         for (Map.Entry<ArithVar, Double> entry : vars.entrySet()) {

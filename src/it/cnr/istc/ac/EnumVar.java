@@ -38,6 +38,9 @@ public class EnumVar<T> extends Var<EnumDomain<T>> {
         } else {
             EnumDomain<T> old_domain = new EnumDomain<>(new HashSet<>(domain.allowed_vals));
             domain.allowed_vals.remove(val);
+            if (network.rootLevel()) {
+                root.allowed_vals.remove(val);
+            }
             network.enqueue(this, old_domain, propagator);
             return true;
         }
@@ -57,6 +60,9 @@ public class EnumVar<T> extends Var<EnumDomain<T>> {
         } else {
             EnumDomain<T> old_domain = new EnumDomain<>(new HashSet<>(domain.allowed_vals));
             domain.allowed_vals.removeAll(to_remove);
+            if (network.rootLevel()) {
+                root.allowed_vals.removeAll(to_remove);
+            }
             network.enqueue(this, old_domain, propagator);
             return true;
         }
@@ -68,6 +74,9 @@ public class EnumVar<T> extends Var<EnumDomain<T>> {
         } else {
             EnumDomain<T> old_domain = new EnumDomain<>(new HashSet<>(domain.allowed_vals));
             domain.allowed_vals.retainAll(Arrays.asList(val));
+            if (network.rootLevel()) {
+                root.allowed_vals.retainAll(Arrays.asList(val));
+            }
             network.enqueue(this, old_domain, propagator);
             return true;
         }

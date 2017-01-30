@@ -25,14 +25,14 @@ public abstract class Var<D extends Domain> implements Expr<D> {
 
     public final Network network;
     public final String name;
+    D root;
     D domain;
-    private boolean is_const;
 
     public Var(Network network, String name, D domain) {
         this.network = network;
         this.name = name;
+        this.root = domain;
         this.domain = domain;
-        this.is_const = network.rootLevel() && domain.isSingleton();
     }
 
     @Override
@@ -42,12 +42,12 @@ public abstract class Var<D extends Domain> implements Expr<D> {
 
     @Override
     public boolean isConst() {
-        if (is_const) {
-            return true;
-        } else {
-            is_const = network.rootLevel() && isSingleton();
-            return is_const;
-        }
+        return root.isSingleton();
+    }
+
+    @Override
+    public D root() {
+        return root;
     }
 
     @Override

@@ -41,6 +41,17 @@ public class ArithLEq implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        if (left.root.leq(right)) {
+            return LBool.L_TRUE;
+        } else if (left.root.gt(right)) {
+            return LBool.L_FALSE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
         if (left.domain.leq(right)) {
             return LBool.L_TRUE;

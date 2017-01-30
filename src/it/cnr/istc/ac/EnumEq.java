@@ -41,9 +41,22 @@ public class EnumEq<T> implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        EnumDomain<T> left_d = left.root;
+        EnumDomain<T> right_d = right.root;
+        if (!left_d.isIntersecting(right_d)) {
+            return LBool.L_FALSE;
+        } else if (left_d.isSingleton() && right_d.isSingleton()) {
+            return LBool.L_TRUE;
+        } else {
+            return LBool.L_UNKNOWN;
+        }
+    }
+
+    @Override
     public LBool evaluate() {
-        EnumDomain<T> left_d = left.evaluate();
-        EnumDomain<T> right_d = right.evaluate();
+        EnumDomain<T> left_d = left.domain;
+        EnumDomain<T> right_d = right.domain;
         if (!left_d.isIntersecting(right_d)) {
             return LBool.L_FALSE;
         } else if (left_d.isSingleton() && right_d.isSingleton()) {

@@ -38,6 +38,9 @@ public class BoolVar extends Var<LBool> implements BoolExpr {
         } else {
             LBool old_domain = domain;
             domain = domain == LBool.L_UNKNOWN ? val : null;
+            if (network.rootLevel()) {
+                root = root == LBool.L_UNKNOWN ? val : null;
+            }
             network.enqueue(this, old_domain, propagator);
             return true;
         }

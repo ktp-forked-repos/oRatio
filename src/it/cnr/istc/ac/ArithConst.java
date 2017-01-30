@@ -39,6 +39,11 @@ public class ArithConst implements ArithExpr {
     }
 
     @Override
+    public Interval root() {
+        return new Interval(val);
+    }
+
+    @Override
     public Interval evaluate() {
         return new Interval(val);
     }

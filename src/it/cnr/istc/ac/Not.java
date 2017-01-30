@@ -39,6 +39,11 @@ public class Not implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        return var.root.not();
+    }
+
+    @Override
     public LBool evaluate() {
         return var.domain.not();
     }

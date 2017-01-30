@@ -44,6 +44,10 @@ public class ArithVar extends Var<Interval> implements ArithExpr {
             Interval old_domain = new Interval(domain);
             domain.lb = Math.max(domain.lb, interval.lb);
             domain.ub = Math.min(domain.ub, interval.ub);
+            if (network.rootLevel()) {
+                root.lb = Math.max(root.lb, interval.lb);
+                root.ub = Math.min(root.ub, interval.ub);
+            }
             network.enqueue(this, old_domain, propagator);
             return true;
         }

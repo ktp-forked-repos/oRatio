@@ -40,6 +40,11 @@ public class BoolConst implements BoolExpr {
     }
 
     @Override
+    public LBool root() {
+        return val;
+    }
+
+    @Override
     public LBool evaluate() {
         return val;
     }
