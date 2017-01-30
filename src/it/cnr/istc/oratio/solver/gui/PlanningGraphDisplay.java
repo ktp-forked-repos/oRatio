@@ -208,7 +208,6 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     @Override
     public void newFlaw(Flaw f) {
         assert !flaws.containsKey(f);
-        assert !f.getCauses().isEmpty();
         assert f.getCauses().stream().allMatch(cause -> resolvers.containsKey(cause));
         synchronized (m_vis) {
             Node flaw_node = g.addNode();
