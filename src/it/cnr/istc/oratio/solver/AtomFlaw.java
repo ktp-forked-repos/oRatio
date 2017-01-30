@@ -59,7 +59,7 @@ class AtomFlaw extends Flaw {
                 Collection<BoolExpr> and = new ArrayList<>();
                 LinkedList<Flaw> queue = new LinkedList<>();
                 queue.add(this);
-                queue.add(solver.reasons.get(atom));
+                queue.add(solver.reasons.get(a));
                 while (!queue.isEmpty()) {
                     Flaw f = queue.pollFirst();
                     assert f.in_plan.evaluate() != LBool.L_FALSE;
