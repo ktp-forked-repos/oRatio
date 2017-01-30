@@ -59,7 +59,7 @@ public class Core implements IScope, IEnv {
     protected final Map<String, Predicate> predicates = new LinkedHashMap<>();
     protected final Map<String, Type> types = new LinkedHashMap<>();
     protected final Map<String, IItem> items = new LinkedHashMap<>();
-    protected BoolExpr ctr_var;
+    protected BoolExpr ctr_var = network.newBool(true);
 
     public Core() {
         types.put(BOOL, new BoolType(this));
