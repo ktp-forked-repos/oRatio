@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -361,7 +362,7 @@ public class Solver extends Core {
         }
 
         BoolExpr tmp_expr = ctr_var;
-        while (flaws.stream().anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY) && !flaw_q.isEmpty()) {
+        while (Stream.concat(flaws.stream(), inconsistencies.stream()).anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY) && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
             if (!isDeferrable(flaw)) {
                 LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
@@ -389,9 +390,7 @@ public class Solver extends Core {
             }
         }
 
-        if (flaw_q.isEmpty() && flaws.stream().anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY)) {
-            throw new UnsupportedOperationException("not supported yet..");
-        }
+        assert !flaw_q.isEmpty() || !Stream.concat(flaws.stream(), inconsistencies.stream()).anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY);
 
         ctr_var = tmp_expr;
         return true;
@@ -446,11 +445,8 @@ public class Solver extends Core {
             return false;
         } else if (costs.getOrDefault(flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY) {
             return true;
-        } else if (flaw.getCauses().size() == 1) {
-            Flaw effect = flaw.getCauses().iterator().next().effect;
-            return effect != null && isDeferrable(effect);
         } else {
-            return flaw.getCauses().stream().map(cause -> cause.effect).filter(effect -> effect != null).anyMatch(effect -> isDeferrable(effect));
+            return flaw.getCauses().stream().map(cause -> cause.effect).anyMatch(effect -> isDeferrable(effect));
         }
     }
 
