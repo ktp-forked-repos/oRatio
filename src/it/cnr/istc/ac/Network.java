@@ -699,7 +699,7 @@ public class Network {
                         if (entry.getValue() > 0) {
                             unsat_core.add(assertions.get(entry.getKey().name + " <= " + entry.getKey().domain.ub));
                         } else if (entry.getValue() < 0) {
-                            unsat_core.add(assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.ub));
+                            unsat_core.add(assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.lb));
                         }
                     }
                     unsat_core.add(assertions.get(x_i.name + " >= " + x_i.domain.lb));
