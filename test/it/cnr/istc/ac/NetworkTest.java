@@ -240,4 +240,26 @@ public class NetworkTest {
         add = n.add(no_good);
         assertTrue(add);
     }
+
+    @Test
+    public void testPush() {
+        Network n = new Network();
+        BoolVar b0 = n.newBool();
+        BoolVar b1 = n.newBool();
+
+        boolean add = n.add(b0);
+        assertTrue(add);
+        assertEquals(LBool.L_TRUE, b0.evaluate());
+        assertEquals(LBool.L_UNKNOWN, b1.evaluate());
+
+        n.push();
+        add = n.add(n.imply(b0, b1));
+        assertTrue(add);
+        assertEquals(LBool.L_TRUE, b0.evaluate());
+        assertEquals(LBool.L_TRUE, b1.evaluate());
+
+        n.pop();
+        assertEquals(LBool.L_TRUE, b0.evaluate());
+        assertEquals(LBool.L_UNKNOWN, b1.evaluate());
+    }
 }
