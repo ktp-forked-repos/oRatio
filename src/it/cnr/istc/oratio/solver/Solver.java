@@ -491,10 +491,16 @@ public class Solver extends Core {
 
     public boolean isDeferrable(Flaw flaw) {
         if (!flaw.isDisjunctive()) {
+            // we cannot defer this flaw..
             return false;
+        } else if (flaw.in_plan.evaluate() == LBool.L_FALSE) {
+            // it is not possible to solve this flaw with current assignments.. thus we defer..
+            return true;
         } else if (costs.getOrDefault(flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY) {
+            // we already have a solution for this flaw.. thus we defer..
             return true;
         } else {
+            // this flaw is deferrable if any of its causes is..
             return flaw.getCauses().stream().map(cause -> cause.effect).anyMatch(effect -> isDeferrable(effect));
         }
     }
