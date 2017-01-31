@@ -120,7 +120,7 @@ class StatementVisitor extends oRatioBaseVisitor<Boolean> {
             if (i instanceof IEnumItem) {
                 assignments.put(SCOPE, i);
             } else {
-                assignments.put(SCOPE, core.newEnum(i));
+                assignments.put(SCOPE, core.newEnumItem(i));
             }
         } else {
             p = core.scopes.get(ctx).getPredicate(ctx.predicate.getText());

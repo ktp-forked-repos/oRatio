@@ -38,7 +38,7 @@ class ArithEnum extends Item implements IArithItem, IEnumItem {
         this.arith_var = av;
         this.enum_var = ev;
         for (IItem v : ev.root().getAllowedValues()) {
-            eqs.put(v, core.network.eq(arith_var, ((IArithItem) v).getArithVar()));
+            eqs.put(v, core.eq(arith_var, ((IArithItem) v).getArithVar()));
         }
     }
 
@@ -60,11 +60,11 @@ class ArithEnum extends Item implements IArithItem, IEnumItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof IArithItem) {
-            return core.network.eq(arith_var, ((IArithItem) item).getArithVar());
+            return core.eq(arith_var, ((IArithItem) item).getArithVar());
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

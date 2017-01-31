@@ -372,7 +372,7 @@ class TypeRefinementListener extends oRatioBaseListener {
 
     @Override
     public void enterConjunction(oRatioParser.ConjunctionContext ctx) {
-        Conjunction c = new Conjunction(core, scope, ctx.cost != null ? (ArithExpr) new ExpressionVisitor(core, core).visit(ctx.cost) : core.network.newReal(1)) {
+        Conjunction c = new Conjunction(core, scope, ctx.cost != null ? (ArithExpr) new ExpressionVisitor(core, core).visit(ctx.cost) : core.newReal(1)) {
             @Override
             public boolean apply(IEnv env) {
                 return new StatementVisitor(core, env).visit(ctx.block());

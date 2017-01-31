@@ -82,7 +82,7 @@ public class Type extends BaseScope {
         if (instances.size() == 1) {
             return instances.iterator().next();
         } else {
-            return core.newEnum(this, instances.toArray(new IItem[instances.size()]));
+            return core.newEnumItem(this, instances.toArray(new IItem[instances.size()]));
         }
     }
 

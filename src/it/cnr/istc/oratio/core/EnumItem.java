@@ -37,7 +37,7 @@ class EnumItem extends Item implements IEnumItem {
         super(c, c, t);
         this.expr = xp;
         for (IItem v : xp.root().getAllowedValues()) {
-            eqs.put(v, core.network.eq(expr, v));
+            eqs.put(v, core.eq(expr, v));
         }
     }
 
@@ -70,9 +70,9 @@ class EnumItem extends Item implements IEnumItem {
                         throw new AssertionError("invalid use: enum of enums..");
                     }
                 }
-                IEnumItem ei = core.newEnum(type.getField(name).type, f_vals.toArray(new IItem[f_vals.size()]));
+                IEnumItem ei = core.newEnumItem(type.getField(name).type, f_vals.toArray(new IItem[f_vals.size()]));
                 for (int i = 0; i < c_vals.size(); i++) {
-                    boolean add = core.network.add(core.network.eq(allows(c_vals.get(i)), ei.allows(f_vals.get(i))));
+                    boolean add = core.add(core.eq(allows(c_vals.get(i)), ei.allows(f_vals.get(i))));
                     assert add;
                 }
 
@@ -85,13 +85,13 @@ class EnumItem extends Item implements IEnumItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (eqs.containsKey(item)) {
             return eqs.get(item);
         } else if (item instanceof IEnumItem) {
-            return core.network.eq(expr, ((IEnumItem) item).getEnumVar());
+            return core.eq(expr, ((IEnumItem) item).getEnumVar());
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

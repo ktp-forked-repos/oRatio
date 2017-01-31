@@ -59,7 +59,7 @@ class TypeDeclarationListener extends oRatioBaseListener {
         // We add the enum values..
         for (oRatioParser.Enum_constantsContext c : ctx.enum_constants()) {
             for (TerminalNode l : c.StringLiteral()) {
-                et.addEnum(core.newString(l.getText()));
+                et.addEnum(core.newStringItem(l.getText()));
             }
         }
 

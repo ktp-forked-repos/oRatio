@@ -18,7 +18,6 @@ package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.LBool;
-import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.Core;
 import it.cnr.istc.oratio.core.Disjunction;
@@ -83,8 +82,8 @@ public class Solver extends Core {
     }
 
     @Override
-    public IEnumItem newEnum(Type type, IItem... values) {
-        IEnumItem c_enum = super.newEnum(type, values);
+    public IEnumItem newEnumItem(Type type, IItem... values) {
+        IEnumItem c_enum = super.newEnumItem(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
         fireFlawUpdate(flaw);
         for (Resolver cause : flaw.getCauses()) {
@@ -175,77 +174,6 @@ public class Solver extends Core {
     }
 
     /**
-     * Adds the given boolean expressions to the current constraint network. If
-     * the boolean expressions make the constraint network inconsistent, a
-     * no-good is generated and backtrack is performed until the no-good can be
-     * enforced.
-     *
-     * @param exprs an array of boolean expressions.
-     * @return {@code true} if the constraint network is consistent after the
-     * introduction of the boolean expressions.
-     */
-    public boolean add(BoolExpr... exprs) {
-        if (!network.add(exprs)) {
-            BoolExpr no_good = network.getNoGood();
-
-            // we backtrack till we can enforce the no-good.. 
-            while (!network.add(no_good)) {
-                if (rootLevel()) {
-                    // the problem is inconsistent..
-                    return false;
-                }
-
-                // we restore flaws and resolvers state..
-                pop();
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if the given boolean expression can be made {@code true} in the
-     * current constraint network. This method saves the current state by
-     * calling {@link Network#push()}. If the expression can be made
-     * {@code true} the state of the network is restored, otherwise a no-good is
-     * added to the network and {@link #backjump()} is called.
-     *
-     * @param expr the boolean expression to be checked.
-     * @return {@code true} if the given boolean expression can be made true.
-     */
-    public boolean check(BoolExpr expr) throws InconsistencyException {
-        switch (expr.evaluate()) {
-            case L_TRUE:
-                return true;
-            case L_FALSE:
-                return false;
-            case L_UNKNOWN:
-                push(null);
-                if (network.assign(expr)) {
-                    pop();
-                    return true;
-                } else {
-                    // we need to back-jump..
-                    BoolExpr no_good = network.getNoGood();
-
-                    // we backtrack till we can enforce the no-good.. 
-                    while (!network.add(no_good)) {
-                        if (rootLevel()) {
-                            // the problem is inconsistent..
-                            throw new InconsistencyException("the problem is unsolvable..");
-                        }
-
-                        // we restore flaws and resolvers state..
-                        pop();
-                    }
-                    return false;
-                }
-            default:
-                throw new AssertionError(expr.evaluate().name());
-        }
-    }
-
-    /**
      * Solves the current problem returning {@code true} if a solution has been
      * found and {@code false} if the problem is unsolvable.
      *
@@ -308,7 +236,7 @@ public class Solver extends Core {
                 fireCurrentFlaw(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r1.cost))).get();
                 assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
                 fireCurrentResolver(least_expensive_resolver);
 
@@ -318,15 +246,15 @@ public class Solver extends Core {
                 inconsistencies.remove(most_expensive_flaw);
 
                 // we try to enforce the resolver..
-                if (network.assign(least_expensive_resolver.in_plan)) {
+                if (assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
                     inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = network.getNoGood();
+                    BoolExpr no_good = getNoGood();
 
                     // we backtrack till we can enforce the no-good.. 
-                    while (!network.add(no_good)) {
+                    while (!add(no_good)) {
                         if (rootLevel()) {
                             // the problem is inconsistent..
                             return false;
@@ -372,7 +300,7 @@ public class Solver extends Core {
                 fireCurrentFlaw(most_expensive_flaw);
 
                 // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r1.cost))).get();
+                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r1.cost))).get();
                 assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
                 fireCurrentResolver(least_expensive_resolver);
                 resolvers.add(least_expensive_resolver);
@@ -383,15 +311,15 @@ public class Solver extends Core {
                 flaws.remove(most_expensive_flaw);
 
                 // we try to enforce the resolver..
-                if (network.assign(least_expensive_resolver.in_plan)) {
+                if (assign(least_expensive_resolver.in_plan)) {
                     // we add sub-goals..
                     flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = network.getNoGood();
+                    BoolExpr no_good = getNoGood();
 
                     // we backtrack till we can enforce the no-good.. 
-                    while (!network.add(no_good)) {
+                    while (!add(no_good)) {
                         if (rootLevel()) {
                             // the problem is inconsistent..
                             return false;
@@ -437,7 +365,7 @@ public class Solver extends Core {
                     fireResolverUpdate(r);
                     if (r.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
-                        setCost(flaw, network.evaluate(r.cost));
+                        setCost(flaw, evaluate(r.cost));
                     }
                     resolvers.removeFirst();
                 }
@@ -473,7 +401,7 @@ public class Solver extends Core {
                 Flaw c_flaw = queue.pollFirst();
                 if (!visited.contains(c_flaw)) {
                     visited.add(c_flaw);
-                    double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + network.evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
+                    double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
                     if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) != c_cost) {
                         if (!rootLevel() && !flaw_costs.containsKey(c_flaw) && costs.containsKey(c_flaw)) {
                             flaw_costs.put(c_flaw, costs.get(c_flaw));
@@ -495,7 +423,7 @@ public class Solver extends Core {
     }
 
     public double getCost(Resolver resolver) {
-        return resolver.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + network.evaluate(resolver.getCost());
+        return resolver.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + evaluate(resolver.getCost());
     }
 
     public boolean isDeferrable(Flaw flaw) {
@@ -540,11 +468,7 @@ public class Solver extends Core {
         return c_flaws;
     }
 
-    public boolean rootLevel() {
-        return layers.isEmpty();
-    }
-
-    private void push(Resolver r) {
+    public void push(Resolver r) {
         // we create a new layer..
         Layer l = new Layer(r, flaw_costs, flaws, inconsistencies);
         flaw_costs = new IdentityHashMap<>();
@@ -553,12 +477,13 @@ public class Solver extends Core {
         layers.add(l);
 
         // we also create a new layer in the constraint network..
-        network.push();
+        super.push();
     }
 
-    private void pop() {
+    @Override
+    public void pop() {
         // we restore the constraint network state..
-        network.pop();
+        super.pop();
 
         // we also restore updated flaws and resolvers costs..
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {

@@ -51,20 +51,20 @@ public abstract class Flaw {
 
         switch (causes.size()) {
             case 0:
-                this.in_plan = (BoolVar) s.network.newBool(true).to_var(s.network);
+                this.in_plan = (BoolVar) s.newBool(true).to_var(s);
                 break;
             case 1:
                 this.in_plan = causes.iterator().next().in_plan;
                 break;
             default:
-                this.in_plan = (BoolVar) s.network.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s.network);
+                this.in_plan = (BoolVar) s.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s);
                 break;
         }
         assert in_plan.evaluate() != LBool.L_FALSE;
 
         this.disjunctive = disjunctive;
 
-        this.solver.network.store(new Propagator() {
+        this.solver.store(new Propagator() {
             @Override
             public Var<?>[] getArgs() {
                 return new Var<?>[]{in_plan};
@@ -118,15 +118,15 @@ public abstract class Flaw {
         switch (resolvers.size()) {
             case 0:
                 // there is no way for solving this flaw..
-                expr = solver.network.not(in_plan);
+                expr = solver.not(in_plan);
                 break;
             case 1:
                 // there is a unique way for solving this flaw: this is a trivial flaw..
-                expr = solver.network.imply(in_plan, resolvers.iterator().next().in_plan);
+                expr = solver.imply(in_plan, resolvers.iterator().next().in_plan);
                 break;
             default:
                 // we need to take a decision for solving this flaw..
-                expr = solver.network.imply(in_plan, disjunctive ? solver.network.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.network.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)));
+                expr = solver.imply(in_plan, disjunctive ? solver.exct_one(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)) : solver.or(resolvers.stream().map(res -> res.in_plan).toArray(BoolExpr[]::new)));
         }
 
         return solver.add(expr);

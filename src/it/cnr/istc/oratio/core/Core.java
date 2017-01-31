@@ -45,12 +45,11 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Core implements IScope, IEnv {
+public class Core extends Network implements IScope, IEnv {
 
     public static final String BOOL = "bool";
     public static final String REAL = "real";
     public static final String STRING = "string";
-    public final Network network = new Network();
     final Map<ParseTree, IScope> scopes = new IdentityHashMap<>();
     oRatioParser parser;
     protected final Map<String, Field> fields = new LinkedHashMap<>();
@@ -58,7 +57,7 @@ public class Core implements IScope, IEnv {
     protected final Map<String, Predicate> predicates = new LinkedHashMap<>();
     protected final Map<String, Type> types = new LinkedHashMap<>();
     protected final Map<String, IItem> items = new LinkedHashMap<>();
-    protected BoolExpr ctr_var = network.newBool(true);
+    protected BoolExpr ctr_var = newBool(true);
 
     public Core() {
         types.put(BOOL, new BoolType(this));
@@ -101,44 +100,44 @@ public class Core implements IScope, IEnv {
         return true;
     }
 
-    public IBoolItem newBool() {
-        return new BoolItem(this, types.get(BOOL), network.newBool());
+    public IBoolItem newBoolItem() {
+        return new BoolItem(this, types.get(BOOL), newBool());
     }
 
-    public IBoolItem newBool(boolean val) {
-        return new BoolItem(this, types.get(BOOL), network.newBool(val));
+    public IBoolItem newBoolItem(boolean val) {
+        return new BoolItem(this, types.get(BOOL), newBool(val));
     }
 
-    public IArithItem newReal() {
-        return new ArithItem(this, types.get(REAL), network.newReal());
+    public IArithItem newRealItem() {
+        return new ArithItem(this, types.get(REAL), newReal());
     }
 
-    public IArithItem newReal(double val) {
-        return new ArithItem(this, types.get(REAL), network.newReal(val));
+    public IArithItem newRealItem(double val) {
+        return new ArithItem(this, types.get(REAL), newReal(val));
     }
 
-    public IEnumItem newEnum(IItem value) {
-        return new EnumItem(this, value.getType(), network.newEnum(value));
+    public IEnumItem newEnumItem(IItem value) {
+        return new EnumItem(this, value.getType(), newEnum(value));
     }
 
-    public IEnumItem newEnum(Type type, IItem... values) {
+    public IEnumItem newEnumItem(Type type, IItem... values) {
         assert values.length > 1;
         assert Stream.of(values).allMatch(item -> type.isAssignableFrom(item.getType()));
         switch (type.name) {
             case BOOL:
-                return new BoolEnum(this, types.get(BOOL), network.newBool(), network.newEnum(Arrays.copyOf(values, values.length, IBoolItem[].class)));
+                return new BoolEnum(this, types.get(BOOL), newBool(), newEnum(Arrays.copyOf(values, values.length, IBoolItem[].class)));
             case REAL:
-                return new ArithEnum(this, types.get(REAL), network.newReal(), network.newEnum(Arrays.copyOf(values, values.length, IArithItem[].class)));
+                return new ArithEnum(this, types.get(REAL), newReal(), newEnum(Arrays.copyOf(values, values.length, IArithItem[].class)));
             default:
-                return new EnumItem(this, type, network.newEnum(values));
+                return new EnumItem(this, type, newEnum(values));
         }
     }
 
-    public IStringItem newString() {
+    public IStringItem newStringItem() {
         return new StringItem(this, types.get(REAL), "");
     }
 
-    public IStringItem newString(String val) {
+    public IStringItem newStringItem(String val) {
         return new StringItem(this, types.get(REAL), val);
     }
 
@@ -203,51 +202,51 @@ public class Core implements IScope, IEnv {
     }
 
     public IBoolItem not(IBoolItem var) {
-        return new BoolItem(this, types.get(BOOL), network.not(var.getBoolVar()));
+        return new BoolItem(this, types.get(BOOL), not(var.getBoolVar()));
     }
 
     public IBoolItem and(IBoolItem... vars) {
-        return new BoolItem(this, types.get(BOOL), network.and(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
+        return new BoolItem(this, types.get(BOOL), and(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
     public IBoolItem or(IBoolItem... vars) {
-        return new BoolItem(this, types.get(BOOL), network.or(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
+        return new BoolItem(this, types.get(BOOL), or(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
     public IBoolItem exct_one(IBoolItem... vars) {
-        return new BoolItem(this, types.get(BOOL), network.exct_one(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
+        return new BoolItem(this, types.get(BOOL), exct_one(Stream.of(vars).map(var -> var.getBoolVar()).toArray(BoolExpr[]::new)));
     }
 
     public IBoolItem imply(IBoolItem left, IBoolItem right) {
-        return new BoolItem(this, types.get(BOOL), network.imply(left.getBoolVar(), right.getBoolVar()));
+        return new BoolItem(this, types.get(BOOL), imply(left.getBoolVar(), right.getBoolVar()));
     }
 
     public IArithItem minus(IArithItem var) {
-        return new ArithItem(this, types.get(REAL), network.minus(var.getArithVar()));
+        return new ArithItem(this, types.get(REAL), minus(var.getArithVar()));
     }
 
     public IArithItem sum(IArithItem... vars) {
-        return new ArithItem(this, types.get(REAL), network.sum(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+        return new ArithItem(this, types.get(REAL), sum(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
     }
 
     public IArithItem sub(IArithItem... vars) {
-        return new ArithItem(this, types.get(REAL), network.sub(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+        return new ArithItem(this, types.get(REAL), sub(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
     }
 
     public IArithItem mult(IArithItem... vars) {
-        return new ArithItem(this, types.get(REAL), network.mult(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
+        return new ArithItem(this, types.get(REAL), mult(Stream.of(vars).map(var -> var.getArithVar()).toArray(ArithExpr[]::new)));
     }
 
     public IArithItem div(IArithItem left, IArithItem right) {
-        return new ArithItem(this, types.get(REAL), network.div(left.getArithVar(), right.getArithVar()));
+        return new ArithItem(this, types.get(REAL), div(left.getArithVar(), right.getArithVar()));
     }
 
     public IBoolItem leq(IArithItem left, IArithItem right) {
-        return new BoolItem(this, types.get(BOOL), network.leq(left.getArithVar(), right.getArithVar()));
+        return new BoolItem(this, types.get(BOOL), leq(left.getArithVar(), right.getArithVar()));
     }
 
     public IBoolItem geq(IArithItem left, IArithItem right) {
-        return new BoolItem(this, types.get(BOOL), network.geq(left.getArithVar(), right.getArithVar()));
+        return new BoolItem(this, types.get(BOOL), geq(left.getArithVar(), right.getArithVar()));
     }
 
     public IBoolItem eq(IItem left, IItem right) {
@@ -255,12 +254,84 @@ public class Core implements IScope, IEnv {
     }
 
     public boolean add(IBoolItem... vars) {
-        BoolExpr[] exprs = Stream.of(vars).map(var -> network.imply(ctr_var, var.getBoolVar())).toArray(BoolExpr[]::new);
+        BoolExpr[] exprs = Stream.of(vars).map(var -> imply(ctr_var, var.getBoolVar())).toArray(BoolExpr[]::new);
         if (exprs.length == 0) {
             // there is nothing to add..
             return true;
         } else {
-            return network.add(exprs);
+            return add(exprs);
+        }
+    }
+
+    /**
+     * Adds the given boolean expressions to the current constraint network. If
+     * the boolean expressions make the constraint network inconsistent, a
+     * no-good is generated and backtrack is performed until the no-good can be
+     * enforced.
+     *
+     * @param exprs an array of boolean expressions.
+     * @return {@code true} if the constraint network is consistent after the
+     * introduction of the boolean expressions.
+     */
+    @Override
+    public boolean add(BoolExpr... exprs) {
+        if (!super.add(exprs)) {
+            BoolExpr no_good = getNoGood();
+
+            // we backtrack till we can enforce the no-good.. 
+            while (!add(no_good)) {
+                if (rootLevel()) {
+                    // the problem is inconsistent..
+                    return false;
+                }
+
+                // we restore flaws and resolvers state..
+                pop();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if the given boolean expression can be made {@code true} in the
+     * current constraint network. This method saves the current state by
+     * calling {@link Network#push()}. If the expression can be made
+     * {@code true} the state of the network is restored, otherwise a no-good is
+     * added to the network and {@link #backjump()} is called.
+     *
+     * @param expr the boolean expression to be checked.
+     * @return {@code true} if the given boolean expression can be made true.
+     */
+    public boolean check(BoolExpr expr) throws InconsistencyException {
+        switch (expr.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                push();
+                if (assign(expr)) {
+                    pop();
+                    return true;
+                } else {
+                    // we need to back-jump..
+                    BoolExpr no_good = getNoGood();
+
+                    // we backtrack till we can enforce the no-good.. 
+                    while (!add(no_good)) {
+                        if (rootLevel()) {
+                            // the problem is inconsistent..
+                            throw new InconsistencyException("the problem is unsolvable..");
+                        }
+
+                        // we restore flaws and resolvers state..
+                        pop();
+                    }
+                    return false;
+                }
+            default:
+                throw new AssertionError(expr.evaluate().name());
         }
     }
 
@@ -368,7 +439,7 @@ public class Core implements IScope, IEnv {
 
         @Override
         public IItem newInstance(IEnv env) {
-            return core.newBool();
+            return core.newBoolItem();
         }
     }
 
@@ -380,7 +451,7 @@ public class Core implements IScope, IEnv {
 
         @Override
         public IItem newInstance(IEnv env) {
-            return core.newReal();
+            return core.newRealItem();
         }
     }
 
@@ -392,7 +463,7 @@ public class Core implements IScope, IEnv {
 
         @Override
         public IItem newInstance(IEnv env) {
-            return core.newString();
+            return core.newStringItem();
         }
     }
 }

@@ -28,7 +28,7 @@ public class Atom extends Item {
 
     Atom(Core c, IEnv e, Predicate p) {
         super(c, e, p);
-        this.state = c.network.newEnum(AtomState.values());
+        this.state = c.newEnum(AtomState.values());
     }
 
     @Override

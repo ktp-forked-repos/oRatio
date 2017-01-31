@@ -22,6 +22,7 @@ import it.cnr.istc.ac.LBool;
 import it.cnr.istc.oratio.core.Atom;
 import it.cnr.istc.oratio.core.AtomState;
 import it.cnr.istc.oratio.core.IItem;
+import it.cnr.istc.oratio.core.InconsistencyException;
 import it.cnr.istc.oratio.core.Predicate;
 import it.cnr.istc.oratio.core.gui.EnvTreeCellRenderer;
 import it.cnr.istc.oratio.core.gui.EnvTreeModel;
@@ -80,14 +81,14 @@ class AtomFlaw extends Flaw {
                         }
                     }
                 }
-                and.add(solver.network.eq(atom.state, AtomState.Unified));
-                and.add(solver.network.eq(a.state, AtomState.Active));
+                and.add(solver.eq(atom.state, AtomState.Unified));
+                and.add(solver.eq(a.state, AtomState.Active));
                 and.add(atom.eq(a));
-                BoolExpr eq = solver.network.and(and.toArray(new BoolExpr[and.size()]));
+                BoolExpr eq = solver.and(and.toArray(new BoolExpr[and.size()]));
                 try {
                     if (solver.check(eq)) {
                         // unification is actually possible!
-                        UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
+                        UnifyGoal unify = new UnifyGoal(solver, solver.newReal(0), this, atom, a, eq);
                         rs.add(unify);
                         boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                         assert add_pre;
@@ -101,13 +102,13 @@ class AtomFlaw extends Flaw {
 
         if (rs.isEmpty()) {
             // we remove unification from atom state..
-            boolean not_unify = solver.add(solver.network.not(solver.network.eq(atom.state, AtomState.Unified)));
+            boolean not_unify = solver.add(solver.not(solver.eq(atom.state, AtomState.Unified)));
             assert not_unify;
         }
         if (fact) {
-            rs.add(new AddFact(solver, solver.network.newReal(0), this, atom));
+            rs.add(new AddFact(solver, solver.newReal(0), this, atom));
         } else {
-            rs.add(new ExpandGoal(solver, solver.network.newReal(1), this, atom));
+            rs.add(new ExpandGoal(solver, solver.newReal(1), this, atom));
         }
         return true;
     }
@@ -149,7 +150,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateFact(atom) && solver.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
+            return solver.activateFact(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
         }
 
         @Override
@@ -169,7 +170,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return solver.activateGoal(atom) && solver.add(solver.network.imply(in_plan, solver.network.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
+            return solver.activateGoal(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
         }
 
         @Override
@@ -193,7 +194,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         protected boolean apply() {
-            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.add(solver.network.imply(in_plan, eq_expr));
+            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.add(solver.imply(in_plan, eq_expr));
         }
 
         @Override

@@ -39,11 +39,11 @@ class StringItem extends Item implements IStringItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof StringItem) {
-            return core.network.newBool(val.equals(((StringItem) item).val));
+            return core.newBool(val.equals(((StringItem) item).val));
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

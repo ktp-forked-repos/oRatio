@@ -40,11 +40,11 @@ class BoolItem extends Item implements IBoolItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof IBoolItem) {
-            return core.network.eq(expr, ((IBoolItem) item).getBoolVar());
+            return core.eq(expr, ((IBoolItem) item).getBoolVar());
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

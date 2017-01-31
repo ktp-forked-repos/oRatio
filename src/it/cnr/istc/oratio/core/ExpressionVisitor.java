@@ -41,13 +41,13 @@ class ExpressionVisitor extends oRatioBaseVisitor<IItem> {
     @Override
     public IItem visitLiteral_expression(oRatioParser.Literal_expressionContext ctx) {
         if (ctx.literal().numeric != null) {
-            return core.newReal(Double.parseDouble(ctx.literal().numeric.getText()));
+            return core.newRealItem(Double.parseDouble(ctx.literal().numeric.getText()));
         } else if (ctx.literal().string != null) {
-            return core.newString(ctx.literal().string.getText());
+            return core.newStringItem(ctx.literal().string.getText());
         } else if (ctx.literal().t != null) {
-            return core.newBool(true);
+            return core.newBoolItem(true);
         } else if (ctx.literal().f != null) {
-            return core.newBool(false);
+            return core.newBoolItem(false);
         } else {
             throw new AssertionError("the primitive type has not been found..");
         }
@@ -152,10 +152,10 @@ class ExpressionVisitor extends oRatioBaseVisitor<IItem> {
 
     @Override
     public IItem visitRange_expression(oRatioParser.Range_expressionContext ctx) {
-        IArithItem var = core.newReal();
+        IArithItem var = core.newRealItem();
         IArithItem min = (IArithItem) visit(ctx.min);
         IArithItem max = (IArithItem) visit(ctx.max);
-        if (!core.network.add(core.network.geq(var.getArithVar(), min.getArithVar()), core.network.leq(var.getArithVar(), max.getArithVar()))) {
+        if (!core.add(core.geq(var.getArithVar(), min.getArithVar()), core.leq(var.getArithVar(), max.getArithVar()))) {
             core.parser.notifyErrorListeners(ctx.getStart(), "invalid range expression..", null);
         }
         return var;

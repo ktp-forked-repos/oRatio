@@ -42,7 +42,7 @@ public class Item extends BaseEnv implements IItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof IEnumItem) {
             return item.eq(this);
         } else {
@@ -63,11 +63,11 @@ public class Item extends BaseEnv implements IItem {
             }
 
             if (exprs.isEmpty()) {
-                return core.network.newBool(true);
+                return core.newBool(true);
             } else if (exprs.size() == 1) {
                 return exprs.iterator().next();
             } else {
-                return core.network.and(exprs.toArray(new BoolExpr[exprs.size()]));
+                return core.and(exprs.toArray(new BoolExpr[exprs.size()]));
             }
         }
     }

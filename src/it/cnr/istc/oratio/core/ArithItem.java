@@ -41,11 +41,11 @@ class ArithItem extends Item implements IArithItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof IArithItem) {
-            return core.network.eq(expr, ((IArithItem) item).getArithVar());
+            return core.eq(expr, ((IArithItem) item).getArithVar());
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

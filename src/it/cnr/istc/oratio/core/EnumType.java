@@ -44,7 +44,7 @@ class EnumType extends Type {
     @Override
     public IItem newInstance(IEnv env) {
         Collection<IItem> items = getEnums();
-        return core.newEnum(this, items.toArray(new IItem[items.size()]));
+        return core.newEnumItem(this, items.toArray(new IItem[items.size()]));
     }
 
     void addEnum(IStringItem item) {

@@ -37,7 +37,7 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem {
         this.bool_var = bv;
         this.enum_var = ev;
         for (IItem v : ev.root().getAllowedValues()) {
-            eqs.put(v, core.network.eq(bool_var, ((IBoolItem) v).getBoolVar()));
+            eqs.put(v, core.eq(bool_var, ((IBoolItem) v).getBoolVar()));
         }
     }
 
@@ -59,11 +59,11 @@ class BoolEnum extends Item implements IBoolItem, IEnumItem {
     @Override
     public BoolExpr eq(IItem item) {
         if (this == item) {
-            return core.network.newBool(true);
+            return core.newBool(true);
         } else if (item instanceof IBoolItem) {
-            return core.network.eq(bool_var, ((IBoolItem) item).getBoolVar());
+            return core.eq(bool_var, ((IBoolItem) item).getBoolVar());
         } else {
-            return core.network.newBool(false);
+            return core.newBool(false);
         }
     }
 

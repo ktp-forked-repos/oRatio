@@ -48,9 +48,9 @@ public abstract class Resolver {
         this.solver = s;
         this.cost = c;
         this.effect = e;
-        this.in_plan = s.network.newBool();
+        this.in_plan = s.newBool();
         this.solver.fireNewResolver(this);
-        this.solver.network.store(new Propagator() {
+        this.solver.store(new Propagator() {
             @Override
             public Var<?>[] getArgs() {
                 return new Var<?>[]{in_plan};
@@ -59,7 +59,7 @@ public abstract class Resolver {
             @Override
             public boolean propagate(Var<?> v) {
                 if (in_plan.evaluate() == LBool.L_FALSE) {
-                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + solver.network.evaluate(r.cost)));
+                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + solver.evaluate(r.cost)));
                     if (costs.isEmpty()) {
                         solver.setCost(e, Double.POSITIVE_INFINITY);
                     } else {
@@ -87,7 +87,7 @@ public abstract class Resolver {
         preconditions.add(f);
         solver.fireNewCausalLink(f, this);
         // if this choice is in plan, its preconditions must be in plan as well..
-        return solver.add(solver.network.imply(in_plan, f.in_plan));
+        return solver.add(solver.imply(in_plan, f.in_plan));
     }
 
     public Collection<Flaw> getPreconditions() {
@@ -108,6 +108,6 @@ public abstract class Resolver {
 
     @Override
     public String toString() {
-        return toSimpleString() + " " + in_plan.evaluate() + " " + preconditions.stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + " + " + solver.network.evaluate(cost);
+        return toSimpleString() + " " + in_plan.evaluate() + " " + preconditions.stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + " + " + solver.evaluate(cost);
     }
 }

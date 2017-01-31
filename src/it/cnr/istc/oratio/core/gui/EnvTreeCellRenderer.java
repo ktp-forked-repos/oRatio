@@ -57,7 +57,7 @@ public class EnvTreeCellRenderer extends DefaultTreeCellRenderer {
                     break;
                 case Core.REAL:
                     setIcon(NUMBER_ICON);
-                    setText(((EnvTreeModel.ItemNode) value).name + " = " + ((EnvTreeModel.ItemNode) value).item.getCore().network.evaluate(((IArithItem) ((EnvTreeModel.ItemNode) value).item).getArithVar()));
+                    setText(((EnvTreeModel.ItemNode) value).name + " = " + ((EnvTreeModel.ItemNode) value).item.getCore().evaluate(((IArithItem) ((EnvTreeModel.ItemNode) value).item).getArithVar()));
                     break;
                 case Core.STRING:
                     setIcon(STRING_ICON);

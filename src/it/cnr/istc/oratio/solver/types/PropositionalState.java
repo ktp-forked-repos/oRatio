@@ -85,7 +85,7 @@ public class PropositionalState extends SmartType {
     @Override
     protected boolean factActivated(Atom atom) {
         if (super.factActivated(atom)) {
-            core.network.addDomainListener(new AtomListener(atom));
+            core.addDomainListener(new AtomListener(atom));
             to_check.add(atom);
             return core.getPredicate("IntervalPredicate").apply(atom) && predicates.get("PropositionalStatePredicate").apply(atom);
         } else {
@@ -96,7 +96,7 @@ public class PropositionalState extends SmartType {
     @Override
     protected boolean goalActivated(Atom atom) {
         if (super.goalActivated(atom)) {
-            core.network.addDomainListener(new AtomListener(atom));
+            core.addDomainListener(new AtomListener(atom));
             to_check.add(atom);
             return true;
         } else {
@@ -152,16 +152,16 @@ public class PropositionalState extends SmartType {
                                 ArithExpr a1_start = ((IArithItem) a1.get("start")).getArithVar();
                                 ArithExpr a1_end = ((IArithItem) a1.get("end")).getArithVar();
 
-                                if (core.network.evaluate(a0_end) > core.network.evaluate(a1_start) && core.network.evaluate(a0_start) < core.network.evaluate(a1_end)) {
+                                if (core.evaluate(a0_end) > core.evaluate(a1_start) && core.evaluate(a0_start) < core.evaluate(a1_end)) {
                                     // they also overlap..
                                     Collection<BoolExpr> or = new ArrayList<>();
 
                                     // either we order..
-                                    BoolExpr a0_before_a1 = core.network.leq(a0_end, a1_start);
+                                    BoolExpr a0_before_a1 = core.leq(a0_end, a1_start);
                                     if (a0_before_a1.root() != LBool.L_FALSE) {
                                         or.add(a0_before_a1);
                                     }
-                                    BoolExpr a1_before_a0 = core.network.leq(a1_end, a0_start);
+                                    BoolExpr a1_before_a0 = core.leq(a1_end, a0_start);
                                     if (a1_before_a0.root() != LBool.L_FALSE) {
                                         or.add(a1_before_a0);
                                     }
@@ -173,7 +173,7 @@ public class PropositionalState extends SmartType {
                                             Set<IItem> a0_arg_vals = ((IEnumItem) a0_arg).getEnumVar().root().getAllowedValues();
                                             if (a0_arg_vals.size() > 1) {
                                                 for (IItem a0_arg_val : a0_arg_vals) {
-                                                    or.add(core.network.not(((IEnumItem) a0_arg).allows(a0_arg_val)));
+                                                    or.add(core.not(((IEnumItem) a0_arg).allows(a0_arg_val)));
                                                 }
                                             }
                                         }
@@ -183,7 +183,7 @@ public class PropositionalState extends SmartType {
                                             Set<IItem> a1_arg_vals = ((IEnumItem) a1_arg).getEnumVar().root().getAllowedValues();
                                             if (a1_arg_vals.size() > 1) {
                                                 for (IItem a1_arg_val : a1_arg_vals) {
-                                                    or.add(core.network.not(((IEnumItem) a1_arg).allows(a1_arg_val)));
+                                                    or.add(core.not(((IEnumItem) a1_arg).allows(a1_arg_val)));
                                                 }
                                             }
                                         }
@@ -214,11 +214,11 @@ public class PropositionalState extends SmartType {
         public Var<?>[] getVars() {
             return atom.getItems().values().stream().filter(i -> (i instanceof IBoolItem || i instanceof IArithItem || i instanceof IEnumItem)).map(i -> {
                 if (i instanceof IBoolItem) {
-                    return ((IBoolItem) i).getBoolVar().to_var(core.network);
+                    return ((IBoolItem) i).getBoolVar().to_var(core);
                 } else if (i instanceof IArithItem) {
-                    return ((IArithItem) i).getArithVar().to_var(core.network);
+                    return ((IArithItem) i).getArithVar().to_var(core);
                 } else {
-                    return ((IEnumItem) i).getEnumVar().to_var(core.network);
+                    return ((IEnumItem) i).getEnumVar().to_var(core);
                 }
             }).toArray(Var<?>[]::new);
         }
@@ -241,7 +241,7 @@ public class PropositionalState extends SmartType {
         @Override
         protected boolean computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
-                rs.add(new PropositionalStateResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr));
+                rs.add(new PropositionalStateResolver(solver, solver.newReal(1.0 / or.size()), this, expr));
             }
             return true;
         }
@@ -268,7 +268,7 @@ public class PropositionalState extends SmartType {
 
         @Override
         protected boolean apply() {
-            return solver.add(solver.network.imply(in_plan, expr));
+            return solver.add(solver.imply(in_plan, expr));
         }
 
         @Override
