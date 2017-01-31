@@ -35,6 +35,7 @@ import it.cnr.istc.oratio.solver.types.StateVariable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -54,6 +55,7 @@ import java.util.stream.Stream;
 public class Solver extends Core {
 
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
+    private final Collection<BoolExpr> assertions = new ArrayList<>();
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     private Map<Flaw, Double> costs = new IdentityHashMap<>();
     private Map<Flaw, Double> flaw_costs;
@@ -79,6 +81,14 @@ public class Solver extends Core {
         types.put(PropositionalAgent.NAME, new PropositionalAgent(this));
         types.put(PropositionalImpulsiveAgent.NAME, new PropositionalImpulsiveAgent(this));
         types.put(PropositionalState.NAME, new PropositionalState(this));
+    }
+
+    @Override
+    public boolean add(BoolExpr... exprs) {
+        if (!rootLevel()) {
+            assertions.addAll(Arrays.asList(exprs));
+        }
+        return super.add(exprs);
     }
 
     @Override
@@ -489,6 +499,17 @@ public class Solver extends Core {
         inconsistencies = l_l.inconsistencies;
 
         layers.pollLast();
+    }
+
+    @Override
+    protected boolean backjump() {
+        if (!super.backjump() || !super.add(assertions.toArray(new BoolExpr[assertions.size()]))) {
+            return false;
+        }
+        if (rootLevel()) {
+            assertions.clear();
+        }
+        return true;
     }
 
     void fireNewFlaw(Flaw f) {
