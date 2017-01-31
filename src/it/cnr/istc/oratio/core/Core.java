@@ -18,7 +18,6 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
-import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.parser.oRatioLexer;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
@@ -287,7 +286,7 @@ public class Core extends Network implements IScope, IEnv {
         BoolExpr no_good = getNoGood();
 
         // we backtrack till we can enforce the no-good.. 
-        while (no_good.evaluate() == LBool.L_FALSE) {
+        while (!super.add(no_good)) {
             if (rootLevel()) {
                 // the problem is inconsistent..
                 return false;
