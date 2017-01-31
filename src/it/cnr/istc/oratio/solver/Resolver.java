@@ -42,6 +42,9 @@ public abstract class Resolver {
     protected final Flaw effect;
 
     public Resolver(Solver s, ArithExpr c, Flaw e) {
+        assert s != null;
+        assert c != null;
+        assert e != null;
         this.solver = s;
         this.cost = c;
         this.effect = e;

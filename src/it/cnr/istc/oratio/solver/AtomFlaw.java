@@ -52,6 +52,7 @@ class AtomFlaw extends Flaw {
 
     @Override
     protected boolean computeResolvers(Collection<Resolver> rs) {
+        atoms:
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
             if (atom != a && solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
@@ -62,18 +63,15 @@ class AtomFlaw extends Flaw {
                 queue.add(solver.reasons.get(a));
                 while (!queue.isEmpty()) {
                     Flaw f = queue.pollFirst();
-                    assert f.in_plan.evaluate() != LBool.L_FALSE;
-                    assert f.getCauses().stream().allMatch(cause -> cause.in_plan.evaluate() != LBool.L_FALSE);
-                    if (!f.in_plan.isConst()) {
-                        and.add(f.in_plan);
+                    if (f.in_plan.isConst() && f.in_plan.evaluate() == LBool.L_FALSE) {
+                        break atoms;
                     }
                     for (Resolver cause : f.getCauses()) {
-                        if (!cause.in_plan.isConst()) {
-                            and.add(cause.in_plan);
-                            if (cause.effect != null) {
-                                queue.add(cause.effect);
-                            }
+                        if (cause.in_plan.isConst() && cause.in_plan.evaluate() == LBool.L_FALSE) {
+                            break atoms;
                         }
+                        and.add(cause.in_plan);
+                        queue.add(cause.effect);
                     }
                 }
                 and.add(solver.network.eq(atom.state, AtomState.Unified));

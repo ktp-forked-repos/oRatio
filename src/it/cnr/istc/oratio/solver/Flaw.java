@@ -41,6 +41,7 @@ public abstract class Flaw {
     private boolean expanded = false;
 
     public Flaw(Solver s, boolean disjunctive) {
+        assert s != null;
         this.solver = s;
 
         this.causes = new ArrayList<>(s.resolvers);
