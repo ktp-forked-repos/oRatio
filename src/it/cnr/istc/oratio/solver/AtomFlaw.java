@@ -63,15 +63,21 @@ class AtomFlaw extends Flaw {
                 queue.add(solver.reasons.get(a));
                 while (!queue.isEmpty()) {
                     Flaw f = queue.pollFirst();
-                    if (f.in_plan.isConst() && f.in_plan.evaluate() == LBool.L_FALSE) {
-                        break atoms;
-                    }
-                    for (Resolver cause : f.getCauses()) {
-                        if (cause.in_plan.isConst() && cause.in_plan.evaluate() == LBool.L_FALSE) {
+                    if (f.in_plan.isConst()) {
+                        if (f.in_plan.evaluate() == LBool.L_FALSE) {
                             break atoms;
                         }
-                        and.add(cause.in_plan);
-                        queue.add(cause.effect);
+                    } else {
+                        for (Resolver cause : f.getCauses()) {
+                            if (cause.in_plan.isConst()) {
+                                if (cause.in_plan.evaluate() == LBool.L_FALSE) {
+                                    break atoms;
+                                }
+                            } else {
+                                and.add(cause.in_plan);
+                                queue.add(cause.effect);
+                            }
+                        }
                     }
                 }
                 and.add(solver.network.eq(atom.state, AtomState.Unified));
