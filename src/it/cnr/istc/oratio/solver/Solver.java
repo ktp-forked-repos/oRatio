@@ -214,7 +214,7 @@ public class Solver extends Core {
      * @param expr the boolean expression to be checked.
      * @return {@code true} if the given boolean expression can be made true.
      */
-    public boolean check(BoolExpr expr) {
+    public boolean check(BoolExpr expr) throws InconsistencyException {
         switch (expr.evaluate()) {
             case L_TRUE:
                 return true;
@@ -226,10 +226,19 @@ public class Solver extends Core {
                     pop();
                     return true;
                 } else {
+                    // we need to back-jump..
                     BoolExpr no_good = extract_no_good();
-                    pop();
-                    boolean add = network.add(no_good);
-                    assert add;
+
+                    // we backtrack till we can enforce the no-good.. 
+                    while (!network.add(no_good)) {
+                        if (rootLevel()) {
+                            // the problem is inconsistent..
+                            throw new InconsistencyException("the problem is unsolvable..");
+                        }
+
+                        // we restore flaws and resolvers state..
+                        pop();
+                    }
                     return false;
                 }
             default:

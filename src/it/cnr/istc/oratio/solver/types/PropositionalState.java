@@ -239,10 +239,11 @@ public class PropositionalState extends SmartType {
         }
 
         @Override
-        protected void computeResolvers(Collection<Resolver> rs) {
+        protected boolean computeResolvers(Collection<Resolver> rs) {
             for (BoolExpr expr : or) {
                 rs.add(new PropositionalStateResolver(solver, solver.network.newReal(1.0 / or.size()), this, expr));
             }
+            return true;
         }
 
         @Override

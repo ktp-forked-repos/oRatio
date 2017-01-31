@@ -51,7 +51,7 @@ class AtomFlaw extends Flaw {
     }
 
     @Override
-    protected void computeResolvers(Collection<Resolver> rs) {
+    protected boolean computeResolvers(Collection<Resolver> rs) {
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
             if (atom != a && solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
@@ -80,17 +80,21 @@ class AtomFlaw extends Flaw {
                 and.add(solver.network.eq(a.state, AtomState.Active));
                 and.add(atom.eq(a));
                 BoolExpr eq = solver.network.and(and.toArray(new BoolExpr[and.size()]));
-                if (solver.check(eq)) {
-                    // unification is actually possible!
-                    UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
-                    rs.add(unify);
-                    boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
-                    assert add_pre;
-                    if (solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY) {
-                        solver.setCost(this, solver.getCost(solver.reasons.get(a)));
-                    } else {
-                        solver.setCost(this, 0);
+                try {
+                    if (solver.check(eq)) {
+                        // unification is actually possible!
+                        UnifyGoal unify = new UnifyGoal(solver, solver.network.newReal(0), this, atom, a, eq);
+                        rs.add(unify);
+                        boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
+                        assert add_pre;
+                        if (solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY) {
+                            solver.setCost(this, solver.getCost(solver.reasons.get(a)));
+                        } else {
+                            solver.setCost(this, 0);
+                        }
                     }
+                } catch (InconsistencyException ex) {
+                    return false;
                 }
             }
         }
@@ -105,6 +109,7 @@ class AtomFlaw extends Flaw {
         } else {
             rs.add(new ExpandGoal(solver, solver.network.newReal(1), this, atom));
         }
+        return true;
     }
 
     @Override

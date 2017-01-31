@@ -108,7 +108,9 @@ public abstract class Flaw {
         assert !expanded;
         assert resolvers.isEmpty();
 
-        computeResolvers(resolvers);
+        if (!computeResolvers(resolvers)) {
+            return false;
+        }
         expanded = true;
 
         BoolExpr expr;
@@ -135,8 +137,9 @@ public abstract class Flaw {
      *
      * @param rs an initially empty {@code Collection} of resolvers to be filled
      * by available resolvers.
+     * @return {@code flase} if an inconsistency has been found.
      */
-    protected abstract void computeResolvers(Collection<Resolver> rs);
+    protected abstract boolean computeResolvers(Collection<Resolver> rs);
 
     public JComponent getDetails() {
         return new JPanel();
