@@ -17,7 +17,6 @@
 package it.cnr.istc.oratio.solver;
 
 import it.cnr.istc.ac.BoolExpr;
-import it.cnr.istc.ac.BoolVar;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.Atom;
@@ -187,7 +186,7 @@ public class Solver extends Core {
      */
     public boolean add(BoolExpr... exprs) {
         if (!network.add(exprs)) {
-            BoolExpr no_good = extract_no_good();
+            BoolExpr no_good = network.getNoGood();
 
             // we backtrack till we can enforce the no-good.. 
             while (!network.add(no_good)) {
@@ -227,7 +226,7 @@ public class Solver extends Core {
                     return true;
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = extract_no_good();
+                    BoolExpr no_good = network.getNoGood();
 
                     // we backtrack till we can enforce the no-good.. 
                     while (!network.add(no_good)) {
@@ -324,7 +323,7 @@ public class Solver extends Core {
                     inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = extract_no_good();
+                    BoolExpr no_good = network.getNoGood();
 
                     // we backtrack till we can enforce the no-good.. 
                     while (!network.add(no_good)) {
@@ -389,7 +388,7 @@ public class Solver extends Core {
                     flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = extract_no_good();
+                    BoolExpr no_good = network.getNoGood();
 
                     // we backtrack till we can enforce the no-good.. 
                     while (!network.add(no_good)) {
@@ -581,25 +580,6 @@ public class Solver extends Core {
         inconsistencies = l_l.inconsistencies;
 
         layers.pollLast();
-    }
-
-    /**
-     * Extracts a no-good from the unsat core of the constraint network.
-     *
-     * @return a {@link BoolExpr} representing the no-good extracted from the
-     * unsat core.
-     */
-    private BoolExpr extract_no_good() {
-        // we compute the unsat-core..
-        Collection<BoolVar> unsat_core = network.getUnsatCore();
-
-        // we build a no-good..
-        Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
-        for (BoolVar v : unsat_core) {
-            ng_vars.add((BoolVar) network.not(v).to_var(network));
-        }
-
-        return ng_vars.size() == 1 ? ng_vars.iterator().next() : network.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
     }
 
     void fireNewFlaw(Flaw f) {

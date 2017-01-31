@@ -767,6 +767,22 @@ public class Network {
     public Collection<BoolVar> getUnsatCore() {
         return Collections.unmodifiableCollection(unsat_core);
     }
+
+    /**
+     * Extracts a no-good from the unsat core of the constraint network.
+     *
+     * @return a {@link BoolExpr} representing the no-good extracted from the
+     * unsat core.
+     */
+    public BoolExpr getNoGood() {
+        // we build a no-good..
+        Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
+        for (BoolVar v : unsat_core) {
+            ng_vars.add((BoolVar) not(v).to_var(this));
+        }
+
+        return ng_vars.size() == 1 ? ng_vars.iterator().next() : or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
+    }
     //</editor-fold>
 
     public void addDomainListener(DomainListener listener) {
