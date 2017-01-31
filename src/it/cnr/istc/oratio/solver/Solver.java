@@ -462,7 +462,7 @@ public class Solver extends Core {
         return c_flaws;
     }
 
-    public void push(Resolver r) {
+    private void push(Resolver r) {
         // we create a new layer..
         Layer l = new Layer(r, flaw_costs, flaws, inconsistencies);
         flaw_costs = new IdentityHashMap<>();
@@ -472,6 +472,11 @@ public class Solver extends Core {
 
         // we also create a new layer in the constraint network..
         super.push();
+    }
+
+    @Override
+    public void push() {
+        push(null);
     }
 
     @Override
@@ -503,7 +508,10 @@ public class Solver extends Core {
 
     @Override
     protected boolean backjump() {
-        if (!super.backjump() || !super.add(assertions.toArray(new BoolExpr[assertions.size()]))) {
+        if (!super.backjump()) {
+            return false;
+        }
+        if (!assertions.isEmpty() && !super.add(assertions.toArray(new BoolExpr[assertions.size()]))) {
             return false;
         }
         if (rootLevel()) {

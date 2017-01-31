@@ -316,9 +316,9 @@ public class Core extends Network implements IScope, IEnv {
             case L_FALSE:
                 return false;
             case L_UNKNOWN:
-                super.push();
+                push();
                 if (assign(expr)) {
-                    super.pop();
+                    pop();
                     return true;
                 } else {
                     // we need to back-jump..
