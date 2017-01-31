@@ -18,6 +18,7 @@ package it.cnr.istc.oratio.core;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.oratio.core.parser.oRatioLexer;
 import it.cnr.istc.oratio.core.parser.oRatioParser;
@@ -276,18 +277,24 @@ public class Core extends Network implements IScope, IEnv {
     @Override
     public boolean add(BoolExpr... exprs) {
         if (!super.add(exprs)) {
-            BoolExpr no_good = getNoGood();
+            return backjump();
+        }
 
-            // we backtrack till we can enforce the no-good.. 
-            while (!add(no_good)) {
-                if (rootLevel()) {
-                    // the problem is inconsistent..
-                    return false;
-                }
+        return true;
+    }
 
-                // we restore flaws and resolvers state..
-                pop();
+    protected boolean backjump() {
+        BoolExpr no_good = getNoGood();
+
+        // we backtrack till we can enforce the no-good.. 
+        while (no_good.evaluate() == LBool.L_FALSE) {
+            if (rootLevel()) {
+                // the problem is inconsistent..
+                return false;
             }
+
+            // we restore flaws and resolvers state..
+            pop();
         }
 
         return true;
@@ -310,25 +317,13 @@ public class Core extends Network implements IScope, IEnv {
             case L_FALSE:
                 return false;
             case L_UNKNOWN:
-                push();
+                super.push();
                 if (assign(expr)) {
-                    pop();
+                    super.pop();
                     return true;
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = getNoGood();
-
-                    // we backtrack till we can enforce the no-good.. 
-                    while (!add(no_good)) {
-                        if (rootLevel()) {
-                            // the problem is inconsistent..
-                            throw new InconsistencyException("the problem is unsolvable..");
-                        }
-
-                        // we restore flaws and resolvers state..
-                        pop();
-                    }
-                    return false;
+                    return backjump();
                 }
             default:
                 throw new AssertionError(expr.evaluate().name());

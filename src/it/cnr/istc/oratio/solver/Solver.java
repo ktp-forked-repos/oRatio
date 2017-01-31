@@ -251,17 +251,9 @@ public class Solver extends Core {
                     inconsistencies.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = getNoGood();
-
-                    // we backtrack till we can enforce the no-good.. 
-                    while (!add(no_good)) {
-                        if (rootLevel()) {
-                            // the problem is inconsistent..
-                            return false;
-                        }
-
-                        // we restore flaws and resolvers state..
-                        pop();
+                    if (!backjump()) {
+                        // the problem is inconsistent..
+                        return false;
                     }
                 }
                 continue;
@@ -316,17 +308,9 @@ public class Solver extends Core {
                     flaws.addAll(least_expensive_resolver.getPreconditions());
                 } else {
                     // we need to back-jump..
-                    BoolExpr no_good = getNoGood();
-
-                    // we backtrack till we can enforce the no-good.. 
-                    while (!add(no_good)) {
-                        if (rootLevel()) {
-                            // the problem is inconsistent..
-                            return false;
-                        }
-
-                        // we restore flaws and resolvers state..
-                        pop();
+                    if (!backjump()) {
+                        // the problem is inconsistent..
+                        return false;
                     }
                 }
             }
