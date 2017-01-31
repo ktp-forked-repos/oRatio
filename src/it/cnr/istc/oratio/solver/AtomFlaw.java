@@ -55,7 +55,7 @@ class AtomFlaw extends Flaw {
         atoms:
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
-            if (atom != a && solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
+            if (atom != a && solver.reasons.get(a).isExpanded() && (!solver.rootLevel() || (atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)))) {
                 // this atom is a good candidate for unification
                 Collection<BoolExpr> and = new ArrayList<>();
                 LinkedList<Flaw> queue = new LinkedList<>();
