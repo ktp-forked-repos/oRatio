@@ -91,11 +91,7 @@ class AtomFlaw extends Flaw {
                         rs.add(unify);
                         boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                         assert add_pre;
-                        if (solver.getCost(solver.reasons.get(a)) < Double.POSITIVE_INFINITY) {
-                            solver.setCost(this, solver.getCost(solver.reasons.get(a)));
-                        } else {
-                            solver.setCost(this, 0);
-                        }
+                        solver.setCost(this, solver.getCost(solver.reasons.get(a)));
                     }
                 } catch (InconsistencyException ex) {
                     return false;

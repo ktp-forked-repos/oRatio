@@ -422,6 +422,7 @@ public class Solver extends Core {
         BoolExpr tmp_expr = ctr_var;
         while (Stream.concat(flaws.stream(), inconsistencies.stream()).anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY) && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
+            fireCurrentFlaw(flaw);
             if (!isDeferrable(flaw)) {
                 LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
                 if (!flaw.expand()) {
