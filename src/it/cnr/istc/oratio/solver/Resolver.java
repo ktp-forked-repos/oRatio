@@ -83,10 +83,19 @@ public abstract class Resolver {
         return cost;
     }
 
+    /**
+     * Adds a precondition to this resolver. If this resolver is in the
+     * solution, its preconditions must be in the solution as well. Conversely,
+     * if the precondition is not in the solution, this resolver must not be in
+     * the solution as well.
+     *
+     * @param f the {@link Flaw} representing the precondition of this resolver.
+     * @return {@code true} if the precondition can be successfully added to the
+     * resolver.
+     */
     boolean addPrecondition(Flaw f) {
         preconditions.add(f);
         solver.fireNewCausalLink(f, this);
-        // if this choice is in plan, its preconditions must be in plan as well..
         return solver.add(solver.imply(in_plan, f.in_plan));
     }
 
