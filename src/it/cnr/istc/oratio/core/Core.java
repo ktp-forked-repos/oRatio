@@ -322,7 +322,10 @@ public class Core extends Network implements IScope, IEnv {
                     return true;
                 } else {
                     // we need to back-jump..
-                    return backjump();
+                    if (!backjump()) {
+                        throw new InconsistencyException("this problem is unsolvable..");
+                    }
+                    return false;
                 }
             default:
                 throw new AssertionError(expr.evaluate().name());
