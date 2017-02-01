@@ -216,12 +216,9 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
             } else {
                 flaw_node.set(NODE_TYPE, "undeferrable-flaw");
             }
-            flaw_node.set(NODE_COST, -f.getSolver().getCost(f));
+            flaw_node.set(NODE_COST, Double.NEGATIVE_INFINITY);
             flaw_node.set(NODE_CONTENT, f);
             flaws.put(f, flaw_node);
-            for (Resolver cause : f.getCauses()) {
-                g.addEdge(flaw_node, resolvers.get(cause));
-            }
         }
     }
 
@@ -248,9 +245,6 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
             resolver_node.set(NODE_COST, Double.NEGATIVE_INFINITY);
             resolver_node.set(NODE_CONTENT, r);
             resolvers.put(r, resolver_node);
-            if (r.getEffect() != null) {
-                g.addEdge(resolver_node, flaws.get(r.getEffect()));
-            }
         }
     }
 
@@ -266,9 +260,8 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     @Override
     public void newCausalLink(Flaw f, Resolver r) {
         synchronized (m_vis) {
-            if (g.getEdge(flaws.get(f), resolvers.get(r)) == null) {
-                g.addEdge(flaws.get(f), resolvers.get(r));
-            }
+            assert g.getEdge(flaws.get(f), resolvers.get(r)) == null;
+            g.addEdge(flaws.get(f), resolvers.get(r));
         }
     }
 
