@@ -272,36 +272,44 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
 
     @Override
     public void currentFlaw(Flaw f) {
-        EXECUTOR.execute(() -> {
-            synchronized (m_vis) {
-                m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(true);
+        synchronized (m_vis) {
+            if (!m_vis.getVisualItem(NODES, flaws.get(f)).isHighlighted()) {
+                EXECUTOR.execute(() -> {
+                    synchronized (m_vis) {
+                        m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(true);
+                    }
+                    try {
+                        Thread.sleep(2_000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    synchronized (m_vis) {
+                        m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(false);
+                    }
+                });
             }
-            try {
-                Thread.sleep(2_000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            synchronized (m_vis) {
-                m_vis.getVisualItem(NODES, flaws.get(f)).setHighlighted(false);
-            }
-        });
+        }
     }
 
     @Override
     public void currentResolver(Resolver r) {
-        EXECUTOR.execute(() -> {
-            synchronized (m_vis) {
-                m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(true);
+        synchronized (m_vis) {
+            if (!m_vis.getVisualItem(NODES, resolvers.get(r)).isHighlighted()) {
+                EXECUTOR.execute(() -> {
+                    synchronized (m_vis) {
+                        m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(true);
+                    }
+                    try {
+                        Thread.sleep(2_000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    synchronized (m_vis) {
+                        m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(false);
+                    }
+                });
             }
-            try {
-                Thread.sleep(2_000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(PlanningGraphDisplay.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            synchronized (m_vis) {
-                m_vis.getVisualItem(NODES, resolvers.get(r)).setHighlighted(false);
-            }
-        });
+        }
     }
 
     /**
