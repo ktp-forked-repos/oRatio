@@ -528,11 +528,11 @@ public class Solver extends Core {
         listeners.parallelStream().forEach(l -> l.newResolver(r));
     }
 
-    private void fireFlawUpdate(Flaw f) {
+    void fireFlawUpdate(Flaw f) {
         listeners.parallelStream().forEach(l -> l.updateFlaw(f));
     }
 
-    private void fireResolverUpdate(Resolver r) {
+    void fireResolverUpdate(Resolver r) {
         listeners.parallelStream().forEach(l -> l.updateResolver(r));
     }
 

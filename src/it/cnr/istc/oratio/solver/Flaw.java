@@ -142,6 +142,10 @@ public abstract class Flaw {
      */
     protected abstract boolean computeResolvers(Collection<Resolver> rs);
 
+    protected void fireFlawUpdate() {
+        solver.fireFlawUpdate(this);
+    }
+
     public JComponent getDetails() {
         return new JPanel();
     }

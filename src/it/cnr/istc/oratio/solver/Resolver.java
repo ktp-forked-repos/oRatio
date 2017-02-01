@@ -109,6 +109,10 @@ public abstract class Resolver {
 
     protected abstract boolean apply();
 
+    protected void fireResolverUpdate() {
+        solver.fireResolverUpdate(this);
+    }
+
     public JComponent getDetails() {
         return new JPanel();
     }
