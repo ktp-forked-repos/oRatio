@@ -219,6 +219,9 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
             flaw_node.set(NODE_COST, Double.NEGATIVE_INFINITY);
             flaw_node.set(NODE_CONTENT, f);
             flaws.put(f, flaw_node);
+            for (Resolver cause : f.getCauses()) {
+                g.addEdge(flaw_node, resolvers.get(cause));
+            }
         }
     }
 
