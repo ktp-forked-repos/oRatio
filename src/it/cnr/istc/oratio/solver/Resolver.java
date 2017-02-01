@@ -45,11 +45,14 @@ public abstract class Resolver {
         assert s != null;
         assert c != null;
         assert e != null;
+
         this.solver = s;
         this.cost = c;
         this.effect = e;
         this.in_plan = s.newBool();
+
         this.solver.fireNewResolver(this);
+
         this.solver.store(new Propagator() {
             @Override
             public Var<?>[] getArgs() {

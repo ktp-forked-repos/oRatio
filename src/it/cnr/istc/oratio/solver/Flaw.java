@@ -42,27 +42,13 @@ public abstract class Flaw {
 
     public Flaw(Solver s, boolean disjunctive) {
         assert s != null;
+
         this.solver = s;
-
-        this.causes = new ArrayList<>(s.resolvers);
-        for (Resolver cause : causes) {
-            cause.preconditions.add(this);
-        }
-
-        switch (causes.size()) {
-            case 0:
-                this.in_plan = (BoolVar) s.newBool(true).to_var(s);
-                break;
-            case 1:
-                this.in_plan = causes.iterator().next().in_plan;
-                break;
-            default:
-                this.in_plan = (BoolVar) s.and(causes.stream().map(resolver -> resolver.in_plan).toArray(BoolVar[]::new)).to_var(s);
-                break;
-        }
-        assert in_plan.evaluate() != LBool.L_FALSE;
-
+        this.in_plan = s.newBool();
         this.disjunctive = disjunctive;
+        this.causes = new ArrayList<>(s.resolvers);
+
+        this.solver.fireNewFlaw(this);
 
         this.solver.store(new Propagator() {
             @Override
@@ -78,7 +64,16 @@ public abstract class Flaw {
                 return true;
             }
         });
-        this.solver.fireNewFlaw(this);
+
+        if (causes.isEmpty()) {
+            boolean add = solver.add(in_plan);
+            assert add;
+        } else {
+            for (Resolver cause : causes) {
+                boolean add_precondition = cause.addPrecondition(this);
+                assert add_precondition : "this flaw instance should not have been created..";
+            }
+        }
     }
 
     public Solver getSolver() {

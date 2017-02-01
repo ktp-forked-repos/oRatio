@@ -239,12 +239,14 @@ public class PlanningGraphDisplay extends Display implements SolverListener {
     @Override
     public void newResolver(Resolver r) {
         assert !resolvers.containsKey(r);
+        assert flaws.containsKey(r.getEffect());
         synchronized (m_vis) {
             Node resolver_node = g.addNode();
             resolver_node.set(NODE_TYPE, "resolver");
             resolver_node.set(NODE_COST, Double.NEGATIVE_INFINITY);
             resolver_node.set(NODE_CONTENT, r);
             resolvers.put(r, resolver_node);
+            g.addEdge(resolver_node, flaws.get(r.getEffect()));
         }
     }
 
