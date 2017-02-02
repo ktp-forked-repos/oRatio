@@ -16,8 +16,15 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.core.Atom;
+import it.cnr.istc.core.AtomState;
+import it.cnr.istc.core.IItem;
+import it.cnr.istc.core.InconsistencyException;
+import it.cnr.istc.core.Predicate;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,6 +43,84 @@ class AtomFlaw extends Flaw {
 
     @Override
     protected void computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (IItem inst : atom.type.getInstances()) {
+            Atom a = (Atom) inst;
+            if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
+                BoolExpr eq = solver.and(
+                        solver.eq(atom.state, AtomState.Unified),
+                        solver.eq(a.state, AtomState.Active),
+                        atom.eq(a)
+                );
+                try {
+                    if (solver.check(eq)) {
+                        // unification is actually possible!
+                        UnifyGoal unify = new UnifyGoal(solver, this, atom, a, eq);
+                        rs.add(unify);
+                    }
+                } catch (InconsistencyException ex) {
+                    Logger.getLogger(AtomFlaw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
+        if (rs.isEmpty()) {
+            // we remove unification from atom state..
+            boolean not_unify = solver.add(solver.not(solver.eq(atom.state, AtomState.Unified)));
+            assert not_unify;
+        }
+        if (fact) {
+            rs.add(new AddFact(solver, this, atom));
+        } else {
+            rs.add(new ExpandGoal(solver, this, atom));
+        }
+    }
+
+    private static class AddFact extends Resolver {
+
+        private final Atom atom;
+
+        AddFact(Solver s, Flaw e, Atom atom) {
+            super(s, s.newReal(0), e);
+            this.atom = atom;
+        }
+
+        @Override
+        protected boolean apply() {
+            return solver.activateFact(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
+        }
+    }
+
+    private static class ExpandGoal extends Resolver {
+
+        private final Atom atom;
+
+        ExpandGoal(Solver s, Flaw e, Atom atom) {
+            super(s, s.newReal(1), e);
+            this.atom = atom;
+        }
+
+        @Override
+        protected boolean apply() {
+            return solver.activateGoal(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
+        }
+    }
+
+    private static class UnifyGoal extends Resolver {
+
+        private final Atom unifying;
+        private final Atom with;
+        private final BoolExpr eq_expr;
+
+        UnifyGoal(Solver s, Flaw e, Atom unifying, Atom with, BoolExpr eq_expr) {
+            super(s, s.newReal(0), e);
+            this.unifying = unifying;
+            this.with = with;
+            this.eq_expr = eq_expr;
+        }
+
+        @Override
+        protected boolean apply() {
+            return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.add(solver.imply(in_plan, eq_expr));
+        }
     }
 }

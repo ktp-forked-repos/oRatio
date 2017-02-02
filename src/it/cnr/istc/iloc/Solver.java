@@ -80,6 +80,16 @@ public class Solver extends Core {
     }
 
     @Override
+    protected boolean activateFact(Atom atom) {
+        return super.activateFact(atom); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    protected boolean unifyFact(Atom unifying, Atom with) {
+        return super.unifyFact(unifying, with); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
     protected boolean newGoal(Atom atom) {
         if (!super.newGoal(atom)) {
             return false;
@@ -87,6 +97,16 @@ public class Solver extends Core {
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
         current_node.flaws.add(flaw);
         return true;
+    }
+
+    @Override
+    protected boolean activateGoal(Atom atom) {
+        return super.activateGoal(atom);
+    }
+
+    @Override
+    protected boolean unifyGoal(Atom unifying, Atom with) {
+        return super.unifyGoal(unifying, with);
     }
 
     @Override

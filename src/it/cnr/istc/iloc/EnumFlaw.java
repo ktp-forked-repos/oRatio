@@ -16,8 +16,12 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.core.IEnumItem;
+import it.cnr.istc.core.IItem;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  *
@@ -34,6 +38,24 @@ class EnumFlaw extends Flaw {
 
     @Override
     protected void computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Set<? extends IItem> vals = enum_item.getEnumVar().evaluate().getAllowedValues();
+        for (IItem v : vals) {
+            rs.add(new ChooseValue(solver, solver.newReal(1.0 / vals.size()), this, enum_item.allows(v)));
+        }
+    }
+
+    private static class ChooseValue extends Resolver {
+
+        private final BoolExpr eq_v;
+
+        ChooseValue(Solver s, ArithExpr c, Flaw e, BoolExpr eq_v) {
+            super(s, c, e);
+            this.eq_v = eq_v;
+        }
+
+        @Override
+        protected boolean apply() {
+            return solver.add(solver.imply(in_plan, eq_v));
+        }
     }
 }

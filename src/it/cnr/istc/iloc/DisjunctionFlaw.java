@@ -16,6 +16,8 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.core.Conjunction;
 import it.cnr.istc.core.Disjunction;
 import it.cnr.istc.core.IEnv;
 import java.util.Collection;
@@ -37,6 +39,25 @@ class DisjunctionFlaw extends Flaw {
 
     @Override
     protected void computeResolvers(Collection<Resolver> rs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (Conjunction conjunction : disjunction.getConjunctions()) {
+            rs.add(new ChooseConjunction(solver, conjunction.getCost(), this, env, conjunction));
+        }
+    }
+
+    private static class ChooseConjunction extends Resolver {
+
+        private final IEnv env;
+        private final Conjunction conjunction;
+
+        ChooseConjunction(Solver s, ArithExpr c, Flaw e, IEnv env, Conjunction conjunction) {
+            super(s, c, e);
+            this.env = env;
+            this.conjunction = conjunction;
+        }
+
+        @Override
+        protected boolean apply() {
+            return conjunction.apply(env);
+        }
     }
 }
