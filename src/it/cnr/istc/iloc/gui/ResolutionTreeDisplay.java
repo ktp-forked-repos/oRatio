@@ -183,6 +183,7 @@ public class ResolutionTreeDisplay extends Display implements SolverListener {
         });
     }
 
+    @Override
     public void init(Solver solver) {
         synchronized (m_vis) {
             t.getEdges().clear();

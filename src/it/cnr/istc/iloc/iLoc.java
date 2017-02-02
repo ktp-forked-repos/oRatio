@@ -17,6 +17,7 @@
 package it.cnr.istc.iloc;
 
 import it.cnr.istc.iloc.gui.ResolutionTreeJFrame;
+import it.cnr.istc.iloc.gui.TimelinesJFrame;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,6 +59,7 @@ public class iLoc {
         }
 
         boolean show_resolution_tree = opts.remove("-show-resolution-tree");
+        boolean show_timelines = opts.remove("-show-timelines");
 
         if (args.length - opts.size() == 0) {
             LOG.severe("there are no input files..");
@@ -69,6 +71,11 @@ public class iLoc {
 
         if (show_resolution_tree) {
             ResolutionTreeJFrame frame = new ResolutionTreeJFrame(s);
+            frame.setVisible(true);
+        }
+
+        if (show_timelines) {
+            TimelinesJFrame frame = new TimelinesJFrame(s);
             frame.setVisible(true);
         }
 
@@ -103,6 +110,7 @@ public class iLoc {
 
     private static void printUsage() {
         LOG.info("usage: java -jar oRatio.jar [options] <file-paths>");
-        LOG.info("-show-planning-graph        Shows the generated planning graph");
+        LOG.info("-show-resolution-tree     Shows the resolution tree");
+        LOG.info("-show-timelines           Shows the current timelines");
     }
 }

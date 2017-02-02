@@ -75,6 +75,10 @@ public class StateVariable extends SmartType {
         }
     }
 
+    public Collection<Predicate> getDefinedPredicates() {
+        return Collections.unmodifiableCollection(defined_predicates);
+    }
+
     @Override
     protected boolean factActivated(Atom atom) {
         if (super.factActivated(atom)) {

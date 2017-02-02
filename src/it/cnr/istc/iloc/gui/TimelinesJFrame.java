@@ -24,17 +24,17 @@ import javax.swing.JFrame;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class ResolutionTreeJFrame extends JFrame {
+public class TimelinesJFrame extends JFrame {
 
     private final Solver solver;
 
     /**
-     * Creates new form ResolutionTreeJFrame
+     * Creates new form TimelinesJFrame
      */
-    public ResolutionTreeJFrame(Solver solver) {
+    public TimelinesJFrame(Solver solver) {
         initComponents();
         this.solver = solver;
-        solver.addSolverListener(resolutionTreeDisplay);
+        solver.addSolverListener(timelinesChart);
     }
 
     /**
@@ -46,10 +46,10 @@ public class ResolutionTreeJFrame extends JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        resolutionTreeDisplay = new it.cnr.istc.iloc.gui.ResolutionTreeDisplay();
+        timelinesChart = new it.cnr.istc.iloc.gui.TimelinesChart();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Resolution tree");
+        setTitle("Timelines");
         setExtendedState(Frame.MAXIMIZED_BOTH);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -57,25 +57,35 @@ public class ResolutionTreeJFrame extends JFrame {
             }
         });
 
+        javax.swing.GroupLayout timelinesChartLayout = new javax.swing.GroupLayout(timelinesChart);
+        timelinesChart.setLayout(timelinesChartLayout);
+        timelinesChartLayout.setHorizontalGroup(
+            timelinesChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 400, Short.MAX_VALUE)
+        );
+        timelinesChartLayout.setVerticalGroup(
+            timelinesChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(resolutionTreeDisplay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(timelinesChart, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(resolutionTreeDisplay, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(timelinesChart, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
         );
 
         pack();
-        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        solver.removeSolverListener(resolutionTreeDisplay);
+        solver.removeSolverListener(timelinesChart);
     }//GEN-LAST:event_formWindowClosing
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private it.cnr.istc.iloc.gui.ResolutionTreeDisplay resolutionTreeDisplay;
+    private it.cnr.istc.iloc.gui.TimelinesChart timelinesChart;
     // End of variables declaration//GEN-END:variables
 }
