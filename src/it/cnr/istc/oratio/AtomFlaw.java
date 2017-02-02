@@ -16,7 +16,6 @@
  */
 package it.cnr.istc.oratio;
 
-import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.core.Atom;
@@ -88,7 +87,7 @@ class AtomFlaw extends Flaw {
                 try {
                     if (solver.check(eq)) {
                         // unification is actually possible!
-                        UnifyGoal unify = new UnifyGoal(solver, solver.newReal(0), this, atom, a, eq);
+                        UnifyGoal unify = new UnifyGoal(solver, this, atom, a, eq);
                         rs.add(unify);
                         boolean add_pre = unify.addPrecondition(solver.reasons.get(a));
                         assert add_pre;
@@ -106,9 +105,9 @@ class AtomFlaw extends Flaw {
             assert not_unify;
         }
         if (fact) {
-            rs.add(new AddFact(solver, solver.newReal(0), this, atom));
+            rs.add(new AddFact(solver, this, atom));
         } else {
-            rs.add(new ExpandGoal(solver, solver.newReal(1), this, atom));
+            rs.add(new ExpandGoal(solver, this, atom));
         }
         return true;
     }
@@ -143,8 +142,8 @@ class AtomFlaw extends Flaw {
 
         private final Atom atom;
 
-        AddFact(Solver s, ArithExpr c, Flaw e, Atom atom) {
-            super(s, c, e);
+        AddFact(Solver s, Flaw e, Atom atom) {
+            super(s, s.newReal(0), e);
             this.atom = atom;
         }
 
@@ -163,8 +162,8 @@ class AtomFlaw extends Flaw {
 
         private final Atom atom;
 
-        ExpandGoal(Solver s, ArithExpr c, Flaw e, Atom atom) {
-            super(s, c, e);
+        ExpandGoal(Solver s, Flaw e, Atom atom) {
+            super(s, s.newReal(1), e);
             this.atom = atom;
         }
 
@@ -185,8 +184,8 @@ class AtomFlaw extends Flaw {
         private final Atom with;
         private final BoolExpr eq_expr;
 
-        UnifyGoal(Solver s, ArithExpr c, Flaw e, Atom unifying, Atom with, BoolExpr eq_expr) {
-            super(s, c, e);
+        UnifyGoal(Solver s, Flaw e, Atom unifying, Atom with, BoolExpr eq_expr) {
+            super(s, s.newReal(0), e);
             this.unifying = unifying;
             this.with = with;
             this.eq_expr = eq_expr;
