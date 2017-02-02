@@ -98,6 +98,7 @@ public abstract class Resolver {
      */
     boolean addPrecondition(Flaw f) {
         preconditions.add(f);
+        f.supports.add(this);
         solver.fireNewCausalLink(f, this);
         return solver.add(solver.imply(in_plan, f.in_plan));
     }
@@ -111,10 +112,6 @@ public abstract class Resolver {
     }
 
     protected abstract boolean apply();
-
-    protected void fireResolverUpdate() {
-        solver.fireResolverUpdate(this);
-    }
 
     public JComponent getDetails() {
         return new JPanel();

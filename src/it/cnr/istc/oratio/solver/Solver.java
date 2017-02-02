@@ -96,9 +96,6 @@ public class Solver extends Core {
         IEnumItem c_enum = super.newEnumItem(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
         fireFlawUpdate(flaw);
-        for (Resolver cause : flaw.getCauses()) {
-            fireResolverUpdate(cause);
-        }
         if (resolvers.isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -114,9 +111,6 @@ public class Solver extends Core {
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
         fireFlawUpdate(flaw);
-        for (Resolver cause : flaw.getCauses()) {
-            fireResolverUpdate(cause);
-        }
         reasons.put(atom, flaw);
         if (resolvers.isEmpty()) {
             // we have a top-level flaw..
@@ -144,9 +138,6 @@ public class Solver extends Core {
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
         reasons.put(atom, flaw);
         fireFlawUpdate(flaw);
-        for (Resolver cause : flaw.getCauses()) {
-            fireResolverUpdate(cause);
-        }
         if (resolvers.isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -172,9 +163,6 @@ public class Solver extends Core {
         }
         DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
         fireFlawUpdate(flaw);
-        for (Resolver cause : flaw.getCauses()) {
-            fireResolverUpdate(cause);
-        }
         if (resolvers.isEmpty()) {
             // we have a top-level flaw..
             flaws.add(flaw);
@@ -230,9 +218,6 @@ public class Solver extends Core {
                 if (!inconsistencies.isEmpty()) {
                     for (Flaw flaw : inconsistencies) {
                         fireFlawUpdate(flaw);
-                        for (Resolver cause : flaw.getCauses()) {
-                            fireResolverUpdate(cause);
-                        }
                         flaw_q.add(flaw);
                     }
                     continue;
@@ -350,20 +335,20 @@ public class Solver extends Core {
                 if (!flaw.expand()) {
                     return false;
                 }
-                fireFlawUpdate(flaw);
                 for (Resolver r : flaw.getResolvers()) {
                     resolvers.addFirst(r);
                     ctr_var = r.in_plan;
                     if (!r.apply()) {
                         return false;
                     }
-                    fireResolverUpdate(r);
                     if (r.getPreconditions().isEmpty()) {
                         // there are no requirements for this resolver..
                         setCost(flaw, evaluate(r.cost));
                     }
+                    fireResolverUpdate(r);
                     resolvers.removeFirst();
                 }
+                fireFlawUpdate(flaw);
             } else {
                 // we postpone the expansion..
                 LOG.log(Level.FINE, "deferring {0}", flaw.toSimpleString());
@@ -384,14 +369,11 @@ public class Solver extends Core {
             }
             costs.put(flaw, cost);
             fireFlawUpdate(flaw);
-            for (Resolver cause : flaw.getCauses()) {
-                fireResolverUpdate(cause);
-            }
 
             Set<Flaw> visited = new HashSet<>();
             visited.add(flaw);
             LinkedList<Flaw> queue = new LinkedList<>();
-            queue.addAll(flaw.getCauses().stream().map(cause -> cause.effect).collect(Collectors.toList()));
+            queue.addAll(flaw.getSupports().stream().map(supp -> supp.effect).collect(Collectors.toList()));
             while (!queue.isEmpty()) {
                 Flaw c_flaw = queue.pollFirst();
                 if (!visited.contains(c_flaw)) {
@@ -403,10 +385,7 @@ public class Solver extends Core {
                         }
                         costs.put(c_flaw, c_cost);
                         fireFlawUpdate(c_flaw);
-                        for (Resolver cause : c_flaw.getCauses()) {
-                            fireResolverUpdate(cause);
-                        }
-                        queue.addAll(c_flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
+                        queue.addAll(c_flaw.getSupports().stream().map(supp -> supp.effect).collect(Collectors.toList()));
                     }
                 }
             }
@@ -491,9 +470,6 @@ public class Solver extends Core {
         }
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             fireFlawUpdate(entry.getKey());
-            for (Resolver cause : entry.getKey().getCauses()) {
-                fireResolverUpdate(cause);
-            }
         }
 
         Layer l_l = layers.getLast();
@@ -529,8 +505,13 @@ public class Solver extends Core {
         listeners.parallelStream().forEach(l -> l.newResolver(r));
     }
 
-    void fireFlawUpdate(Flaw f) {
-        listeners.parallelStream().forEach(l -> l.updateFlaw(f));
+    private void fireFlawUpdate(Flaw f) {
+        listeners.parallelStream().forEach(l -> {
+            l.updateFlaw(f);
+            for (Resolver supp : f.getSupports()) {
+                fireResolverUpdate(supp);
+            }
+        });
     }
 
     void fireResolverUpdate(Resolver r) {

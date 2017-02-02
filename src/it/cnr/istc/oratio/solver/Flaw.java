@@ -38,6 +38,7 @@ public abstract class Flaw {
     private final boolean disjunctive;
     private final Collection<Resolver> resolvers = new ArrayList<>();
     private final Collection<Resolver> causes;
+    final Collection<Resolver> supports;
     private boolean expanded = false;
 
     public Flaw(Solver s, boolean disjunctive) {
@@ -48,6 +49,7 @@ public abstract class Flaw {
         for (Resolver cause : causes) {
             cause.preconditions.add(this);
         }
+        this.supports = new ArrayList<>(s.resolvers);
 
         switch (causes.size()) {
             case 0:
@@ -93,12 +95,33 @@ public abstract class Flaw {
         return disjunctive;
     }
 
+    /**
+     * Returns the collection of resolvers that resolve this flaw. This
+     * collection is computed, depending on the flaw, by expanding the flaw
+     * through the {@link #expand()} method.
+     *
+     * @return the collection of resolvers that resolve this flaw.
+     */
     public Collection<Resolver> getResolvers() {
         return Collections.unmodifiableCollection(resolvers);
     }
 
+    /**
+     * Returns the collection of resolvers that caused this flaw.
+     *
+     * @return the collection of resolvers that caused this flaw.
+     */
     public Collection<Resolver> getCauses() {
         return Collections.unmodifiableCollection(causes);
+    }
+
+    /**
+     * Returns the collection of resolvers supported by this flaw.
+     *
+     * @return the collection of resolvers supported by this flaw.
+     */
+    public Collection<Resolver> getSupports() {
+        return Collections.unmodifiableCollection(supports);
     }
 
     public boolean isExpanded() {
@@ -141,10 +164,6 @@ public abstract class Flaw {
      * @return {@code flase} if an inconsistency has been found.
      */
     protected abstract boolean computeResolvers(Collection<Resolver> rs);
-
-    protected void fireFlawUpdate() {
-        solver.fireFlawUpdate(this);
-    }
 
     public JComponent getDetails() {
         return new JPanel();
