@@ -122,14 +122,14 @@ public class ResolutionTreeDisplay extends Display implements SolverListener {
         ColorAction nFill = new DataColorAction(NODES, NODE_COST, Constants.ORDINAL, VisualItem.FILLCOLOR, ColorLib.getHotPalette());
         nFill.add(VisualItem.HOVER, ColorLib.gray(200));
         nFill.add(VisualItem.HIGHLIGHT, ColorLib.rgb(255, 230, 230));
+        nFill.add(NODE_TYPE + " == \"default\"", ColorLib.rgb(230, 230, 250));
+        nFill.add(NODE_TYPE + " == \"current\"", ColorLib.rgb(255, 255, 204));
+        nFill.add(NODE_TYPE + " == \"inconsistent\"", ColorLib.rgb(255, 69, 0));
+        nFill.add(NODE_TYPE + " == \"solution\"", ColorLib.rgb(152, 251, 152));
 
         ColorAction nStroke = new ColorAction(NODES, VisualItem.STROKECOLOR);
         nStroke.setDefaultColor(ColorLib.gray(100));
         nStroke.add(VisualItem.HOVER, ColorLib.gray(50));
-        nStroke.add(NODE_TYPE + " == \"default\"", ColorLib.rgb(230, 230, 250));
-        nStroke.add(NODE_TYPE + " == \"current\"", ColorLib.rgb(255, 255, 204));
-        nStroke.add(NODE_TYPE + " == \"inconsistent\"", ColorLib.rgb(255, 69, 0));
-        nStroke.add(NODE_TYPE + " == \"solution\"", ColorLib.rgb(152, 251, 152));
 
         ColorAction eStroke = new ColorAction(EDGES, VisualItem.STROKECOLOR);
         eStroke.setDefaultColor(ColorLib.gray(100));
