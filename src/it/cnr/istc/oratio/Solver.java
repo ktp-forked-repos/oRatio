@@ -423,7 +423,7 @@ public class Solver extends Core {
      * @return a collection of {@link Flaw}s representing all the
      * inconsistencies.
      */
-    private Set<Flaw> get_inconsistencies() {
+    private Collection<Flaw> get_inconsistencies() {
         Set<Type> c_types = new HashSet<>();
         LinkedList<Type> queue = new LinkedList<>();
         queue.addAll(types.values());
@@ -434,7 +434,7 @@ public class Solver extends Core {
                 queue.addAll(c_type.getTypes());
             }
         }
-        Set<Flaw> c_flaws = new HashSet<>();
+        Collection<Flaw> c_flaws = new ArrayList<>();
         for (Type type : c_types) {
             if (type instanceof SmartType) {
                 c_flaws.addAll(((SmartType) type).getInconsistencies());
