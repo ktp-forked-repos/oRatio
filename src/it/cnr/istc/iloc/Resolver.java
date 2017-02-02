@@ -16,9 +16,26 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolVar;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Resolver {
+public abstract class Resolver {
+
+    protected final Solver solver;
+    protected final BoolVar in_plan;
+    protected final ArithExpr cost;
+    protected final Flaw effect;
+
+    public Resolver(Solver s, ArithExpr c, Flaw e) {
+        this.solver = s;
+        this.in_plan = s.newBool();
+        this.cost = c;
+        this.effect = e;
+    }
+
+    protected abstract boolean apply();
 }

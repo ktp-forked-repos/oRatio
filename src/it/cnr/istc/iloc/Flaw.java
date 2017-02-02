@@ -16,9 +16,21 @@
  */
 package it.cnr.istc.iloc;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Flaw {
+public abstract class Flaw {
+
+    protected final Solver solver;
+    private final Collection<Resolver> resolvers = new ArrayList<>();
+
+    public Flaw(Solver solver) {
+        this.solver = solver;
+    }
+
+    protected abstract void computeResolvers(Collection<Resolver> rs);
 }

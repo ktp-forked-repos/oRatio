@@ -542,7 +542,7 @@ public class Solver extends Core {
         listeners.remove(listener);
     }
 
-    static class Layer {
+    private static class Layer {
 
         private final Resolver resolver;
         private final Map<Flaw, Double> flaw_costs;

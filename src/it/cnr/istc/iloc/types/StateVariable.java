@@ -1,0 +1,209 @@
+/*
+ * Copyright (C) 2017 Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package it.cnr.istc.iloc.types;
+
+import it.cnr.istc.ac.DomainListener;
+import it.cnr.istc.ac.Var;
+import it.cnr.istc.core.Atom;
+import it.cnr.istc.core.AtomState;
+import it.cnr.istc.core.Constructor;
+import it.cnr.istc.core.IArithItem;
+import it.cnr.istc.core.IBoolItem;
+import it.cnr.istc.core.IEnumItem;
+import it.cnr.istc.core.IItem;
+import static it.cnr.istc.core.IScope.SCOPE;
+import it.cnr.istc.core.Predicate;
+import it.cnr.istc.iloc.Flaw;
+import it.cnr.istc.iloc.Resolver;
+import it.cnr.istc.iloc.SmartType;
+import it.cnr.istc.iloc.Solver;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ *
+ * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
+ */
+public class StateVariable extends SmartType {
+
+    public static final String NAME = "StateVariable";
+    private final Set<IItem> to_check = new HashSet<>();
+    private final Collection<Predicate> defined_predicates = new ArrayList<>();
+
+    public StateVariable(Solver s) {
+        super(s, s, NAME);
+        constructors.add(new Constructor(core, this) {
+            @Override
+            public boolean invoke(IItem item, IItem... expressions) {
+                return true;
+            }
+        });
+    }
+
+    @Override
+    protected void predicateDefined(Predicate predicate) {
+        if (!defined_predicates.contains(predicate)) {
+            extendPredicate(predicate, core.getPredicate("IntervalPredicate"));
+            defined_predicates.add(predicate);
+        }
+    }
+
+    @Override
+    protected boolean factActivated(Atom atom) {
+        if (super.factActivated(atom)) {
+            core.addDomainListener(new AtomListener(atom));
+            to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
+            return core.getPredicate("IntervalPredicate").apply(atom);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean goalActivated(Atom atom) {
+        if (super.goalActivated(atom)) {
+            core.addDomainListener(new AtomListener(atom));
+            to_check.addAll(((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public Collection<Flaw> getInconsistencies() {
+        if (to_check.isEmpty()) {
+            // nothing has changed since last inconsistency check..
+            return Collections.emptyList();
+        }
+
+        Map<IItem, Collection<Atom>> instances = new IdentityHashMap<>(to_check.size());
+        for (IItem i : to_check) {
+            instances.put(i, new ArrayList<>());
+        }
+        for (Atom atom : defined_predicates.stream().flatMap(p -> p.getInstances().stream()).map(a -> (Atom) a).filter(a -> a.state.evaluate().isSingleton() && a.state.evaluate().contains(AtomState.Active)).collect(Collectors.toList())) {
+            for (IItem i : ((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues()) {
+                if (instances.containsKey(i)) {
+                    instances.get(i).add(atom);
+                }
+            }
+        }
+
+        Collection<Flaw> fs = new ArrayList<>();
+        for (IItem i : to_check) {
+            Collection<Atom> atoms = instances.get(i);
+
+            // For each pulse the atoms starting at that pulse
+            Map<Double, Collection<Atom>> starting_atoms = new HashMap<>(atoms.size());
+            // For each pulse the atoms ending at that pulse
+            Map<Double, Collection<Atom>> ending_atoms = new HashMap<>(atoms.size());
+
+            // The pulses of the timeline
+            Set<Double> c_pulses = new HashSet<>(atoms.size() * 2);
+
+            for (Atom atom : atoms) {
+                double start = core.evaluate(((IArithItem) atom.get("start")).getArithVar());
+                double end = core.evaluate(((IArithItem) atom.get("end")).getArithVar());
+
+                if (!starting_atoms.containsKey(start)) {
+                    starting_atoms.put(start, new ArrayList<>());
+                }
+                starting_atoms.get(start).add(atom);
+
+                if (!ending_atoms.containsKey(end)) {
+                    ending_atoms.put(end, new ArrayList<>());
+                }
+                ending_atoms.get(end).add(atom);
+
+                c_pulses.add(start);
+                c_pulses.add(end);
+            }
+
+            // we sort current pulses..
+            Double[] c_pulses_array = c_pulses.toArray(new Double[c_pulses.size()]);
+            Arrays.sort(c_pulses_array);
+
+            List<Atom> overlapping_atoms = new ArrayList<>();
+            for (Double p : c_pulses_array) {
+                if (starting_atoms.containsKey(p)) {
+                    overlapping_atoms.addAll(starting_atoms.get(p));
+                }
+                if (ending_atoms.containsKey(p)) {
+                    overlapping_atoms.removeAll(ending_atoms.get(p));
+                }
+                if (overlapping_atoms.size() > 1) {
+                    fs.add(new StateVariableFlaw(solver, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()])));
+                }
+            }
+        }
+        to_check.clear();
+        return fs;
+    }
+
+    private class AtomListener implements DomainListener {
+
+        private final Atom atom;
+
+        AtomListener(Atom atom) {
+            this.atom = atom;
+        }
+
+        @Override
+        public Var<?>[] getVars() {
+            return atom.getItems().values().stream().filter(i -> (i instanceof IBoolItem || i instanceof IArithItem || i instanceof IEnumItem)).map(i -> {
+                if (i instanceof IBoolItem) {
+                    return ((IBoolItem) i).getBoolVar().to_var(core);
+                } else if (i instanceof IArithItem) {
+                    return ((IArithItem) i).getArithVar().to_var(core);
+                } else {
+                    return ((IEnumItem) i).getEnumVar().to_var(core);
+                }
+            }).toArray(Var<?>[]::new);
+        }
+
+        @Override
+        public void domainChange(Var<?> var) {
+            for (IItem i : ((IEnumItem) atom.get(SCOPE)).getEnumVar().evaluate().getAllowedValues()) {
+                to_check.add(i);
+            }
+        }
+    }
+
+    private static class StateVariableFlaw extends Flaw {
+
+        private final Atom[] atoms;
+
+        StateVariableFlaw(Solver solver, Atom... atoms) {
+            super(solver);
+            this.atoms = atoms;
+        }
+
+        @Override
+        protected void computeResolvers(Collection<Resolver> rs) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    }
+}
