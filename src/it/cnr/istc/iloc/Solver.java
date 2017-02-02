@@ -46,6 +46,7 @@ public class Solver extends Core {
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     private final LinkedList<Node> fringe = new LinkedList<>();
     private Node current_node;
+    private final Collection<SolverListener> listeners = new ArrayList<>();
 
     public Solver() {
         try {
@@ -66,6 +67,7 @@ public class Solver extends Core {
         IEnumItem c_enum = super.newEnumItem(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
         current_node.flaws.add(flaw);
+        listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
         return c_enum;
     }
 
@@ -76,6 +78,7 @@ public class Solver extends Core {
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, true);
         current_node.flaws.add(flaw);
+        listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
         return true;
     }
 
@@ -96,6 +99,7 @@ public class Solver extends Core {
         }
         AtomFlaw flaw = new AtomFlaw(this, atom, false);
         current_node.flaws.add(flaw);
+        listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
         return true;
     }
 
@@ -114,14 +118,16 @@ public class Solver extends Core {
         while (!fringe.isEmpty()) {
             Node node = fringe.poll();
             if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
-                current_node = node;
                 if (go_to(node)) {
+                    assert current_node == node;
                     Flaw flaw = null;
                     Collection<Flaw> inconsistencies = get_inconsistencies();
                     if (!inconsistencies.isEmpty()) {
                         flaw = inconsistencies.stream().findAny().get();
                     } else if (!node.flaws.isEmpty()) {
                         flaw = node.flaws.stream().findAny().get();
+                        node.flaws.remove(flaw);
+                        listeners.parallelStream().forEach(listener -> listener.currentNode(node));
                     }
                     if (flaw != null) {
                         if (flaw.expand()) {
@@ -130,15 +136,19 @@ public class Solver extends Core {
                                 // the problem is unsolvable..
                                 return false;
                             }
-                            for (Node n : resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList())) {
+                            List<Node> childs = resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList());
+                            Collections.reverse(childs);
+                            for (Node n : childs) {
                                 fringe.addFirst(n);
                             }
+                            listeners.parallelStream().forEach(listener -> listener.branch(node, childs));
                         }
                     } else {
                         // we have found a solution..
                         return true;
                     }
                 } else {
+                    listeners.parallelStream().forEach(listener -> listener.inconsistentNode(current_node));
                     if (!backjump()) {
                         // the problem is unsolvable..
                         return false;
@@ -155,8 +165,9 @@ public class Solver extends Core {
         if (current_node == node) {
             return true;
         } else if (node.parent == current_node) {
-            push();
+            push(node.resolver);
             current_node = node;
+            listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
             return node.resolver.apply();
         } else {
             // we look for a common ancestor c_node..
@@ -177,12 +188,14 @@ public class Solver extends Core {
             // we pop till the common ancestor..
             while (current_node.level > c_node.level) {
                 pop();
+                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
             }
 
             // we push till the target node..
             for (Node n : path) {
-                push();
+                push(n.resolver);
                 current_node = n;
+                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
                 if (!n.resolver.apply()) {
                     return false;
                 }
@@ -217,13 +230,37 @@ public class Solver extends Core {
         return c_flaws;
     }
 
+    private void push(Resolver r) {
+        super.push();
+        current_node = new Node(current_node, r);
+    }
+
+    @Override
+    public void push() {
+        super.push();
+        current_node = new Node(current_node, null);
+    }
+
     @Override
     public void pop() {
         super.pop();
         current_node = current_node.parent;
     }
 
-    private static class Node {
+    public Node getCurrentNode() {
+        return current_node;
+    }
+
+    public void addSolverListener(SolverListener listener) {
+        listeners.add(listener);
+        listener.init(this);
+    }
+
+    public void removeSolverListener(SolverListener listener) {
+        listeners.remove(listener);
+    }
+
+    public static class Node {
 
         private Solver solver;
         private final int level;
@@ -240,6 +277,11 @@ public class Solver extends Core {
                 protected boolean apply() {
                     return solver.assign(in_plan);
                 }
+
+                @Override
+                public String toSimpleString() {
+                    return "root";
+                }
             };
             this.flaws = new ArrayList<>();
         }
@@ -250,6 +292,22 @@ public class Solver extends Core {
             this.parent = parent;
             this.resolver = resolver;
             this.flaws = new ArrayList<>(parent.flaws);
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        public Node getParent() {
+            return parent;
+        }
+
+        public Resolver getResolver() {
+            return resolver;
+        }
+
+        public Collection<Flaw> getFlaws() {
+            return Collections.unmodifiableCollection(flaws);
         }
     }
 }

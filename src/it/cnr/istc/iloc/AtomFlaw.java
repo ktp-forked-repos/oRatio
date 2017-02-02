@@ -88,6 +88,11 @@ class AtomFlaw extends Flaw {
         protected boolean apply() {
             return solver.activateFact(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active)));
         }
+
+        @Override
+        public String toSimpleString() {
+            return "add fact " + atom.type.name;
+        }
     }
 
     private static class ExpandGoal extends Resolver {
@@ -102,6 +107,11 @@ class AtomFlaw extends Flaw {
         @Override
         protected boolean apply() {
             return solver.activateGoal(atom) && solver.add(solver.imply(in_plan, solver.eq(((AtomFlaw) effect).atom.state, AtomState.Active))) && ((Predicate) ((AtomFlaw) effect).atom.type).apply(((AtomFlaw) effect).atom);
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "add goal " + atom.type.name;
         }
     }
 
@@ -121,6 +131,11 @@ class AtomFlaw extends Flaw {
         @Override
         protected boolean apply() {
             return (((AtomFlaw) effect).fact ? solver.unifyFact(unifying, with) : solver.unifyGoal(unifying, with)) && solver.add(solver.imply(in_plan, eq_expr));
+        }
+
+        @Override
+        public String toSimpleString() {
+            return "unify " + unifying.type.name;
         }
     }
 }

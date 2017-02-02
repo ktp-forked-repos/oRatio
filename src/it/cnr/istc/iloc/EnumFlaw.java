@@ -57,5 +57,10 @@ class EnumFlaw extends Flaw {
         protected boolean apply() {
             return solver.add(solver.imply(in_plan, eq_v));
         }
+
+        @Override
+        public String toSimpleString() {
+            return "val";
+        }
     }
 }

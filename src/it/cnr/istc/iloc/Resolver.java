@@ -38,4 +38,6 @@ public abstract class Resolver {
     }
 
     protected abstract boolean apply();
+
+    public abstract String toSimpleString();
 }

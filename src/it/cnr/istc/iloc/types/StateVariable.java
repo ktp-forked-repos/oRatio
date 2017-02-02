@@ -16,7 +16,10 @@
  */
 package it.cnr.istc.iloc.types;
 
+import it.cnr.istc.ac.ArithExpr;
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.DomainListener;
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.ac.Var;
 import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.AtomState;
@@ -31,6 +34,7 @@ import it.cnr.istc.iloc.Flaw;
 import it.cnr.istc.iloc.Resolver;
 import it.cnr.istc.iloc.SmartType;
 import it.cnr.istc.iloc.Solver;
+import it.cnr.istc.utils.CombinationGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -203,7 +207,78 @@ public class StateVariable extends SmartType {
 
         @Override
         protected void computeResolvers(Collection<Resolver> rs) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            for (Atom[] as : new CombinationGenerator<>(2, atoms)) {
+                ArithExpr a0_start = ((IArithItem) as[0].get("start")).getArithVar();
+                ArithExpr a0_end = ((IArithItem) as[0].get("end")).getArithVar();
+
+                ArithExpr a1_start = ((IArithItem) as[1].get("start")).getArithVar();
+                ArithExpr a1_end = ((IArithItem) as[1].get("end")).getArithVar();
+
+                BoolExpr a0_before_a1 = solver.leq(a0_end, a1_start);
+                if (a0_before_a1.evaluate() != LBool.L_FALSE) {
+                    rs.add(new Resolver(solver, solver.newReal(0), this) {
+                        @Override
+                        protected boolean apply() {
+                            return solver.add(a0_before_a1);
+                        }
+
+                        @Override
+                        public String toSimpleString() {
+                            return as[0].type.name + " <= " + as[1].type.name;
+                        }
+                    });
+                }
+                BoolExpr a1_before_a0 = solver.leq(a1_end, a0_start);
+                if (a1_before_a0.evaluate() != LBool.L_FALSE) {
+                    rs.add(new Resolver(solver, solver.newReal(0), this) {
+                        @Override
+                        protected boolean apply() {
+                            return solver.add(a1_before_a0);
+                        }
+
+                        @Override
+                        public String toSimpleString() {
+                            return as[1].type.name + " <= " + as[0].type.name;
+                        }
+                    });
+                }
+
+                IEnumItem a0_scope = (IEnumItem) as[0].get(SCOPE);
+                Set<IItem> a0_scopes = a0_scope.getEnumVar().evaluate().getAllowedValues();
+                if (a0_scopes.size() > 1) {
+                    for (IItem a0_s : a0_scopes) {
+                        rs.add(new Resolver(solver, solver.newReal(0), this) {
+                            @Override
+                            protected boolean apply() {
+                                return solver.add(solver.not(a0_scope.allows(a0_s)));
+                            }
+
+                            @Override
+                            public String toSimpleString() {
+                                return "scope != " + a0_s;
+                            }
+                        });
+                    }
+                }
+
+                IEnumItem a1_scope = (IEnumItem) as[1].get(SCOPE);
+                Set<IItem> a1_scopes = a1_scope.getEnumVar().evaluate().getAllowedValues();
+                if (a1_scopes.size() > 1) {
+                    for (IItem a1_s : a1_scopes) {
+                        rs.add(new Resolver(solver, solver.newReal(0), this) {
+                            @Override
+                            protected boolean apply() {
+                                return solver.add(solver.not(a1_scope.allows(a1_s)));
+                            }
+
+                            @Override
+                            public String toSimpleString() {
+                                return "scope != " + a1_s;
+                            }
+                        });
+                    }
+                }
+            }
         }
     }
 }

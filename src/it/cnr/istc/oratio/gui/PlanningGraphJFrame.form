@@ -40,7 +40,7 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="it.cnr.istc.oratio.solver.gui.PlanningGraphDisplay" name="planningGraphDisplay">
+    <Component class="it.cnr.istc.oratio.gui.PlanningGraphDisplay" name="planningGraphDisplay">
     </Component>
   </SubComponents>
 </Form>

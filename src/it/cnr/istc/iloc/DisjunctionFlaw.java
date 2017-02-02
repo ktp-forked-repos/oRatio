@@ -59,5 +59,10 @@ class DisjunctionFlaw extends Flaw {
         protected boolean apply() {
             return conjunction.apply(env);
         }
+
+        @Override
+        public String toSimpleString() {
+            return "conj";
+        }
     }
 }
