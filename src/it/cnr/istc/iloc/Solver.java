@@ -145,6 +145,7 @@ public class Solver extends Core {
                         }
                     } else {
                         // we have found a solution..
+                        listeners.parallelStream().forEach(listener -> listener.solutionNode(current_node));
                         return true;
                     }
                 } else {

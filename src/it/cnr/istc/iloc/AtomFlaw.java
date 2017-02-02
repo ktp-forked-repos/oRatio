@@ -45,7 +45,7 @@ class AtomFlaw extends Flaw {
     protected void computeResolvers(Collection<Resolver> rs) {
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
-            if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
+            if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.isSingleton() && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
                 BoolExpr eq = solver.and(
                         solver.eq(atom.state, AtomState.Unified),
                         solver.eq(a.state, AtomState.Active),
