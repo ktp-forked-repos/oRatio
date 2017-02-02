@@ -343,6 +343,7 @@ public class Solver extends Core {
         BoolExpr tmp_expr = ctr_var;
         while (Stream.concat(flaws.stream(), inconsistencies.stream()).anyMatch(flaw -> getCost(flaw) == Double.POSITIVE_INFINITY) && !flaw_q.isEmpty()) {
             Flaw flaw = flaw_q.pollFirst();
+            assert !flaw.isExpanded();
             fireCurrentFlaw(flaw);
             if (!isDeferrable(flaw)) {
                 LOG.log(Level.FINE, "expanding {0}", flaw.toSimpleString());
@@ -390,7 +391,7 @@ public class Solver extends Core {
             Set<Flaw> visited = new HashSet<>();
             visited.add(flaw);
             LinkedList<Flaw> queue = new LinkedList<>();
-            queue.addAll(flaw.getCauses().stream().filter(cause -> cause.effect != null).map(cause -> cause.effect).collect(Collectors.toList()));
+            queue.addAll(flaw.getCauses().stream().map(cause -> cause.effect).collect(Collectors.toList()));
             while (!queue.isEmpty()) {
                 Flaw c_flaw = queue.pollFirst();
                 if (!visited.contains(c_flaw)) {
