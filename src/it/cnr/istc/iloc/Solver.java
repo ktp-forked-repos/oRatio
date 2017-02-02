@@ -16,7 +16,9 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.LBool;
 import it.cnr.istc.core.Core;
+import it.cnr.istc.core.Type;
 import it.cnr.istc.iloc.types.StateVariable;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -58,10 +61,40 @@ public class Solver extends Core {
     public boolean solve() {
         while (!fringe.isEmpty()) {
             Node node = fringe.poll();
-            if (!go_to(node)) {
-
+            if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
+                current_node = node;
+                if (go_to(node)) {
+                    Collection<Flaw> inconsistencies = get_inconsistencies();
+                    if (!inconsistencies.isEmpty()) {
+                        Flaw flaw = inconsistencies.stream().findAny().get();
+                        if (flaw.expand()) {
+                            Collection<Resolver> resolvers = flaw.getResolvers();
+                            for (Node n : resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList())) {
+                                fringe.addFirst(n);
+                            }
+                        }
+                    } else if (!node.flaws.isEmpty()) {
+                        Flaw flaw = node.flaws.stream().findAny().get();
+                        node.flaws.remove(flaw);
+                        if (flaw.expand()) {
+                            Collection<Resolver> resolvers = flaw.getResolvers();
+                            for (Node n : resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList())) {
+                                fringe.addFirst(n);
+                            }
+                        }
+                    } else {
+                        // we have found a solution..
+                        return true;
+                    }
+                } else {
+                    if (!backjump()) {
+                        // the problem is unsolvable..
+                        return false;
+                    }
+                }
             }
         }
+
         // the problem is unsolvable..
         return false;
     }
@@ -104,6 +137,32 @@ public class Solver extends Core {
             }
             return true;
         }
+    }
+
+    /**
+     * Collects all the inconsistencies of the {@link SmartType} instances.
+     *
+     * @return a collection of {@link Flaw}s representing all the
+     * inconsistencies.
+     */
+    private Collection<Flaw> get_inconsistencies() {
+        Set<Type> c_types = new HashSet<>();
+        LinkedList<Type> queue = new LinkedList<>();
+        queue.addAll(types.values());
+        while (!queue.isEmpty()) {
+            Type c_type = queue.pollFirst();
+            if (!c_types.contains(c_type)) {
+                c_types.add(c_type);
+                queue.addAll(c_type.getTypes());
+            }
+        }
+        Collection<Flaw> c_flaws = new ArrayList<>();
+        for (Type type : c_types) {
+            if (type instanceof SmartType) {
+                c_flaws.addAll(((SmartType) type).getInconsistencies());
+            }
+        }
+        return c_flaws;
     }
 
     @Override

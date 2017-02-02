@@ -18,6 +18,7 @@ package it.cnr.istc.iloc;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  *
@@ -30,6 +31,16 @@ public abstract class Flaw {
 
     public Flaw(Solver solver) {
         this.solver = solver;
+    }
+
+    public Collection<Resolver> getResolvers() {
+        return Collections.unmodifiableCollection(resolvers);
+    }
+
+    boolean expand() {
+        resolvers.clear();
+        computeResolvers(resolvers);
+        return !resolvers.isEmpty();
     }
 
     protected abstract void computeResolvers(Collection<Resolver> rs);
