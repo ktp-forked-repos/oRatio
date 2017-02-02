@@ -370,16 +370,16 @@ public class Solver extends Core {
             costs.put(flaw, cost);
             fireFlawUpdate(flaw);
 
-            Set<Flaw> visited = new HashSet<>();
-            visited.add(flaw);
+            Set<Flaw> updated = new HashSet<>();
+            updated.add(flaw);
             LinkedList<Flaw> queue = new LinkedList<>();
             queue.addAll(flaw.getSupports().stream().map(supp -> supp.effect).collect(Collectors.toList()));
             while (!queue.isEmpty()) {
                 Flaw c_flaw = queue.pollFirst();
-                if (!visited.contains(c_flaw)) {
-                    visited.add(c_flaw);
+                if (!updated.contains(c_flaw)) {
                     double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
                     if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) != c_cost) {
+                        updated.add(c_flaw);
                         if (!rootLevel() && !flaw_costs.containsKey(c_flaw) && costs.containsKey(c_flaw)) {
                             flaw_costs.put(c_flaw, costs.get(c_flaw));
                         }
