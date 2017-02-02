@@ -16,6 +16,7 @@
  */
 package it.cnr.istc.oratio.solver;
 
+import it.cnr.istc.oratio.Solver;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

@@ -16,8 +16,7 @@
  */
 package it.cnr.istc.oratio;
 
-import it.cnr.istc.oratio.solver.Solver;
-import it.cnr.istc.oratio.solver.gui.PlanningGraphJFrame;
+import it.cnr.istc.oratio.gui.PlanningGraphJFrame;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
