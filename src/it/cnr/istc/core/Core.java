@@ -45,7 +45,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public class Core extends Network implements IScope, IEnv {
+public abstract class Core extends Network implements IScope, IEnv {
 
     public static final String BOOL = "bool";
     public static final String REAL = "real";
@@ -99,6 +99,15 @@ public class Core extends Network implements IScope, IEnv {
         }
         return true;
     }
+
+    /**
+     * Solves the current problem returning {@code true} if a solution has been
+     * found and {@code false} if the problem is unsolvable.
+     *
+     * @return {@code true} if a solution has been found or {@code false} if the
+     * problem is unsolvable.
+     */
+    public abstract boolean solve();
 
     public IBoolItem newBoolItem() {
         return new BoolItem(this, types.get(BOOL), newBool());

@@ -178,6 +178,7 @@ public class Solver extends Core {
      * @return {@code true} if a solution has been found or {@code false} if the
      * problem is unsolvable.
      */
+    @Override
     public boolean solve() {
         LOG.info("solving the problem..");
         while (true) {
