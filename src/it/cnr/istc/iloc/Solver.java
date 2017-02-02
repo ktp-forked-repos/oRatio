@@ -16,8 +16,12 @@
  */
 package it.cnr.istc.iloc;
 
+import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.LBool;
+import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.Core;
+import it.cnr.istc.core.IEnumItem;
+import it.cnr.istc.core.IItem;
 import it.cnr.istc.core.Type;
 import it.cnr.istc.iloc.types.StateVariable;
 import java.io.File;
@@ -58,26 +62,54 @@ public class Solver extends Core {
     }
 
     @Override
+    public IEnumItem newEnumItem(Type type, IItem... values) {
+        IEnumItem c_enum = super.newEnumItem(type, values);
+        EnumFlaw flaw = new EnumFlaw(this, c_enum);
+        current_node.flaws.add(flaw);
+        return c_enum;
+    }
+
+    @Override
+    protected boolean newFact(Atom atom) {
+        if (!super.newFact(atom)) {
+            return false;
+        }
+        AtomFlaw flaw = new AtomFlaw(this, atom, true);
+        current_node.flaws.add(flaw);
+        return true;
+    }
+
+    @Override
+    protected boolean newGoal(Atom atom) {
+        if (!super.newGoal(atom)) {
+            return false;
+        }
+        AtomFlaw flaw = new AtomFlaw(this, atom, false);
+        current_node.flaws.add(flaw);
+        return true;
+    }
+
+    @Override
     public boolean solve() {
         while (!fringe.isEmpty()) {
             Node node = fringe.poll();
             if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
                 current_node = node;
                 if (go_to(node)) {
+                    Flaw flaw = null;
                     Collection<Flaw> inconsistencies = get_inconsistencies();
                     if (!inconsistencies.isEmpty()) {
-                        Flaw flaw = inconsistencies.stream().findAny().get();
-                        if (flaw.expand()) {
-                            Collection<Resolver> resolvers = flaw.getResolvers();
-                            for (Node n : resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList())) {
-                                fringe.addFirst(n);
-                            }
-                        }
+                        flaw = inconsistencies.stream().findAny().get();
                     } else if (!node.flaws.isEmpty()) {
-                        Flaw flaw = node.flaws.stream().findAny().get();
-                        node.flaws.remove(flaw);
+                        flaw = node.flaws.stream().findAny().get();
+                    }
+                    if (flaw != null) {
                         if (flaw.expand()) {
                             Collection<Resolver> resolvers = flaw.getResolvers();
+                            if (!add(flaw.isDisjunctive() ? exct_one(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)) : or(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)))) {
+                                // the problem is unsolvable..
+                                return false;
+                            }
                             for (Node n : resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList())) {
                                 fringe.addFirst(n);
                             }
@@ -105,7 +137,7 @@ public class Solver extends Core {
         } else if (node.parent == current_node) {
             push();
             current_node = node;
-            return assign(node.resolver.in_plan);
+            return node.resolver.apply();
         } else {
             // we look for a common ancestor c_node..
             Node c_node = current_node;
@@ -131,7 +163,7 @@ public class Solver extends Core {
             for (Node n : path) {
                 push();
                 current_node = n;
-                if (!assign(n.resolver.in_plan)) {
+                if (!n.resolver.apply()) {
                     return false;
                 }
             }
@@ -183,7 +215,12 @@ public class Solver extends Core {
             this.solver = solver;
             this.level = 0;
             this.parent = null;
-            this.resolver = null;
+            this.resolver = new Resolver(solver, solver.newReal(0), null) {
+                @Override
+                protected boolean apply() {
+                    return solver.assign(in_plan);
+                }
+            };
             this.flaws = new ArrayList<>();
         }
 

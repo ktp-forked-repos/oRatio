@@ -197,7 +197,7 @@ public class StateVariable extends SmartType {
         private final Atom[] atoms;
 
         StateVariableFlaw(Solver solver, Atom... atoms) {
-            super(solver);
+            super(solver, false);
             this.atoms = atoms;
         }
 

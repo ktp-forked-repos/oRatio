@@ -16,38 +16,24 @@
  */
 package it.cnr.istc.iloc;
 
-import java.util.ArrayList;
+import it.cnr.istc.core.IEnumItem;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  *
  * @author Riccardo De Benedictis <riccardo.debenedictis@istc.cnr.it>
  */
-public abstract class Flaw {
+class EnumFlaw extends Flaw {
 
-    protected final Solver solver;
-    private final boolean disjunctive;
-    private final Collection<Resolver> resolvers = new ArrayList<>();
+    private final IEnumItem enum_item;
 
-    public Flaw(Solver s, boolean disjunctive) {
-        this.solver = s;
-        this.disjunctive = disjunctive;
+    EnumFlaw(Solver s, IEnumItem ei) {
+        super(s, true);
+        this.enum_item = ei;
     }
 
-    public boolean isDisjunctive() {
-        return disjunctive;
+    @Override
+    protected void computeResolvers(Collection<Resolver> rs) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    public Collection<Resolver> getResolvers() {
-        return Collections.unmodifiableCollection(resolvers);
-    }
-
-    boolean expand() {
-        resolvers.clear();
-        computeResolvers(resolvers);
-        return !resolvers.isEmpty();
-    }
-
-    protected abstract void computeResolvers(Collection<Resolver> rs);
 }
