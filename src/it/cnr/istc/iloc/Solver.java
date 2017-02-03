@@ -61,6 +61,9 @@ public class Solver extends Core {
         types.put(StateVariable.NAME, new StateVariable(this));
 
         current_node = new Node(this);
+        boolean add = add(current_node.resolver.in_plan);
+        assert add;
+        ctr_var = current_node.resolver.in_plan;
         fringe.add(current_node);
     }
 
@@ -145,16 +148,38 @@ public class Solver extends Core {
                     if (flaw != null) {
                         if (flaw.expand()) {
                             Collection<Resolver> resolvers = flaw.getResolvers();
-                            if (!add(flaw.isDisjunctive() ? exct_one(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)) : or(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)))) {
-                                // the problem is unsolvable..
-                                return false;
+                            if (resolvers.size() == 1) {
+                                // we have a trivial node..
+                                Resolver resolver = resolvers.iterator().next();
+                                ctr_var = resolver.in_plan;
+                                if (!add(resolver.in_plan) || !resolver.apply()) {
+                                    // the problem is unsolvable..
+                                    return false;
+                                }
+                                // we re-add the node at the beginining to be repolled at next ycle..
+                                fringe.addFirst(node);
+                            } else {
+                                if (!add(flaw.isDisjunctive() ? exct_one(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)) : or(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)))) {
+                                    // the problem is unsolvable..
+                                    return false;
+                                }
+                                List<Node> childs = resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList());
+                                Collections.reverse(childs);
+                                for (Node n : childs) {
+                                    fringe.addFirst(n);
+                                }
+                                listeners.parallelStream().forEach(listener -> listener.branch(node, childs));
+                                for (Node n : childs) {
+                                    current_node = n;
+                                    ctr_var = n.resolver.in_plan;
+                                    if (!add(imply(n.resolver.in_plan, node.resolver.in_plan)) || !n.resolver.apply()) {
+                                        // the problem is unsolvable..
+                                        return false;
+                                    }
+                                }
+                                current_node = node;
+                                listeners.parallelStream().forEach(listener -> listener.currentNode(node));
                             }
-                            List<Node> childs = resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList());
-                            Collections.reverse(childs);
-                            for (Node n : childs) {
-                                fringe.addFirst(n);
-                            }
-                            listeners.parallelStream().forEach(listener -> listener.branch(node, childs));
                         }
                     } else {
                         // we have found a solution..
@@ -182,7 +207,7 @@ public class Solver extends Core {
             push(node.resolver);
             current_node = node;
             listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
-            return node.resolver.apply();
+            return assign(current_node.resolver.in_plan);
         } else {
             // we look for a common ancestor c_node..
             Node c_node = current_node;
@@ -210,7 +235,7 @@ public class Solver extends Core {
                 push(n.resolver);
                 current_node = n;
                 listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
-                if (!n.resolver.apply()) {
+                if (!assign(current_node.resolver.in_plan)) {
                     return false;
                 }
             }
