@@ -223,7 +223,7 @@ public class StateVariable extends SmartType {
                     rs.add(new Resolver(solver, solver.newReal(0), this) {
                         @Override
                         protected boolean apply() {
-                            return solver.add(a0_before_a1);
+                            return solver.add(solver.imply(in_plan, a0_before_a1));
                         }
 
                         @Override
@@ -237,7 +237,7 @@ public class StateVariable extends SmartType {
                     rs.add(new Resolver(solver, solver.newReal(0), this) {
                         @Override
                         protected boolean apply() {
-                            return solver.add(a1_before_a0);
+                            return solver.add(solver.imply(in_plan, a1_before_a0));
                         }
 
                         @Override
@@ -254,7 +254,7 @@ public class StateVariable extends SmartType {
                         rs.add(new Resolver(solver, solver.newReal(0), this) {
                             @Override
                             protected boolean apply() {
-                                return solver.add(solver.not(a0_scope.allows(a0_s)));
+                                return solver.add(solver.imply(in_plan, solver.not(a0_scope.allows(a0_s))));
                             }
 
                             @Override
@@ -272,7 +272,7 @@ public class StateVariable extends SmartType {
                         rs.add(new Resolver(solver, solver.newReal(0), this) {
                             @Override
                             protected boolean apply() {
-                                return solver.add(solver.not(a1_scope.allows(a1_s)));
+                                return solver.add(solver.imply(in_plan, solver.not(a1_scope.allows(a1_s))));
                             }
 
                             @Override

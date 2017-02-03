@@ -89,12 +89,12 @@ public class Solver extends Core {
 
     @Override
     protected boolean activateFact(Atom atom) {
-        return super.activateFact(atom); //To change body of generated methods, choose Tools | Templates.
+        return super.activateFact(atom);
     }
 
     @Override
     protected boolean unifyFact(Atom unifying, Atom with) {
-        return super.unifyFact(unifying, with); //To change body of generated methods, choose Tools | Templates.
+        return super.unifyFact(unifying, with);
     }
 
     @Override

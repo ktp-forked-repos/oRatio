@@ -56,6 +56,11 @@ class AtomFlaw extends Flaw {
                         // unification is actually possible!
                         UnifyGoal unify = new UnifyGoal(solver, this, atom, a, eq);
                         rs.add(unify);
+                        if (fact) {
+                            solver.unifyFact(atom, a);
+                        } else {
+                            solver.unifyGoal(atom, a);
+                        }
                     }
                 } catch (InconsistencyException ex) {
                     Logger.getLogger(AtomFlaw.class.getName()).log(Level.SEVERE, null, ex);
@@ -70,8 +75,10 @@ class AtomFlaw extends Flaw {
         }
         if (fact) {
             rs.add(new AddFact(solver, this, atom));
+            solver.activateFact(atom);
         } else {
             rs.add(new ExpandGoal(solver, this, atom));
+            solver.activateGoal(atom);
         }
     }
 
