@@ -91,7 +91,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         public String toSimpleString() {
-            return "add fact " + atom.type.name;
+            return "expand fact " + atom.type.name;
         }
     }
 
@@ -111,7 +111,7 @@ class AtomFlaw extends Flaw {
 
         @Override
         public String toSimpleString() {
-            return "add goal " + atom.type.name;
+            return "expand goal " + atom.type.name;
         }
     }
 

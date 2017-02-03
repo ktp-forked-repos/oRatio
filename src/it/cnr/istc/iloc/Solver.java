@@ -20,7 +20,9 @@ import it.cnr.istc.ac.BoolExpr;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.Core;
+import it.cnr.istc.core.Disjunction;
 import it.cnr.istc.core.IEnumItem;
+import it.cnr.istc.core.IEnv;
 import it.cnr.istc.core.IItem;
 import it.cnr.istc.core.Type;
 import it.cnr.istc.iloc.types.StateVariable;
@@ -111,6 +113,17 @@ public class Solver extends Core {
     @Override
     protected boolean unifyGoal(Atom unifying, Atom with) {
         return super.unifyGoal(unifying, with);
+    }
+
+    @Override
+    public boolean newDisjunction(IEnv env, Disjunction d) {
+        if (!super.newDisjunction(env, d)) {
+            return false;
+        }
+        DisjunctionFlaw flaw = new DisjunctionFlaw(this, env, d);
+        current_node.flaws.add(flaw);
+        listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
+        return true;
     }
 
     @Override

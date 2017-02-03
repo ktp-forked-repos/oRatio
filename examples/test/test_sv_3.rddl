@@ -67,7 +67,7 @@ goal g1 = new sv0.P1(start:origin);
 goal g2 = new sv0.P4();
 goal g3 = new sv0.P4();
 goal g4 = new sv0.P3();
-fact g5 = new sv0.P1();
+fact g5 = new sv0.P1(end:horizon);
 
 g1.end <= g2.start;
 g2.end <= g3.start;
@@ -79,7 +79,7 @@ goal g6 = new sv1.P5(start:origin);
 goal g7 = new sv1.P5();
 goal g8 = new sv1.P8();
 goal g9 = new sv1.P7();
-fact g10 = new sv1.P5();
+fact g10 = new sv1.P5(end:horizon);
 
 g6.end <= g7.start;
 g6.end <= g8.start;
