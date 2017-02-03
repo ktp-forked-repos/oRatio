@@ -573,7 +573,7 @@ public class Network {
         return null;
     }
 
-    public boolean assign(BoolExpr var) {
+    public boolean assign(BoolExpr var) throws InconsistencyException {
         assert var.evaluate() == LBool.L_UNKNOWN;
         assert prop_q.isEmpty();
         assert layers.getLast().decision_variable == null;
@@ -581,7 +581,14 @@ public class Network {
         boolean intersect = bv.intersect(LBool.L_TRUE, null);
         assert intersect;
         layers.getLast().decision_variable = bv;
-        return propagate();
+
+        if (propagate()) {
+            return true;
+        } else if (backjump()) {
+            return false;
+        } else {
+            throw new InconsistencyException("inconsistent constraint network..");
+        }
     }
 
     /**
