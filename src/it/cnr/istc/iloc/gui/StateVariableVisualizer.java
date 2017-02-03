@@ -140,7 +140,7 @@ class StateVariableVisualizer implements TimelineVisualizer {
                         sv_values.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
                         break;
                     default:
-                        sv_values.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
+                        conflicts.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
                         break;
                 }
             }
