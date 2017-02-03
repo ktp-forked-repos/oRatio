@@ -18,6 +18,7 @@ package it.cnr.istc.core;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.InconsistencyException;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.core.parser.oRatioLexer;
 import it.cnr.istc.core.parser.oRatioParser;
@@ -106,8 +107,10 @@ public abstract class Core extends Network implements IScope, IEnv {
      *
      * @return {@code true} if a solution has been found or {@code false} if the
      * problem is unsolvable.
+     * @throws it.cnr.istc.ac.InconsistencyException if the problem is
+     * unsolvable.
      */
-    public abstract boolean solve();
+    public abstract boolean solve() throws InconsistencyException;
 
     public IBoolItem newBoolItem() {
         return new BoolItem(this, types.get(BOOL), newBool());
@@ -269,75 +272,6 @@ public abstract class Core extends Network implements IScope, IEnv {
             return true;
         } else {
             return add(exprs);
-        }
-    }
-
-    /**
-     * Adds the given boolean expressions to the current constraint network. If
-     * the boolean expressions make the constraint network inconsistent, a
-     * no-good is generated and backtrack is performed until the no-good can be
-     * enforced.
-     *
-     * @param exprs an array of boolean expressions.
-     * @return {@code true} if the constraint network is consistent after the
-     * introduction of the boolean expressions.
-     */
-    @Override
-    public boolean add(BoolExpr... exprs) {
-        if (!super.add(exprs)) {
-            return backjump();
-        }
-
-        return true;
-    }
-
-    protected boolean backjump() {
-        BoolExpr no_good = getNoGood();
-
-        // we backtrack till we can enforce the no-good.. 
-        while (!super.add(no_good)) {
-            if (rootLevel()) {
-                // the problem is inconsistent..
-                return false;
-            }
-
-            // we restore flaws and resolvers state..
-            pop();
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if the given boolean expression can be made {@code true} in the
-     * current constraint network. This method saves the current state by
-     * calling {@link Network#push()}. If the expression can be made
-     * {@code true} the state of the network is restored, otherwise a no-good is
-     * added to the network and {@link #backjump()} is called.
-     *
-     * @param expr the boolean expression to be checked.
-     * @return {@code true} if the given boolean expression can be made true.
-     */
-    public boolean check(BoolExpr expr) throws InconsistencyException {
-        switch (expr.evaluate()) {
-            case L_TRUE:
-                return true;
-            case L_FALSE:
-                return false;
-            case L_UNKNOWN:
-                push();
-                if (assign(expr)) {
-                    pop();
-                    return true;
-                } else {
-                    // we need to back-jump..
-                    if (!backjump()) {
-                        throw new InconsistencyException("this problem is unsolvable..");
-                    }
-                    return false;
-                }
-            default:
-                throw new AssertionError(expr.evaluate().name());
         }
     }
 

@@ -17,10 +17,10 @@
 package it.cnr.istc.iloc;
 
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.InconsistencyException;
 import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.AtomState;
 import it.cnr.istc.core.IItem;
-import it.cnr.istc.core.InconsistencyException;
 import it.cnr.istc.core.Predicate;
 import java.util.Collection;
 import java.util.logging.Level;

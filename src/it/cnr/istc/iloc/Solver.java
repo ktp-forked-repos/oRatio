@@ -17,6 +17,7 @@
 package it.cnr.istc.iloc;
 
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.InconsistencyException;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.Core;
@@ -130,7 +131,7 @@ public class Solver extends Core {
     }
 
     @Override
-    public boolean solve() {
+    public boolean solve() throws InconsistencyException {
         while (!fringe.isEmpty()) {
             Node node = fringe.poll();
             if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
@@ -186,12 +187,6 @@ public class Solver extends Core {
                         listeners.parallelStream().forEach(listener -> listener.solutionNode(current_node));
                         return true;
                     }
-                } else {
-                    listeners.parallelStream().forEach(listener -> listener.inconsistentNode(current_node));
-                    if (!backjump()) {
-                        // the problem is unsolvable..
-                        return false;
-                    }
                 }
             }
         }
@@ -200,7 +195,7 @@ public class Solver extends Core {
         return false;
     }
 
-    private boolean go_to(Node node) {
+    private boolean go_to(Node node) throws InconsistencyException {
         if (current_node == node) {
             return true;
         } else if (node.parent == current_node) {
@@ -314,7 +309,7 @@ public class Solver extends Core {
             this.resolver = new Resolver(solver, solver.newReal(0), null) {
                 @Override
                 protected boolean apply() {
-                    return solver.assign(in_plan);
+                    return solver.add(in_plan);
                 }
 
                 @Override

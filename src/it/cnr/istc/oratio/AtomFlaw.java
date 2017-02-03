@@ -17,11 +17,11 @@
 package it.cnr.istc.oratio;
 
 import it.cnr.istc.ac.BoolExpr;
+import it.cnr.istc.ac.InconsistencyException;
 import it.cnr.istc.ac.LBool;
 import it.cnr.istc.core.Atom;
 import it.cnr.istc.core.AtomState;
 import it.cnr.istc.core.IItem;
-import it.cnr.istc.core.InconsistencyException;
 import it.cnr.istc.core.Predicate;
 import it.cnr.istc.core.gui.EnvTreeCellRenderer;
 import it.cnr.istc.core.gui.EnvTreeModel;
