@@ -97,7 +97,10 @@ public class ArithEq implements BoolExpr {
                             // we enforce the constraint..
                             return n.assertLower(left, right, eq, this) && n.assertUpper(left, right, eq, this);
                         case L_FALSE:
-                            throw new UnsupportedOperationException("strict inequalities are not supported yet..");
+                            if (!left.domain.neq(right)) {
+                                throw new UnsupportedOperationException("strict inequalities are not supported yet..");
+                            }
+                            return true;
                         case L_UNKNOWN:
                             return eq.intersect(evaluate(), this);
                         default:
