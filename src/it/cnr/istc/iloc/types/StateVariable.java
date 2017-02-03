@@ -210,7 +210,7 @@ public class StateVariable extends SmartType {
         }
 
         @Override
-        protected void computeResolvers(Collection<Resolver> rs) {
+        protected boolean computeResolvers(Collection<Resolver> rs) {
             for (Atom[] as : new CombinationGenerator<>(2, atoms)) {
                 ArithExpr a0_start = ((IArithItem) as[0].get("start")).getArithVar();
                 ArithExpr a0_end = ((IArithItem) as[0].get("end")).getArithVar();
@@ -283,6 +283,8 @@ public class StateVariable extends SmartType {
                     }
                 }
             }
+
+            return true;
         }
     }
 }

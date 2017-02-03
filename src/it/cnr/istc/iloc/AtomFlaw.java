@@ -23,8 +23,6 @@ import it.cnr.istc.core.AtomState;
 import it.cnr.istc.core.IItem;
 import it.cnr.istc.core.Predicate;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -42,7 +40,7 @@ class AtomFlaw extends Flaw {
     }
 
     @Override
-    protected void computeResolvers(Collection<Resolver> rs) {
+    protected boolean computeResolvers(Collection<Resolver> rs) {
         for (IItem inst : atom.type.getInstances()) {
             Atom a = (Atom) inst;
             if (atom != a && atom.state.evaluate().contains(AtomState.Unified) && a.state.isSingleton() && a.state.evaluate().contains(AtomState.Active) && atom.equates(a)) {
@@ -63,7 +61,7 @@ class AtomFlaw extends Flaw {
                         }
                     }
                 } catch (InconsistencyException ex) {
-                    Logger.getLogger(AtomFlaw.class.getName()).log(Level.SEVERE, null, ex);
+                    return false;
                 }
             }
         }
@@ -80,6 +78,8 @@ class AtomFlaw extends Flaw {
             rs.add(new ExpandGoal(solver, this, atom));
             solver.activateGoal(atom);
         }
+
+        return true;
     }
 
     private static class AddFact extends Resolver {

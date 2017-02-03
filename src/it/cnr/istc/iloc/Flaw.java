@@ -45,9 +45,8 @@ public abstract class Flaw {
 
     boolean expand() {
         resolvers.clear();
-        computeResolvers(resolvers);
-        return !resolvers.isEmpty();
+        return computeResolvers(resolvers) && !resolvers.isEmpty();
     }
 
-    protected abstract void computeResolvers(Collection<Resolver> rs);
+    protected abstract boolean computeResolvers(Collection<Resolver> rs);
 }
