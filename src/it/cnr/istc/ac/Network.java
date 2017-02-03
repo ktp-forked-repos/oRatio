@@ -552,6 +552,7 @@ public class Network {
     public boolean assign(BoolExpr var) {
         assert var.evaluate() == LBool.L_UNKNOWN;
         assert prop_q.isEmpty();
+        assert layers.getLast().decision_variable == null;
         BoolVar bv = (BoolVar) var.to_var(this);
         boolean intersect = bv.intersect(LBool.L_TRUE, null);
         assert intersect;
