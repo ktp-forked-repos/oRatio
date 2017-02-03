@@ -18,7 +18,6 @@ package it.cnr.istc.core;
 
 import it.cnr.istc.ac.ArithExpr;
 import it.cnr.istc.ac.BoolExpr;
-import it.cnr.istc.ac.InconsistencyException;
 import it.cnr.istc.ac.Network;
 import it.cnr.istc.core.parser.oRatioLexer;
 import it.cnr.istc.core.parser.oRatioParser;
@@ -107,10 +106,8 @@ public abstract class Core extends Network implements IScope, IEnv {
      *
      * @return {@code true} if a solution has been found or {@code false} if the
      * problem is unsolvable.
-     * @throws it.cnr.istc.ac.InconsistencyException if the problem is
-     * unsolvable.
      */
-    public abstract boolean solve() throws InconsistencyException;
+    public abstract boolean solve();
 
     public IBoolItem newBoolItem() {
         return new BoolItem(this, types.get(BOOL), newBool());

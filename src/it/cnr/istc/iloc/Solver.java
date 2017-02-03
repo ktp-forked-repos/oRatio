@@ -131,66 +131,70 @@ public class Solver extends Core {
     }
 
     @Override
-    public boolean solve() throws InconsistencyException {
-        while (!fringe.isEmpty()) {
-            Node node = fringe.poll();
-            if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
-                if (go_to(node)) {
-                    assert current_node == node;
-                    Flaw flaw = null;
-                    Collection<Flaw> inconsistencies = get_inconsistencies();
-                    if (!inconsistencies.isEmpty()) {
-                        flaw = inconsistencies.stream().findAny().get();
-                    } else if (!node.flaws.isEmpty()) {
-                        flaw = node.flaws.stream().findAny().get();
-                        node.flaws.remove(flaw);
-                        listeners.parallelStream().forEach(listener -> listener.currentNode(node));
-                    }
-                    if (flaw != null) {
-                        if (flaw.expand()) {
-                            Collection<Resolver> resolvers = flaw.getResolvers();
-                            if (resolvers.size() == 1) {
-                                // we have a trivial node..
-                                Resolver resolver = resolvers.iterator().next();
-                                ctr_var = resolver.in_plan;
-                                if (!add(resolver.in_plan) || !resolver.apply()) {
-                                    // the problem is unsolvable..
-                                    return false;
-                                }
-                                // we re-add the node at the beginining to be repolled at next ycle..
-                                fringe.addFirst(node);
-                            } else {
-                                if (!add(flaw.isDisjunctive() ? exct_one(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)) : or(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)))) {
-                                    // the problem is unsolvable..
-                                    return false;
-                                }
-                                List<Node> childs = resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList());
-                                Collections.reverse(childs);
-                                for (Node n : childs) {
-                                    fringe.addFirst(n);
-                                }
-                                listeners.parallelStream().forEach(listener -> listener.branch(node, childs));
-                                for (Node n : childs) {
-                                    current_node = n;
-                                    ctr_var = n.resolver.in_plan;
-                                    if (!add(imply(n.resolver.in_plan, node.resolver.in_plan)) || !n.resolver.apply()) {
+    public boolean solve() {
+        try {
+            while (!fringe.isEmpty()) {
+                Node node = fringe.poll();
+                if (node.resolver.in_plan.evaluate() != LBool.L_FALSE) {
+                    if (go_to(node)) {
+                        assert current_node == node;
+                        Flaw flaw = null;
+                        Collection<Flaw> inconsistencies = get_inconsistencies();
+                        if (!inconsistencies.isEmpty()) {
+                            flaw = inconsistencies.stream().findAny().get();
+                        } else if (!node.flaws.isEmpty()) {
+                            flaw = node.flaws.stream().findAny().get();
+                            node.flaws.remove(flaw);
+                            listeners.parallelStream().forEach(listener -> listener.currentNode(node));
+                        }
+                        if (flaw != null) {
+                            if (flaw.expand()) {
+                                Collection<Resolver> resolvers = flaw.getResolvers();
+                                if (resolvers.size() == 1) {
+                                    // we have a trivial node..
+                                    Resolver resolver = resolvers.iterator().next();
+                                    ctr_var = resolver.in_plan;
+                                    if (!add(resolver.in_plan) || !resolver.apply()) {
                                         // the problem is unsolvable..
                                         return false;
                                     }
+                                    // we re-add the node at the beginining to be repolled at next ycle..
+                                    fringe.addFirst(node);
+                                } else {
+                                    if (!add(flaw.isDisjunctive() ? exct_one(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)) : or(resolvers.stream().map(resolver -> resolver.in_plan).toArray(BoolExpr[]::new)))) {
+                                        // the problem is unsolvable..
+                                        return false;
+                                    }
+                                    List<Node> childs = resolvers.stream().map(resolver -> new Node(node, resolver)).collect(Collectors.toList());
+                                    Collections.reverse(childs);
+                                    for (Node n : childs) {
+                                        fringe.addFirst(n);
+                                    }
+                                    listeners.parallelStream().forEach(listener -> listener.branch(node, childs));
+                                    for (Node n : childs) {
+                                        current_node = n;
+                                        ctr_var = n.resolver.in_plan;
+                                        if (!add(imply(n.resolver.in_plan, node.resolver.in_plan)) || !n.resolver.apply()) {
+                                            // the problem is unsolvable..
+                                            return false;
+                                        }
+                                    }
+                                    current_node = node;
+                                    listeners.parallelStream().forEach(listener -> listener.currentNode(node));
                                 }
-                                current_node = node;
-                                listeners.parallelStream().forEach(listener -> listener.currentNode(node));
                             }
+                        } else {
+                            // we have found a solution..
+                            listeners.parallelStream().forEach(listener -> listener.solutionNode(current_node));
+                            return true;
                         }
-                    } else {
-                        // we have found a solution..
-                        listeners.parallelStream().forEach(listener -> listener.solutionNode(current_node));
-                        return true;
                     }
                 }
             }
+        } catch (InconsistencyException e) {
+            // the problem is unsolvable..
+            return false;
         }
-
         // the problem is unsolvable..
         return false;
     }

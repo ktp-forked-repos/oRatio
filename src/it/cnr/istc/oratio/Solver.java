@@ -163,7 +163,7 @@ public class Solver extends Core {
     }
 
     @Override
-    public boolean solve() throws InconsistencyException {
+    public boolean solve() {
         LOG.info("solving the problem..");
         while (true) {
             // we update the planning graph..
@@ -225,10 +225,15 @@ public class Solver extends Core {
                 // and remove the flaw..
                 inconsistencies.remove(most_expensive_flaw);
 
-                // we try to enforce the resolver..
-                if (assign(least_expensive_resolver.in_plan)) {
-                    // we add sub-goals..
-                    inconsistencies.addAll(least_expensive_resolver.getPreconditions());
+                try {
+                    // we try to enforce the resolver..
+                    if (assign(least_expensive_resolver.in_plan)) {
+                        // we add sub-goals..
+                        inconsistencies.addAll(least_expensive_resolver.getPreconditions());
+                    }
+                } catch (InconsistencyException ex) {
+                    // the problem is unsolvable..
+                    return false;
                 }
                 continue;
             }
@@ -276,10 +281,15 @@ public class Solver extends Core {
                 // and remove the flaw..
                 flaws.remove(most_expensive_flaw);
 
-                // we try to enforce the resolver..
-                if (assign(least_expensive_resolver.in_plan)) {
-                    // we add sub-goals..
-                    flaws.addAll(least_expensive_resolver.getPreconditions());
+                try {
+                    // we try to enforce the resolver..
+                    if (assign(least_expensive_resolver.in_plan)) {
+                        // we add sub-goals..
+                        flaws.addAll(least_expensive_resolver.getPreconditions());
+                    }
+                } catch (InconsistencyException ex) {
+                    // the problem is unsolvable..
+                    return false;
                 }
             }
         }
