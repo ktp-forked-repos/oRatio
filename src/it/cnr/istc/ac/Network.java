@@ -53,7 +53,8 @@ public class Network {
     private final Map<Var<?>, Propagator> causes = new IdentityHashMap<>();
     private final LinkedList<Layer> layers = new LinkedList<>();
     final Map<ArithVar, Lin> tableau = new IdentityHashMap<>();
-    private final Map<String, BoolVar> assertions = new HashMap<>();
+    private final Collection<BoolExpr> bool_assertions = new ArrayList<>();
+    private final Map<String, BoolVar> arith_assertions = new HashMap<>();
     private final Set<BoolVar> unsat_core = new HashSet<>();
 
     //<editor-fold defaultstate="collapsed" desc="variable creation..">
@@ -459,15 +460,33 @@ public class Network {
     }
     //</editor-fold>
 
+    /**
+     * Adds the given boolean expressions to the current constraint network
+     * (i.e., forces these expressions to be {@code true}). Once made
+     * {@code true}, these expressions will return free. In other words, the
+     * methods {@link #push()} and {@link #pop()} will not remove these
+     * assertions. If backtracking is required, a combination of
+     * {@link #imply(it.cnr.istc.ac.BoolExpr, it.cnr.istc.ac.BoolExpr)} and
+     * {@link #assign(it.cnr.istc.ac.BoolExpr)} methods would do the job. If the
+     * boolean expressions make the constraint network inconsistent, a no-good
+     * is generated and backtrack is performed until the no-good can be
+     * enforced.
+     *
+     * @param exprs an array of boolean expressions.
+     * @return {@code true} if the constraint network is consistent after the
+     * introduction of the boolean expressions.
+     */
     public boolean add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
+        assert Stream.of(exprs).noneMatch(expr -> expr.evaluate() == LBool.L_FALSE);
+        if (!rootLevel()) {
+            bool_assertions.addAll(Arrays.asList(exprs));
+        }
         for (BoolExpr expr : exprs) {
             switch (expr.evaluate()) {
                 case L_TRUE:
                     break;
-                case L_FALSE:
-                    return false;
                 case L_UNKNOWN:
                     if (!((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null)) {
                         return false;
@@ -477,7 +496,12 @@ public class Network {
                     throw new AssertionError(expr.evaluate().name());
             }
         }
-        return propagate();
+
+        if (propagate()) {
+            return true;
+        } else {
+            return backjump();
+        }
     }
 
     private boolean propagate() {
@@ -564,14 +588,14 @@ public class Network {
         return layers.isEmpty();
     }
 
-    public void push() {
+    protected void push() {
         assert prop_q.isEmpty();
         Layer layer = new Layer(domains);
         domains = new IdentityHashMap<>();
         layers.add(layer);
     }
 
-    public void pop() {
+    protected void pop() {
         assert prop_q.isEmpty();
         for (Var<?> var : domains.keySet()) {
             var.restore();
@@ -581,6 +605,30 @@ public class Network {
         Layer layer = layers.getLast();
         domains = layer.domains;
         layers.pollLast();
+    }
+
+    private boolean backjump() {
+        BoolExpr no_good = extract_no_good();
+
+        // we backtrack till we can enforce the no-good.. 
+        while (no_good.evaluate() == LBool.L_FALSE) {
+            if (rootLevel()) {
+                // the problem is inconsistent..
+                return false;
+            }
+
+            // we restore flaws and resolvers state..
+            pop();
+        }
+
+        if (!bool_assertions.isEmpty() && !add(bool_assertions.toArray(new BoolExpr[bool_assertions.size()]))) {
+            return false;
+        }
+        if (rootLevel()) {
+            bool_assertions.clear();
+        }
+
+        return true;
     }
 
     public void store(Propagator prop) {
@@ -698,12 +746,12 @@ public class Network {
                     // we generate an explanation for the conflict..
                     for (Map.Entry<ArithVar, Double> entry : tableau.get(x_i).vars.entrySet()) {
                         if (entry.getValue() > 0) {
-                            unsat_core.add(assertions.get(entry.getKey().name + " <= " + entry.getKey().domain.ub));
+                            unsat_core.add(arith_assertions.get(entry.getKey().name + " <= " + entry.getKey().domain.ub));
                         } else if (entry.getValue() < 0) {
-                            unsat_core.add(assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.lb));
+                            unsat_core.add(arith_assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.lb));
                         }
                     }
-                    unsat_core.add(assertions.get(x_i.name + " >= " + x_i.domain.lb));
+                    unsat_core.add(arith_assertions.get(x_i.name + " >= " + x_i.domain.lb));
                     return false;
                 }
             }
@@ -715,12 +763,12 @@ public class Network {
                     // we generate an explanation for the conflict..
                     for (Map.Entry<ArithVar, Double> entry : tableau.get(x_i).vars.entrySet()) {
                         if (entry.getValue() > 0) {
-                            unsat_core.add(assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.lb));
+                            unsat_core.add(arith_assertions.get(entry.getKey().name + " >= " + entry.getKey().domain.lb));
                         } else if (entry.getValue() < 0) {
-                            unsat_core.add(assertions.get(entry.getKey().name + " <= " + entry.getKey().domain.ub));
+                            unsat_core.add(arith_assertions.get(entry.getKey().name + " <= " + entry.getKey().domain.ub));
                         }
                     }
-                    unsat_core.add(assertions.get(x_i.name + " <= " + x_i.domain.ub));
+                    unsat_core.add(arith_assertions.get(x_i.name + " <= " + x_i.domain.ub));
                     return false;
                 }
             }
@@ -733,7 +781,7 @@ public class Network {
         } else if (val < x_i.domain.lb) {
             return false;
         } else {
-            assertions.put(x_i.name + " <= " + val, geq_var);
+            arith_assertions.put(x_i.name + " <= " + val, geq_var);
             boolean intersect = x_i.intersect(new Interval(Double.NEGATIVE_INFINITY, val), prop);
             assert intersect;
             if (x_i.val > val) {
@@ -752,7 +800,7 @@ public class Network {
         } else if (val > x_i.domain.ub) {
             return false;
         } else {
-            assertions.put(x_i.name + " >= " + val, leq_var);
+            arith_assertions.put(x_i.name + " >= " + val, leq_var);
             boolean intersect = x_i.intersect(new Interval(val, Double.POSITIVE_INFINITY), prop);
             assert intersect;
             if (x_i.val < val) {
@@ -775,7 +823,7 @@ public class Network {
      * @return a {@link BoolExpr} representing the no-good extracted from the
      * unsat core.
      */
-    public BoolExpr getNoGood() {
+    private BoolExpr extract_no_good() {
         // we build a no-good..
         Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
         for (BoolVar v : unsat_core) {
