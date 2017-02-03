@@ -584,6 +584,41 @@ public class Network {
         return propagate();
     }
 
+    /**
+     * Checks if the given boolean expression can be made {@code true} in the
+     * current constraint network. This method saves the current state by
+     * calling {@link #push()}. If the expression can be made {@code true} the
+     * state of the network is restored, otherwise a no-good is added to the
+     * network and {@link #backjump()} is called.
+     *
+     * @param expr the boolean expression to be checked.
+     * @return {@code true} if the given boolean expression can be made true.
+     * @throws it.cnr.istc.ac.InconsistencyException if the constraint network
+     * cannot be made consistent anymore.
+     */
+    public boolean check(BoolExpr expr) throws InconsistencyException {
+        switch (expr.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                push();
+                if (assign(expr)) {
+                    pop();
+                    return true;
+                } else {
+                    // we need to back-jump..
+                    if (!backjump()) {
+                        throw new InconsistencyException("inconsistent constraint network..");
+                    }
+                    return false;
+                }
+            default:
+                throw new AssertionError(expr.evaluate().name());
+        }
+    }
+
     public boolean rootLevel() {
         return layers.isEmpty();
     }
