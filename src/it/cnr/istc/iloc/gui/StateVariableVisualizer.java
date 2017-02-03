@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,23 +125,22 @@ class StateVariableVisualizer implements TimelineVisualizer {
             ValueXYIntervalSeries conflicts = new ValueXYIntervalSeries("Conflicts");
 
             List<Atom> overlapping_atoms = new ArrayList<>();
-            double start = 0;
-            for (Double p : c_pulses_array) {
-                if (starting_atoms.containsKey(p)) {
-                    overlapping_atoms.addAll(starting_atoms.get(p));
+            for (int i = 0; i < c_pulses_array.length - 1; i++) {
+                if (starting_atoms.containsKey(c_pulses_array[i])) {
+                    overlapping_atoms.addAll(starting_atoms.get(c_pulses_array[i]));
                 }
-                if (ending_atoms.containsKey(p)) {
-                    overlapping_atoms.removeAll(ending_atoms.get(p));
+                if (ending_atoms.containsKey(c_pulses_array[i])) {
+                    overlapping_atoms.removeAll(ending_atoms.get(c_pulses_array[i]));
                 }
                 switch (overlapping_atoms.size()) {
                     case 0:
-                        undefined.add(start, start, p, 0, 0, 1, new Atom[0]);
+                        undefined.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, new Atom[0]);
                         break;
                     case 1:
-                        sv_values.add(start, start, p, 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
+                        sv_values.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
                         break;
                     default:
-                        sv_values.add(start, start, p, 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
+                        sv_values.add(c_pulses_array[i], c_pulses_array[i], c_pulses_array[i + 1], 0, 0, 1, overlapping_atoms.toArray(new Atom[overlapping_atoms.size()]));
                         break;
                 }
             }
@@ -193,20 +193,26 @@ class StateVariableVisualizer implements TimelineVisualizer {
     private static String toString(Atom atom) {
         StringBuilder sb = new StringBuilder();
         sb.append(atom.type.name).append("(");
-        for (Field field : atom.type.getFields()) {
-            if (!field.synthetic && !field.name.equals(SCOPE)) {
-                IItem item = atom.get(field.name);
-                sb.append(", ").append(field.name);
-                switch (field.type.name) {
-                    case BOOL:
-                        sb.append(" = ").append(((IBoolItem) item).getBoolVar().evaluate());
-                        break;
-                    case REAL:
-                        sb.append(" = ").append(atom.core.evaluate(((IArithItem) item).getArithVar()));
-                        break;
-                    case STRING:
-                        sb.append(" = ").append(((IStringItem) item).getValue());
-                        break;
+        LinkedList<Type> queue = new LinkedList<>();
+        queue.add(atom.type);
+        while (!queue.isEmpty()) {
+            Type c_type = queue.pollFirst();
+            queue.addAll(c_type.getSuperclasses());
+            for (Field field : c_type.getFields()) {
+                if (!field.synthetic && !field.name.equals(SCOPE)) {
+                    IItem item = atom.get(field.name);
+                    sb.append(", ").append(field.name);
+                    switch (field.type.name) {
+                        case BOOL:
+                            sb.append(" = ").append(((IBoolItem) item).getBoolVar().evaluate());
+                            break;
+                        case REAL:
+                            sb.append(" = ").append(atom.core.evaluate(((IArithItem) item).getArithVar()));
+                            break;
+                        case STRING:
+                            sb.append(" = ").append(((IStringItem) item).getValue());
+                            break;
+                    }
                 }
             }
         }

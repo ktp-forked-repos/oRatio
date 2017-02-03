@@ -141,6 +141,7 @@ public final class TimelinesChart extends ChartPanel implements SolverListener {
                 }
             }
         }
+        setChart(new JFreeChart("", new Font("SansSerif", Font.BOLD, 14), combined_plot, false));
         setBorder(BorderFactory.createEtchedBorder());
     }
 
