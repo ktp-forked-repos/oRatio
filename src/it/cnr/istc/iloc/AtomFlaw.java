@@ -66,11 +66,6 @@ class AtomFlaw extends Flaw {
             }
         }
 
-        if (rs.isEmpty()) {
-            // we remove unification from atom state..
-            boolean not_unify = solver.add(solver.not(solver.eq(atom.state, AtomState.Unified)));
-            assert not_unify;
-        }
         if (fact) {
             rs.add(new AddFact(solver, this, atom));
             solver.activateFact(atom);

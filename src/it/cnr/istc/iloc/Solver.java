@@ -204,6 +204,7 @@ public class Solver extends Core {
         } else if (node.parent == current_node) {
             push(node.resolver);
             current_node = node;
+            ctr_var = node.resolver.in_plan;
             listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
             return assign(current_node.resolver.in_plan);
         } else {
@@ -232,6 +233,7 @@ public class Solver extends Core {
             for (Node n : path) {
                 push(n.resolver);
                 current_node = n;
+                ctr_var = n.resolver.in_plan;
                 listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
                 if (!assign(current_node.resolver.in_plan)) {
                     return false;
