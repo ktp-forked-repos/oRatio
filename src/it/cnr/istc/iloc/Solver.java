@@ -205,8 +205,13 @@ public class Solver extends Core {
             push(node.resolver);
             current_node = node;
             ctr_var = node.resolver.in_plan;
-            listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
-            return assign(current_node.resolver.in_plan);
+            if (assign(current_node.resolver.in_plan)) {
+                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
+                return true;
+            } else {
+                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
+                return false;
+            }
         } else {
             // we look for a common ancestor c_node..
             Node c_node = current_node;
@@ -234,10 +239,10 @@ public class Solver extends Core {
                 push(n.resolver);
                 current_node = n;
                 ctr_var = n.resolver.in_plan;
-                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
                 if (!assign(current_node.resolver.in_plan)) {
                     return false;
                 }
+                listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
             }
             return true;
         }
