@@ -153,8 +153,7 @@ public class Solver extends Core {
                                 if (resolvers.size() == 1) {
                                     // we have a trivial node..
                                     Resolver resolver = resolvers.iterator().next();
-                                    ctr_var = resolver.in_plan;
-                                    if (!add(resolver.in_plan) || !resolver.apply()) {
+                                    if (!add(imply(ctr_var, resolver.in_plan)) || !resolver.apply()) {
                                         // the problem is unsolvable..
                                         return false;
                                     }
@@ -174,7 +173,7 @@ public class Solver extends Core {
                                     for (Node n : childs) {
                                         current_node = n;
                                         ctr_var = n.resolver.in_plan;
-                                        if (!add(imply(n.resolver.in_plan, node.resolver.in_plan)) || !n.resolver.apply()) {
+                                        if (!add(imply(ctr_var, node.resolver.in_plan)) || !n.resolver.apply()) {
                                             // the problem is unsolvable..
                                             return false;
                                         }
@@ -283,6 +282,7 @@ public class Solver extends Core {
     public void pop() {
         super.pop();
         current_node = current_node.parent;
+        listeners.parallelStream().forEach(listener -> listener.currentNode(current_node));
     }
 
     public Node getCurrentNode() {
