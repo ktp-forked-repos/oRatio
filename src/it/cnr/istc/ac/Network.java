@@ -640,13 +640,9 @@ public class Network {
         for (Var<?> var : domains.keySet()) {
             var.restore();
         }
-        domains.keySet().stream().sorted((Var<?> v0, Var<?> v1) -> v0.name.compareTo(v1.name)).forEach(v -> v.reevaluate());
-        for (BoolExpr expr : assertions) {
-            boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
-            assert intersect;
-        }
-        boolean propagate = propagate();
-        assert propagate;
+
+        Map<Var<?>, Domain> c_domains = new IdentityHashMap<>(domains);
+        Collection<BoolExpr> c_assertions = new ArrayList<>(assertions);
 
         Layer layer = layers.getLast();
         domains = layer.domains;
@@ -655,6 +651,14 @@ public class Network {
         }
         assertions = layer.assertions;
         layers.pollLast();
+
+        c_domains.keySet().stream().sorted((Var<?> v0, Var<?> v1) -> v0.name.compareTo(v1.name)).forEach(v -> v.reevaluate());
+        for (BoolExpr expr : c_assertions) {
+            boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
+            assert intersect;
+        }
+        boolean propagate = propagate();
+        assert propagate;
     }
 
     private boolean backjump() {
