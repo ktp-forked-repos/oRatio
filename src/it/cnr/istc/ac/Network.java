@@ -477,9 +477,17 @@ public class Network {
      * introduction of the boolean expressions.
      */
     public boolean add(BoolExpr... exprs) {
+        if (simple_add(exprs)) {
+            return true;
+        } else {
+            return backjump();
+        }
+    }
+
+    private boolean simple_add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
-        assert Stream.of(exprs).noneMatch(expr -> expr.evaluate() == LBool.L_FALSE);
+        assert Stream.of(exprs).noneMatch(expr -> expr.root() == LBool.L_FALSE);
         if (!rootLevel()) {
             assertions.addAll(Arrays.asList(exprs));
         }
@@ -492,16 +500,13 @@ public class Network {
                         return false;
                     }
                     break;
+                case L_FALSE:
+                    return false;
                 default:
                     throw new AssertionError(expr.evaluate().name());
             }
         }
-
-        if (propagate()) {
-            return true;
-        } else {
-            return backjump();
-        }
+        return propagate();
     }
 
     private boolean propagate() {
@@ -515,33 +520,35 @@ public class Network {
                     if (!prop.propagate(var)) {
                         prop_q.clear();
                         causes.clear();
-                        if (unsat_core.isEmpty()) {
-                            Set<Var<?>> viewed = new HashSet<>();
-                            LinkedList<Var<?>> queue = new LinkedList<>();
-                            queue.addAll(Arrays.asList(prop.getArgs()));
-                            while (!queue.isEmpty()) {
-                                Var<?> p = queue.pollFirst();
-                                if (!viewed.contains(p)) {
-                                    viewed.add(p);
-                                    BoolVar dv = getDecisionVariable(p);
+                        if (!rootLevel()) {
+                            if (unsat_core.isEmpty()) {
+                                Set<Var<?>> viewed = new HashSet<>();
+                                LinkedList<Var<?>> queue = new LinkedList<>();
+                                queue.addAll(Arrays.asList(prop.getArgs()));
+                                while (!queue.isEmpty()) {
+                                    Var<?> p = queue.pollFirst();
+                                    if (!viewed.contains(p)) {
+                                        viewed.add(p);
+                                        BoolVar dv = getDecisionVariable(p);
+                                        if (dv != null) {
+                                            unsat_core.add(dv);
+                                        }
+                                        if (layers.getLast().reason.containsKey(p)) {
+                                            queue.addAll(layers.getLast().reason.get(p).stream().flatMap(c_prop -> Stream.of(c_prop.getArgs())).collect(Collectors.toList()));
+                                        }
+                                    }
+                                }
+                            } else {
+                                Set<BoolVar> c_unsat_core = new HashSet<>();
+                                for (BoolVar q : unsat_core) {
+                                    BoolVar dv = getDecisionVariable(q);
                                     if (dv != null) {
-                                        unsat_core.add(dv);
-                                    }
-                                    if (layers.getLast().reason.containsKey(p)) {
-                                        queue.addAll(layers.getLast().reason.get(p).stream().flatMap(c_prop -> Stream.of(c_prop.getArgs())).collect(Collectors.toList()));
+                                        c_unsat_core.add(dv);
                                     }
                                 }
+                                unsat_core.clear();
+                                unsat_core.addAll(c_unsat_core);
                             }
-                        } else {
-                            Set<BoolVar> c_unsat_core = new HashSet<>();
-                            for (BoolVar q : unsat_core) {
-                                BoolVar dv = getDecisionVariable(q);
-                                if (dv != null) {
-                                    c_unsat_core.add(dv);
-                                }
-                            }
-                            unsat_core.clear();
-                            unsat_core.addAll(c_unsat_core);
                         }
                         return false;
                     }
@@ -654,29 +661,24 @@ public class Network {
 
         c_domains.keySet().stream().sorted((Var<?> v0, Var<?> v1) -> v0.name.compareTo(v1.name)).forEach(v -> v.reevaluate());
         for (BoolExpr expr : c_assertions) {
-            boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
-            assert intersect;
+            ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
         }
-        boolean propagate = propagate();
-        assert propagate;
+        propagate();
     }
 
     private boolean backjump() {
         BoolExpr no_good = extract_no_good();
 
         // we backtrack till we can enforce the no-good.. 
-        while (no_good.evaluate() == LBool.L_FALSE) {
-            // the constraint network is inconsistent..
+        while (!simple_add(no_good)) {
             if (rootLevel()) {
+                // the problem is unsolvable..
                 return false;
             }
 
             // we restore the variables' domains..
             pop();
         }
-
-        boolean add = add(no_good);
-        assert add;
 
         return true;
     }
