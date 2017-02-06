@@ -581,20 +581,28 @@ public class Network {
     }
 
     public boolean assign(BoolExpr var) throws InconsistencyException {
-        assert var.evaluate() == LBool.L_UNKNOWN;
         assert prop_q.isEmpty();
         assert layers.getLast().decision_variable == null;
         BoolVar bv = (BoolVar) var.to_var(this);
-        boolean intersect = bv.intersect(LBool.L_TRUE, null);
-        assert intersect;
         layers.getLast().decision_variable = bv;
+        switch (bv.evaluate()) {
+            case L_TRUE:
+                return true;
+            case L_FALSE:
+                return false;
+            case L_UNKNOWN:
+                boolean intersect = bv.intersect(LBool.L_TRUE, null);
+                assert intersect;
 
-        if (propagate()) {
-            return true;
-        } else if (backjump()) {
-            return false;
-        } else {
-            throw new InconsistencyException("inconsistent constraint network..");
+                if (propagate()) {
+                    return true;
+                } else if (backjump()) {
+                    return false;
+                } else {
+                    throw new InconsistencyException("inconsistent constraint network..");
+                }
+            default:
+                throw new AssertionError(bv.evaluate().name());
         }
     }
 
