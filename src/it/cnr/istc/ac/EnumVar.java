@@ -69,7 +69,9 @@ public class EnumVar<T> extends Var<EnumDomain<T>> {
     }
 
     boolean intersect(T val, Propagator propagator) {
-        if (domain.contains(val) && domain.isSingleton()) {
+        if (!domain.contains(val)) {
+            return false;
+        } else if (domain.isSingleton()) {
             return true;
         } else {
             EnumDomain<T> old_domain = new EnumDomain<>(new HashSet<>(domain.allowed_vals));
