@@ -16,8 +16,6 @@
  */
 package it.cnr.istc.ac;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -188,7 +186,7 @@ public class NetworkTest {
     }
 
     @Test
-    public void testNoGood() {
+    public void testNoGood() throws InconsistencyException {
         Network n = new Network();
         BoolVar b0 = n.newBool();
         BoolVar b1 = n.newBool();
@@ -227,18 +225,6 @@ public class NetworkTest {
         n.push();
         assign = n.assign(n.not(b0));
         assertFalse(assign);
-
-        Collection<BoolVar> unsat_core = n.getUnsatCore();
-        Collection<BoolVar> ng_vars = new ArrayList<>(unsat_core.size());
-        for (BoolVar v : unsat_core) {
-            ng_vars.add((BoolVar) n.not(v).to_var(n));
-        }
-        BoolExpr no_good = n.or(ng_vars.toArray(new BoolVar[ng_vars.size()]));
-        while (no_good.evaluate() == LBool.L_FALSE) {
-            n.pop();
-        }
-        add = n.add(no_good);
-        assertTrue(add);
     }
 
     @Test
@@ -260,6 +246,6 @@ public class NetworkTest {
 
         n.pop();
         assertEquals(LBool.L_TRUE, b0.evaluate());
-        assertEquals(LBool.L_UNKNOWN, b1.evaluate());
+        assertEquals(LBool.L_TRUE, b1.evaluate());
     }
 }

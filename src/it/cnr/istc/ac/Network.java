@@ -487,7 +487,6 @@ public class Network {
     private boolean simple_add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
-        assert Stream.of(exprs).noneMatch(expr -> expr.root() == LBool.L_FALSE);
         if (!rootLevel()) {
             assertions.addAll(Arrays.asList(exprs));
         }
