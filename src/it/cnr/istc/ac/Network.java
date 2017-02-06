@@ -615,10 +615,6 @@ public class Network {
                     pop();
                     return true;
                 } else {
-                    // we need to back-jump..
-                    if (!backjump()) {
-                        throw new InconsistencyException("inconsistent constraint network..");
-                    }
                     return false;
                 }
             default:
@@ -652,25 +648,36 @@ public class Network {
     private boolean backjump() {
         BoolExpr no_good = extract_no_good();
 
-        // we backtrack till we can enforce the no-good.. 
-        while (no_good.evaluate() == LBool.L_FALSE) {
-            if (rootLevel()) {
-                // the problem is inconsistent..
-                return false;
+        backjump:
+        do {
+            if (no_good.evaluate() == LBool.L_FALSE || bool_assertions.stream().anyMatch(assertion -> assertion.evaluate() == LBool.L_FALSE)) {
+                // we restore the variables' domains..
+                pop();
+                continue;
             }
 
-            // we restore flaws and resolvers state..
-            pop();
-        }
+            for (BoolExpr expr : bool_assertions) {
+                if (!((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null)) {
+                    // we restore the variables' domains..
+                    pop();
+                    continue backjump;
+                }
+            }
 
-        if (!bool_assertions.isEmpty() && !add(bool_assertions.toArray(new BoolExpr[bool_assertions.size()]))) {
-            return false;
-        }
-        if (rootLevel()) {
-            bool_assertions.clear();
-        }
+            if (!propagate()) {
+                // we restore the variables' domains..
+                pop();
+                continue;
+            }
 
-        return true;
+            if (rootLevel()) {
+                bool_assertions.clear();
+            }
+
+            return true;
+        } while (!rootLevel());
+
+        return false;
     }
 
     public void store(Propagator prop) {
