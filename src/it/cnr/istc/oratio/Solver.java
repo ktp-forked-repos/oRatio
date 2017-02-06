@@ -444,9 +444,6 @@ public class Solver extends Core {
 
     @Override
     public void pop() {
-        // we restore the constraint network state..
-        super.pop();
-
         // we also restore updated flaws and resolvers costs..
         for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
             costs.put(entry.getKey(), entry.getValue());
@@ -464,6 +461,9 @@ public class Solver extends Core {
         inconsistencies = l_l.inconsistencies;
 
         layers.pollLast();
+
+        // we restore the constraint network state..
+        super.pop();
     }
 
     void fireNewFlaw(Flaw f) {

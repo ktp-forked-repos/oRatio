@@ -48,6 +48,7 @@ public abstract class Flaw {
         this.causes = new ArrayList<>(s.resolvers);
         for (Resolver cause : causes) {
             cause.preconditions.add(this);
+            s.setCost(cause.effect, cause.getPreconditions().stream().mapToDouble(pre -> s.getCost(pre)).max().orElse(0) + s.evaluate(cause.cost));
         }
         this.supports = new ArrayList<>(s.resolvers);
 
