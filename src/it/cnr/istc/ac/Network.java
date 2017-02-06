@@ -45,6 +45,7 @@ public class Network {
     int n_slack_vars = 0;
     int n_enum_vars = 0;
     Map<Var<?>, Domain> domains = null;
+    private Collection<BoolExpr> assertions;
     private final Map<Var<?>, Collection<DomainListener>> listeners = new IdentityHashMap<>();
     final Map<String, BoolVar> bool_vars = new HashMap<>();
     final Map<String, ArithVar> arith_vars = new HashMap<>();
@@ -53,7 +54,6 @@ public class Network {
     private final Map<Var<?>, Propagator> causes = new IdentityHashMap<>();
     private final LinkedList<Layer> layers = new LinkedList<>();
     final Map<ArithVar, Lin> tableau = new IdentityHashMap<>();
-    private final Collection<BoolExpr> bool_assertions = new ArrayList<>();
     private final Map<String, BoolVar> arith_assertions = new HashMap<>();
     private final Set<BoolVar> unsat_core = new HashSet<>();
 
@@ -481,7 +481,7 @@ public class Network {
         assert Stream.of(exprs).noneMatch(Objects::isNull);
         assert Stream.of(exprs).noneMatch(expr -> expr.evaluate() == LBool.L_FALSE);
         if (!rootLevel()) {
-            bool_assertions.addAll(Arrays.asList(exprs));
+            assertions.addAll(Arrays.asList(exprs));
         }
         for (BoolExpr expr : exprs) {
             switch (expr.evaluate()) {
@@ -628,56 +628,53 @@ public class Network {
 
     protected void push() {
         assert prop_q.isEmpty();
-        Layer layer = new Layer(domains);
+        Layer layer = new Layer(domains, assertions);
         domains = new IdentityHashMap<>();
+        assertions = new ArrayList<>();
         layers.add(layer);
     }
 
     protected void pop() {
         assert prop_q.isEmpty();
+
         for (Var<?> var : domains.keySet()) {
             var.restore();
         }
         domains.keySet().stream().sorted((Var<?> v0, Var<?> v1) -> v0.name.compareTo(v1.name)).forEach(v -> v.reevaluate());
-        prop_q.clear();
+        for (BoolExpr expr : assertions) {
+            boolean intersect = ((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null);
+            assert intersect;
+        }
+        boolean propagate = propagate();
+        assert propagate;
+
         Layer layer = layers.getLast();
         domains = layer.domains;
+        if (layer.assertions != null) {
+            layer.assertions.addAll(assertions);
+        }
+        assertions = layer.assertions;
         layers.pollLast();
     }
 
     private boolean backjump() {
         BoolExpr no_good = extract_no_good();
 
-        backjump:
-        do {
-            if (no_good.evaluate() == LBool.L_FALSE || bool_assertions.stream().anyMatch(assertion -> assertion.evaluate() == LBool.L_FALSE)) {
-                // we restore the variables' domains..
-                pop();
-                continue;
-            }
-
-            for (BoolExpr expr : bool_assertions) {
-                if (!((BoolVar) expr.to_var(this)).intersect(LBool.L_TRUE, null)) {
-                    // we restore the variables' domains..
-                    pop();
-                    continue backjump;
-                }
-            }
-
-            if (!propagate()) {
-                // we restore the variables' domains..
-                pop();
-                continue;
-            }
-
+        // we backtrack till we can enforce the no-good.. 
+        while (no_good.evaluate() == LBool.L_FALSE) {
+            // the constraint network is inconsistent..
             if (rootLevel()) {
-                bool_assertions.clear();
+                return false;
             }
 
-            return true;
-        } while (!rootLevel());
+            // we restore the variables' domains..
+            pop();
+        }
 
-        return false;
+        boolean add = add(no_good);
+        assert add;
+
+        return true;
     }
 
     public void store(Propagator prop) {
@@ -921,10 +918,12 @@ public class Network {
 
         private BoolVar decision_variable;
         private final Map<Var<?>, Domain> domains;
+        private final Collection<BoolExpr> assertions;
         private final Map<Var<?>, Collection<Propagator>> reason = new IdentityHashMap<>();
 
-        private Layer(Map<Var<?>, Domain> domains) {
+        private Layer(Map<Var<?>, Domain> domains, Collection<BoolExpr> assertions) {
             this.domains = domains;
+            this.assertions = assertions;
         }
     }
 }
