@@ -388,19 +388,29 @@ public class Solver extends Core {
     }
 
     public boolean isDeferrable(Flaw flaw) {
-        if (!flaw.isDisjunctive()) {
-            // we cannot defer this flaw..
-            return false;
-        } else if (flaw.in_plan.evaluate() == LBool.L_FALSE) {
-            // it is not possible to solve this flaw with current assignments.. thus we defer..
-            return true;
-        } else if (costs.getOrDefault(flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY) {
-            // we already have a solution for this flaw.. thus we defer..
-            return true;
-        } else {
-            // this flaw is deferrable if any of its causes is..
-            return flaw.getCauses().stream().map(cause -> cause.effect).anyMatch(effect -> isDeferrable(effect));
+        LinkedList<Flaw> queue = new LinkedList<>();
+        Set<Flaw> visited = new HashSet<>();
+        queue.add(flaw);
+        while (!queue.isEmpty()) {
+            Flaw c_flaw = queue.pollFirst();
+            if (!visited.contains(c_flaw)) {
+                if (!c_flaw.isDisjunctive()) {
+                    // we cannot defer this flaw..
+                    return false;
+                } else if (c_flaw.in_plan.evaluate() == LBool.L_FALSE) {
+                    // it is not possible to solve this flaw with current assignments.. thus we defer..
+                    return true;
+                } else if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY) {
+                    // we already have a solution for this flaw.. thus we defer..
+                    return true;
+                }
+                visited.add(c_flaw);
+                // this flaw is deferrable if any of its causes is..
+                queue.addAll(c_flaw.getCauses().stream().map(resolver -> resolver.effect).collect(Collectors.toList()));
+            }
         }
+        // we cannot defer this flaw..
+        return false;
     }
 
     /**
