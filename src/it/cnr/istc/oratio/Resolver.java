@@ -24,8 +24,6 @@ import it.cnr.istc.ac.Var;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -62,12 +60,8 @@ public abstract class Resolver {
             @Override
             public boolean propagate(Var<?> v) {
                 if (in_plan.evaluate() == LBool.L_FALSE) {
-                    Map<Resolver, Double> costs = e.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).collect(Collectors.toMap(r -> r, r -> r.getPreconditions().stream().mapToDouble(pre -> solver.getCost(pre)).max().orElse(0) + solver.evaluate(r.cost)));
-                    if (costs.isEmpty()) {
-                        solver.setCost(e, Double.POSITIVE_INFINITY);
-                    } else {
-                        solver.setCost(e, costs.get(costs.keySet().stream().min((Resolver r0, Resolver r1) -> Double.compare(costs.get(r0), costs.get(r1))).get()));
-                    }
+                    // we update the cost of the effect..
+                    solver.setCost(effect, effect.getResolvers().stream().mapToDouble(r -> solver.getCost(r)).min().orElse(Double.POSITIVE_INFINITY));
                 }
                 return true;
             }
