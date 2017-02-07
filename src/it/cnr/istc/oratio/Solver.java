@@ -360,7 +360,7 @@ public class Solver extends Core {
             while (!queue.isEmpty()) {
                 Flaw c_flaw = queue.pollFirst();
                 if (!updated.contains(c_flaw)) {
-                    double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> r.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r.cost)).min().orElse(Double.POSITIVE_INFINITY);
+                    double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> getCost(r)).min().orElse(Double.POSITIVE_INFINITY);
                     if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) != c_cost) {
                         updated.add(c_flaw);
                         if (!rootLevel() && !flaw_costs.containsKey(c_flaw) && costs.containsKey(c_flaw)) {
@@ -380,7 +380,11 @@ public class Solver extends Core {
     }
 
     public double getCost(Resolver resolver) {
-        return resolver.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + evaluate(resolver.getCost());
+        if (resolver.in_plan.evaluate() == LBool.L_FALSE) {
+            return Double.POSITIVE_INFINITY;
+        } else {
+            return resolver.getPreconditions().stream().mapToDouble(pre -> pre.getSolver().getCost(pre)).max().orElse(0) + evaluate(resolver.getCost());
+        }
     }
 
     public boolean isDeferrable(Flaw flaw) {
