@@ -331,6 +331,7 @@ public class Solver extends Core {
                     fireResolverUpdate(r);
                     resolvers.removeFirst();
                 }
+
                 fireFlawUpdate(flaw);
             } else {
                 // we postpone the expansion..
