@@ -57,7 +57,6 @@ public class Solver extends Core {
     private static final Logger LOG = Logger.getLogger(Solver.class.getName());
     final Map<Atom, Flaw> reasons = new IdentityHashMap<>();
     private Map<Flaw, Double> costs = new IdentityHashMap<>();
-    private Map<Flaw, Double> flaw_costs;
     private Set<Flaw> flaws = new HashSet<>();
     private Set<Flaw> inconsistencies = new HashSet<>();
     private final LinkedList<Flaw> flaw_q = new LinkedList<>();
@@ -84,6 +83,7 @@ public class Solver extends Core {
 
     @Override
     public IEnumItem newEnumItem(Type type, IItem... values) {
+        assert rootLevel();
         IEnumItem c_enum = super.newEnumItem(type, values);
         EnumFlaw flaw = new EnumFlaw(this, c_enum);
         fireFlawUpdate(flaw);
@@ -97,6 +97,7 @@ public class Solver extends Core {
 
     @Override
     protected boolean newFact(Atom atom) {
+        assert rootLevel();
         if (!super.newFact(atom)) {
             return false;
         }
@@ -123,6 +124,7 @@ public class Solver extends Core {
 
     @Override
     protected boolean newGoal(Atom atom) {
+        assert rootLevel();
         if (!super.newGoal(atom)) {
             return false;
         }
@@ -149,6 +151,7 @@ public class Solver extends Core {
 
     @Override
     public boolean newDisjunction(IEnv env, Disjunction d) {
+        assert rootLevel();
         if (!super.newDisjunction(env, d)) {
             return false;
         }
@@ -165,6 +168,7 @@ public class Solver extends Core {
     @Override
     public boolean solve() {
         LOG.info("solving the problem..");
+
         while (true) {
             // we update the planning graph..
             if (!update_planning_graph()) {
@@ -172,9 +176,76 @@ public class Solver extends Core {
                 return false;
             }
 
-            assert layers.stream().map(l -> l.resolver).allMatch(res -> res.in_plan.evaluate() == LBool.L_TRUE);
-            assert resolvers.stream().allMatch(res -> res.in_plan.evaluate() == LBool.L_TRUE);
+            if (!clear_inconsistencies()) {
+                // the problem is unsolvable..
+                return false;
+            }
 
+            if (flaws.isEmpty()) {
+                // Hurray!! We have found a solution..
+                return true;
+            }
+
+            while (!flaws.isEmpty()) {
+                // we clean up trivial flaws..
+                Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                while (trivial_flaw.isPresent()) {
+                    assert trivial_flaw.get().isExpanded();
+                    assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
+                    assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                    fireCurrentFlaw(trivial_flaw.get());
+                    Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
+                    assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
+                    assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
+                    fireCurrentResolver(unique_resolver);
+                    flaws.remove(trivial_flaw.get());
+                    flaws.addAll(unique_resolver.getPreconditions());
+                    trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
+                }
+
+                assert flaws.stream().allMatch(f -> f.isExpanded());
+                assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
+                assert flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
+
+                if (flaws.isEmpty()) {
+                    // Hurray!! We have found a solution..
+                    return true;
+                } else {
+                    // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
+                    Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
+                    assert most_expensive_flaw.isExpanded();
+                    assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
+                    assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
+                    fireCurrentFlaw(most_expensive_flaw);
+
+                    // we select the least expensive resolver (i.e., the most promising for finding a solution)..
+                    Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r1.cost))).get();
+                    assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
+                    fireCurrentResolver(least_expensive_resolver);
+                    resolvers.add(least_expensive_resolver);
+
+                    // we create a new layer..
+                    push(least_expensive_resolver);
+                    // and remove the flaw..
+                    flaws.remove(most_expensive_flaw);
+
+                    try {
+                        // we try to enforce the resolver..
+                        if (assign(least_expensive_resolver.in_plan)) {
+                            // we add sub-goals..
+                            flaws.addAll(least_expensive_resolver.getPreconditions());
+                        }
+                    } catch (InconsistencyException ex) {
+                        // the problem is unsolvable..
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean clear_inconsistencies() {
+        while (!inconsistencies.isEmpty()) {
             // we clean up trivial inconsistencies..
             Optional<Flaw> trivial_inconsistency = inconsistencies.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
             while (trivial_inconsistency.isPresent()) {
@@ -205,7 +276,26 @@ public class Solver extends Core {
                         fireFlawUpdate(flaw);
                         flaw_q.add(flaw);
                     }
-                    continue;
+                    for (Flaw inconsistency : inconsistencies) {
+                        if (!inconsistency.expand()) {
+                            return false;
+                        }
+                        for (Resolver r : inconsistency.getResolvers()) {
+                            resolvers.addFirst(r);
+                            ctr_var = r.in_plan;
+                            if (!r.apply()) {
+                                return false;
+                            }
+                            if (r.getPreconditions().isEmpty()) {
+                                // there are no requirements for this resolver..
+                                setCost(inconsistency, evaluate(r.cost));
+                            }
+                            fireResolverUpdate(r);
+                            resolvers.removeFirst();
+                        }
+
+                        fireFlawUpdate(inconsistency);
+                    }
                 }
             } else {
                 // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
@@ -235,64 +325,9 @@ public class Solver extends Core {
                     // the problem is unsolvable..
                     return false;
                 }
-                continue;
-            }
-            assert inconsistencies.isEmpty();
-
-            // we clean up trivial flaws..
-            Optional<Flaw> trivial_flaw = flaws.stream().filter(f -> f.isExpanded() && f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            while (trivial_flaw.isPresent()) {
-                assert trivial_flaw.get().isExpanded();
-                assert trivial_flaw.get().in_plan.evaluate() == LBool.L_TRUE;
-                assert costs.getOrDefault(trivial_flaw.get(), Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                fireCurrentFlaw(trivial_flaw.get());
-                Resolver unique_resolver = trivial_flaw.get().getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).findAny().get();
-                assert unique_resolver.in_plan.evaluate() == LBool.L_TRUE;
-                assert unique_resolver.getPreconditions().stream().allMatch(flaw -> flaw.in_plan.evaluate() == LBool.L_TRUE);
-                fireCurrentResolver(unique_resolver);
-                flaws.remove(trivial_flaw.get());
-                flaws.addAll(unique_resolver.getPreconditions());
-                trivial_flaw = flaws.stream().filter(f -> f.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).count() == 1).findAny();
-            }
-
-            assert flaws.stream().allMatch(f -> f.isExpanded());
-            assert flaws.stream().allMatch(f -> f.in_plan.evaluate() == LBool.L_TRUE);
-            assert flaws.stream().allMatch(f -> costs.getOrDefault(f, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY);
-
-            if (flaws.isEmpty()) {
-                // Hurray!! We have found a solution..
-                return true;
-            } else {
-                // we select the most expensive flaw (i.e., the nearest to the top level flaws)..
-                Flaw most_expensive_flaw = flaws.stream().max((Flaw f0, Flaw f1) -> Double.compare(costs.getOrDefault(f0, Double.POSITIVE_INFINITY), costs.getOrDefault(f1, Double.POSITIVE_INFINITY))).get();
-                assert most_expensive_flaw.isExpanded();
-                assert most_expensive_flaw.in_plan.evaluate() == LBool.L_TRUE;
-                assert costs.getOrDefault(most_expensive_flaw, Double.POSITIVE_INFINITY) < Double.POSITIVE_INFINITY;
-                fireCurrentFlaw(most_expensive_flaw);
-
-                // we select the least expensive resolver (i.e., the most promising for finding a solution)..
-                Resolver least_expensive_resolver = most_expensive_flaw.getResolvers().stream().filter(r -> r.in_plan.evaluate() != LBool.L_FALSE).min((Resolver r0, Resolver r1) -> Double.compare(r0.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r0.cost), r1.getPreconditions().stream().mapToDouble(pre -> costs.getOrDefault(pre, Double.POSITIVE_INFINITY)).max().orElse(0) + evaluate(r1.cost))).get();
-                assert least_expensive_resolver.in_plan.evaluate() == LBool.L_UNKNOWN;
-                fireCurrentResolver(least_expensive_resolver);
-                resolvers.add(least_expensive_resolver);
-
-                // we create a new layer..
-                push(least_expensive_resolver);
-                // and remove the flaw..
-                flaws.remove(most_expensive_flaw);
-
-                try {
-                    // we try to enforce the resolver..
-                    if (assign(least_expensive_resolver.in_plan)) {
-                        // we add sub-goals..
-                        flaws.addAll(least_expensive_resolver.getPreconditions());
-                    }
-                } catch (InconsistencyException ex) {
-                    // the problem is unsolvable..
-                    return false;
-                }
             }
         }
+        return true;
     }
 
     /**
@@ -348,9 +383,6 @@ public class Solver extends Core {
 
     void setCost(Flaw flaw, double cost) {
         if (costs.getOrDefault(flaw, Double.POSITIVE_INFINITY) != cost) {
-            if (!rootLevel() && !flaw_costs.containsKey(flaw) && costs.containsKey(flaw)) {
-                flaw_costs.put(flaw, costs.get(flaw));
-            }
             costs.put(flaw, cost);
             fireFlawUpdate(flaw);
 
@@ -364,9 +396,6 @@ public class Solver extends Core {
                     double c_cost = c_flaw.getResolvers().stream().mapToDouble(r -> getCost(r)).min().orElse(Double.POSITIVE_INFINITY);
                     if (costs.getOrDefault(c_flaw, Double.POSITIVE_INFINITY) != c_cost) {
                         updated.add(c_flaw);
-                        if (!rootLevel() && !flaw_costs.containsKey(c_flaw) && costs.containsKey(c_flaw)) {
-                            flaw_costs.put(c_flaw, costs.get(c_flaw));
-                        }
                         costs.put(c_flaw, c_cost);
                         fireFlawUpdate(c_flaw);
                         queue.addAll(c_flaw.getSupports().stream().map(supp -> supp.effect).collect(Collectors.toList()));
@@ -442,8 +471,7 @@ public class Solver extends Core {
 
     private void push(Resolver r) {
         // we create a new layer..
-        Layer l = new Layer(r, flaw_costs, flaws, inconsistencies);
-        flaw_costs = new IdentityHashMap<>();
+        Layer l = new Layer(r, flaws, inconsistencies);
         flaws = new HashSet<>(flaws);
         inconsistencies = new HashSet<>(inconsistencies);
         layers.add(l);
@@ -459,19 +487,10 @@ public class Solver extends Core {
 
     @Override
     public void pop() {
-        // we also restore updated flaws and resolvers costs..
-        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-            costs.put(entry.getKey(), entry.getValue());
-        }
-        for (Map.Entry<Flaw, Double> entry : flaw_costs.entrySet()) {
-            fireFlawUpdate(entry.getKey());
-        }
-
         Layer l_l = layers.getLast();
         if (!resolvers.isEmpty() && resolvers.getLast() == l_l.resolver) {
             resolvers.removeLast();
         }
-        flaw_costs = l_l.flaw_costs;
         flaws = l_l.flaws;
         inconsistencies = l_l.inconsistencies;
 
@@ -528,13 +547,11 @@ public class Solver extends Core {
     private static class Layer {
 
         private final Resolver resolver;
-        private final Map<Flaw, Double> flaw_costs;
         private final Set<Flaw> flaws;
         private final Set<Flaw> inconsistencies;
 
-        Layer(Resolver resolver, Map<Flaw, Double> flaw_costs, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
+        Layer(Resolver resolver, Set<Flaw> flaws, Set<Flaw> inconsistencies) {
             this.resolver = resolver;
-            this.flaw_costs = flaw_costs;
             this.flaws = flaws;
             this.inconsistencies = inconsistencies;
         }

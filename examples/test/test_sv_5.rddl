@@ -1,0 +1,57 @@
+class SV0 : StateVariable {
+
+    SV1 sv1;
+
+    SV0(SV1 sv1) : sv1(sv1) {
+    }
+
+    predicate P1() {
+        duration == 5;
+        {
+            goal p2 = new P2(start:end);
+        } or {
+            goal p3 = new P3(start:end);
+        }
+    }
+
+    predicate P2() {
+        duration == 8;
+        goal p1 = new P1(start:end);
+    }
+
+    predicate P3() {
+        duration == 8;
+        goal p2 = new P2(start:end);
+    }
+}
+
+class SV1 : StateVariable {
+
+    predicate P4() {
+        duration == 5;
+        {
+            goal p5 = new P5(start:end);
+        } or {
+            goal p6 = new P6(start:end);
+        }
+    }
+
+    predicate P5() {
+        duration == 8;
+        goal p4 = new P4(start:end);
+    }
+
+    predicate P6() {
+        duration == 8;
+        goal p5 = new P5(start:end);
+    }
+}
+
+SV1 sv1 = new SV1();
+SV0 sv0 = new SV0(sv1);
+
+goal g1 = new sv0.P1(start:origin);
+fact g2 = new sv0.P2(end:horizon);
+
+goal g3 = new sv1.P4(start:origin);
+fact g4 = new sv1.P5(end:horizon);

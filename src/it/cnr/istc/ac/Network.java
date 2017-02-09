@@ -467,24 +467,13 @@ public class Network {
      * methods {@link #push()} and {@link #pop()} will not remove these
      * assertions. If backtracking is required, a combination of
      * {@link #imply(it.cnr.istc.ac.BoolExpr, it.cnr.istc.ac.BoolExpr)} and
-     * {@link #assign(it.cnr.istc.ac.BoolExpr)} methods would do the job. If the
-     * boolean expressions make the constraint network inconsistent, a no-good
-     * is generated and backtrack is performed until the no-good can be
-     * enforced.
+     * {@link #assign(it.cnr.istc.ac.BoolExpr)} methods would do the job.
      *
      * @param exprs an array of boolean expressions.
      * @return {@code true} if the constraint network is consistent after the
      * introduction of the boolean expressions.
      */
     public boolean add(BoolExpr... exprs) {
-        if (simple_add(exprs)) {
-            return true;
-        } else {
-            return backjump();
-        }
-    }
-
-    private boolean simple_add(BoolExpr... exprs) {
         assert exprs.length > 0;
         assert Stream.of(exprs).noneMatch(Objects::isNull);
         if (!rootLevel()) {
@@ -673,11 +662,11 @@ public class Network {
         propagate();
     }
 
-    private boolean backjump() {
+    protected boolean backjump() {
         BoolExpr no_good = extract_no_good();
 
         // we backtrack till we can enforce the no-good.. 
-        while (!simple_add(no_good)) {
+        while (!add(no_good)) {
             if (rootLevel()) {
                 // the problem is unsolvable..
                 return false;
